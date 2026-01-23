@@ -9,13 +9,13 @@ import { useSearchParams } from 'next/navigation';
 function DocsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams?.get('tab');
-  const initialTab = (tabParam === 'review-boards' || tabParam === 'idea-futures' || tabParam === 'economics') 
+  const initialTab = (tabParam === 'trial-resolution' || tabParam === 'review-boards' || tabParam === 'idea-futures' || tabParam === 'economics') 
     ? tabParam 
-    : 'economics';
-  const [activeTab, setActiveTab] = useState<'economics' | 'idea-futures' | 'review-boards'>(initialTab);
+    : 'trial-resolution';
+  const [activeTab, setActiveTab] = useState<'trial-resolution' | 'economics' | 'idea-futures' | 'review-boards'>(initialTab);
   
   useEffect(() => {
-    if (tabParam && (tabParam === 'review-boards' || tabParam === 'idea-futures' || tabParam === 'economics')) {
+    if (tabParam && (tabParam === 'trial-resolution' || tabParam === 'review-boards' || tabParam === 'idea-futures' || tabParam === 'economics')) {
       setActiveTab(tabParam);
     }
   }, [tabParam]);
@@ -25,9 +25,17 @@ function DocsContent() {
       <Navbar />
       <main className="min-h-screen bg-white">
         <div className="max-w-3xl mx-auto px-4 py-8">
-          <div className="text-sm text-gray-400 font-sans mb-2">Research</div>
-          
           <div className="flex gap-4 mb-6 border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab('trial-resolution')}
+              className={`pb-2 px-1 font-sans text-lg font-semibold transition-colors ${
+                activeTab === 'trial-resolution'
+                  ? 'text-black border-b-2 border-black'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Trial & Resolution Procedure
+            </button>
             <button
               onClick={() => setActiveTab('economics')}
               className={`pb-2 px-1 font-sans text-lg font-semibold transition-colors ${
@@ -59,6 +67,106 @@ function DocsContent() {
               Review Boards
             </button>
           </div>
+
+          {activeTab === 'trial-resolution' && (
+            <div>
+              <p className="text-gray-800 leading-7 mb-4">
+                The trial &amp; resolution process is primarily based on the Science Court System designed by Prof. Ellad Tadmors who ran a Science Court Class at the University of Minnesota. The original idea for science courts came from Prof. Arthur Kantrowitz who proposed the idea in the 1970s and succeeded in convincing the Ford administration to create science courts, however Ford lost his bid for reelection shortly thereafter and the courts were never implemented at the federal level.
+              </p>
+              
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Question Scope</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                The question scope defines the underlying claim that the market is trying to answer. A JFK market could ask the following questions with one being more general and the other being more specific:
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                <strong>General</strong> - Was the CIA Involved in the Assassination of JFK?
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                <strong>Specific</strong> - Did multiple assassins shoot at JFK on 11/22/1963?
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                One focuses on a specific factual claim, multiple shooters, while the other opens a set of possible claims that could satisfy the more general term &quot;involved.&quot; If any of those possible claims is well evidenced then, then the general claim can be resolved yes.
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                In the context of this question, involved means direct participation in planning or executing the act, foreknowledge and failure to prevent it, facilitation through assets or proxies, or post-assassination cover-up.
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                Prof. Tradmors recommends the general question since it produces a broader fact sheet than the narrowly defined claim. However, the more possible sub-claims that a question generates the more cumbersome the judging process since the jury will need to litigate each claim. For the sake of this paper, the general question will proceed and the following defines the question that the market will attempt to answer:
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                Was the CIA Involved in the Assassination of JFK?
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                Involved means direct participation in planning or executing the act, foreknowledge and failure to prevent it, facilitation through assets or proxies, or post-assassination cover-up.
+              </p>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Burden of Proof</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                Next, the market needs to define the burden of proof by which the jury (&quot;board of editors&quot;) will evaluate the claim. Below are some options for the burden of proof:
+              </p>
+              <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+                <li>The market will resolve &quot;Yes&quot; if the board of editors concludes that it is reasonable to conclude (&gt;~51% confidence) that the CIA was involved in JFK&apos;s assassination? Otherwise, the market will resolve &quot;No.&quot;</li>
+                <li>The market will resolve &quot;Yes&quot; if the board of editors finds that it is more likely than not that the CIA (&gt;51% confidence) was involved in JFK&apos;s assassination. Otherwise, the market will resolve &quot;No.&quot;</li>
+                <li>The market will resolve &quot;Yes&quot; if the board of editors finds there is a preponderance of the evidence (&gt;51% confidence) that the CIA was involved in the assassination of JFK. Otherwise, the market will resolve &quot;No.&quot;</li>
+                <li>The market will resolve &quot;Yes&quot; if the board of editors finds that there is clear and convincing evidence (&gt;75% confidence) that the CIA was involved in the assassination of JFK. Otherwise, the market will resolve &quot;No.&quot;</li>
+                <li>The market will resolve &quot;Yes&quot; if the board of editors finds that beyond a reasonable doubt (&gt;95% confidence) that the CIA was involved in the assassination of JFK. Otherwise, the market will resolve &quot;No.&quot;</li>
+              </ol>
+              <p className="text-gray-800 leading-7 mb-4">
+                The University of Minnesota Science Court avoided resolving the markets entirely because they found the resolutions controversial. However, markets demand resolution so the fifth option is optimal since in clear language it defines the burden of proof with the associated confidence level without becoming too legalistic in its terminology. In this paper, the market will proceed with the following burden of proof and wording:
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                The market will resolve &quot;Yes&quot; if the board of editors finds that there is clear and convincing evidence (&gt;75% confidence) that the CIA was involved in the assassination of JFK. Otherwise, the market will resolve &quot;No.&quot;
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                Involved means direct participation in planning or executing the act, foreknowledge and failure to prevent it, facilitation through assets or proxies, or post-assassination cover-up.
+              </p>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Jury Selection &amp; Pay</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                The markets will be resolved by a panel of three neutral judges known as &quot;board of editors&quot; that have domain expertise. The Citizen that will draft three judges that meet the following criteria:
+              </p>
+              <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+                <li>Male born in the United States</li>
+                <li>Phd. or Phd. candidate in relevant field</li>
+                <li>Self-proclaimed neutral and undecided on the particular question at hand</li>
+              </ul>
+              <p className="text-gray-800 leading-7 mb-4">
+                The board of editors will be compensated at a level commensurate with one week&apos;s wages of the Post Doc Program. Each will be paid $1,300 dollars, so the total cost of the jury would be $3,900.
+              </p>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Case Managers</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                Case Managers are responsible for representing their respective side of the market and they are ideally pundits who already debate the issues so they have technical qualifications and familiarity with the specific domain.
+              </p>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Trial Proceedings</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                The market discovery period will run for three months to enable trading and also, the collection of all relevant evidence. Then, the trial period will run for one week after the discover period ends and at the end of the trial period, the market will be resolved. Below is the trial proceedings: 
+              </p>
+              <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+                <li>Using the crowd-sourced evidence section, the case managers formulate a series of factual statements which they regard as most important to their cases. Such statements must be results, or anticipated results, of experiments or observations of nature. The statements should be ranked in order of importance assigned by the case managers.</li>
+                <li>The judges examine each statement to determine that it is relevant and factual.</li>
+                <li>Each case manager is invited to accept or challenge each of the opponent&apos;s statements.</li>
+                <li>The list of statements accepted by both sides will constitute the first output from the Science Court.</li>
+                <li>Challenged statements are first dealt with by a mediation procedure in which attempts are made to narrow the area of disagreement or to negotiate a revised statement of fact which both case managers can accept.</li>
+                <li>The mediated statements are added to the Science Court&apos;s output. Those statements which remain challenged are then subjected to an adversary procedure.</li>
+                <li>Case managers prepare substantiation papers on statements remaining challenged and transmit these to the judges and the opposing case managers, starting with the first, the most important challenged statement.</li>
+                <li>The substantiation is cross-examined by opposing case managers and judges and contrary evidence is presented and cross-examined.</li>
+                <li>A second attempt to negotiate a mediated statement is made and, if successful, this statement is added to the Science Court&apos;s output.</li>
+                <li>If this is not successful the judges write their opinions on the contested statement of fact.</li>
+                <li>This procedure is repeated for each of the challenged statements.</li>
+                <li>The accepted statements plus the judges&apos; statements constitute the final output of the procedure.</li>
+              </ol>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Trial Resolution</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                Based on the factsheet, the judges make a final ruling resolving the market about whether or not the evidence meets the defined burden of proof
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                Judges also recommend possible future research that could be conduced to resolve the market more conclusively.
+              </p>
+            </div>
+          )}
 
           {activeTab === 'economics' && (
             <div>
