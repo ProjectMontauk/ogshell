@@ -75,10 +75,10 @@ function DocsContent() {
                 The trial procedure draws from the Science Court system developed by Professor Ellad Tadmor, who has run a Science Court seminar at the University of Minnesota. The original concept of science courts originated with Professor Arthur Kantrowitz, who proposed it in the 1960s and persuaded the Ford administration to explore establishing them. However, Ford&apos;s loss in the 1976 election prevented further research at the federal level. 
               </p>
               <p className="text-gray-800 leading-7 mb-4">
-                Professor Tadmor&apos;s science courts dealt with policy questions like &quot;should the US increase investment in nuclear energy&quot; and at the end of the deliberation process, volunteer jurors voted on what action they would recommend based on an agreed upon fact sheet produced by the trial procedure.
+                Professor Tadmor&apos;s science courts dealt with policy questions like &quot;should the US increase investment in nuclear energy&quot; and at the end of the deliberation process, jurors voted on what action they would recommend based on an agreed upon fact sheet produced by the trial procedure.
               </p>
               <p className="text-gray-800 leading-7 mb-4">
-                Professor Kantrowitz&apos;s proposed science courts dealt with questions of scientific fact like whether the Love Canal environmental disaster increased birth defects and genetic hazards among residents. After an adversarial process of cross examination, technical judges submitted opinions on the merits of each side&apos;s argument but the court avoided total resolution of the underlying question. Kantrowitz viewed the exercise as encouraging, noting that it added clarity on a complex issue. Kantrowitz&apos;s science courts used jurors with technical expertise while Tadmor&apos;s courts used volunteers since the course was run as a class at the University of Minnesota. The volunteers were not paid for their time and did not have any tecnical expertise. 
+                Professor Kantrowitz&apos;s proposed science courts dealt with questions of scientific fact like whether the Love Canal environmental disaster increased birth defects and genetic hazards among residents. After an adversarial process of cross examination, technical judges submitted opinions on the merits of each side&apos;s argument but the court avoided total resolution of the underlying question. Kantrowitz viewed the exercise as encouraging, noting that it added clarity on a complex issue. Kantrowitz&apos;s science courts used jurors with technical expertise while Tadmor&apos;s courts used unpaid volunteers since the course was run as a class at the University of Minnesota. 
               </p>
               <p className="text-gray-800 leading-7 mb-4">
                 The trial procedure for the science courts run by Tadmor and Kantrowitz are nearly identical, so The Citizen will implement the same trial and procedure process from these previous attempts. The first point of differentiation between previous science courts is that The Citizen will venture to resolve the market by making a judgement about the underlying claim based on the factsheet produced by the trial. The second point of differentiation is that The Citizen&apos;s crowd-sourced evidence section will aid the case managers in their research. Case managers are responsible for representing a market position and responding to any challenges from opposing counsel regarding disputed facts. The case manager&apos;s research is not limited to the evidence section but the evidence section should be useful in finding good evidence in support of the respective positions. If the evidence section is effective at finding and ranking the best arguments, The Citizen will explore removing case managers entirely and proceed with having technical jurors review the claims made in the evidence section.
@@ -91,7 +91,7 @@ function DocsContent() {
               
               <h3 className="text-xl font-bold text-black font-sans mb-3 mt-6">Question Scope</h3>
               <p className="text-gray-800 leading-7 mb-4">
-                The question scope defines the core claim that the prediction market seeks to resolve. For a JFK-themed market, possible formulations range from broad to narrow. Consider these examples:
+                The question scope defines the core claim that the prediction market seeks to answer. For a JFK-themed market, possible formulations range from broad to narrow. Consider these examples:
               </p>
               <p className="text-gray-800 leading-7 mb-4">
                 <strong>General:</strong> Was the CIA involved in the assassination of JFK?
@@ -123,7 +123,7 @@ function DocsContent() {
 
               <h3 className="text-xl font-bold text-black font-sans mb-3 mt-6">Burden of Proof</h3>
               <p className="text-gray-800 leading-7 mb-4">
-                Next, the market needs to define the burden of proof by which the jury (&quot;board of editors&quot;) will evaluate the claim. Below are some options for the burden of proof:
+                Next, the market needs to define the burden of proof by which the jury (&quot;board&quot;) will evaluate the claim. Below are some options for the burden of proof:
               </p>
               <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 mb-4">
                 <li><strong>More likely than not (&gt;51% confidence):</strong> The market resolves &quot;Yes&quot; if the board finds it more likely than not that the CIA was involved in JFK&apos;s assassination. Otherwise, the market will resolve &quot;No.&quot;</li>
@@ -138,7 +138,7 @@ function DocsContent() {
                 Clear and convincing evidence is the recommended burden of proof because it uses clear language and it provides a reasonable threshold for proof. Beyond a reasonable doubt is too difficult to prove considering that The Citizen does not have the authority to subpoena any involved party. More likely than not might cause the trial proceedings to be too circumstantial leading to a flimsy resolution that could be easily overturned at a later date. The market rules will proceed with the following phrasing:
               </p>
               <p className="text-gray-800 leading-7 mb-4">
-                The market will resolve &quot;Yes&quot; if the board of editors finds that there is clear and convincing evidence that the CIA was involved in the assassination of JFK. Otherwise, the market will resolve &quot;No.&quot;
+                The market will resolve &quot;Yes&quot; if the board finds that there is clear and convincing evidence that the CIA was involved in the assassination of JFK. Otherwise, the market will resolve &quot;No.&quot;
               </p>
               <p className="text-gray-800 leading-7 mb-4">
                 Involved means direct participation in planning or executing the act, foreknowledge and failure to prevent it, facilitation through assets or proxies, or post-assassination cover-up.
@@ -146,7 +146,7 @@ function DocsContent() {
 
               <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Personnel Selection &amp; Pay</h2>
               <p className="text-gray-800 leading-7 mb-4">
-                The markets will be resolved by a panel of three neutral jurors known as the &quot;board of editors&quot; who have domain expertise. The Citizen will draft three jurors who meet the following criteria:
+                The markets will be resolved by a panel of three neutral jurors known as the &quot;board&quot; who have domain expertise. The Citizen will draft three jurors who meet the following criteria:
               </p>
               <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
                 <li>Male born in the United States</li>
@@ -154,7 +154,7 @@ function DocsContent() {
                 <li>Self-proclaimed neutral and undecided on the particular question at hand</li>
               </ul>
               <p className="text-gray-800 leading-7 mb-4">
-                The board of editors will be compensated at a level commensurate with one week&apos;s wages for a typical postdoctoral program. Each juror will be paid $1,300 in exchange for one week of their time, bringing the total cost of fielding the jury to $3,900. Compensation may be adjusted based on current wage market conditions, field of expertise, or seniority.
+                The board will be compensated at a level commensurate with one week&apos;s wages for a typical postdoctoral program. Each juror will be paid $1,300 in exchange for one week of their time, bringing the total cost of fielding the jury to $3,900. Compensation may be adjusted based on current wage market conditions, field of expertise, or seniority.
               </p>
               <p className="text-gray-800 leading-7 mb-4">
                 Case managers are responsible for representing their respective side of the market and are ideally pundits who already publicly debate the market position. If possible, The Citizen will not pay case managers since the trial procedures serve as a platform to increase their personal profile. In the Love Canal case, case managers were unpaid local scientists who had already debated the issue in community and academic settings.
@@ -174,7 +174,7 @@ function DocsContent() {
 
               <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Trial Procedure</h2>
               <p className="text-gray-800 leading-7 mb-4">
-                After the three-month trading and discovery period closes and both case managers submit their prioritized lists of factual claims, the one-week deliberation and resolution phase begins. During this phase, the board of editors follows the mediation-then-adversary procedure originally proposed by Kantrowitz. Tadmor&apos;s implementation followed a similar structure, though typically in an oral, classroom format.
+                After the three-month trading and discovery period closes and both case managers submit their prioritized lists of factual claims, the one-week deliberation and resolution phase begins. During this phase, the board follows the mediation-then-adversary procedure originally proposed by Kantrowitz. Tadmor&apos;s implementation followed a similar structure, though typically in an oral, classroom format.
               </p>
               <p className="text-gray-800 leading-7 mb-4">
                 The process proceeds as follows:
@@ -185,10 +185,10 @@ function DocsContent() {
                 <li>Statements accepted by both sides become the first component of the court&apos;s output (agreed-upon facts).</li>
                 <li>Challenged statements enter a mediation phase: The case managers attempt to narrow disagreements or negotiate revised wording that both can accept.</li>
                 <li>Any successfully mediated statements are added to the court&apos;s output. Remaining challenged statements proceed to an adversary procedure.</li>
-                <li>For each remaining challenged statement (starting with the highest-priority one), case managers prepare and submit substantiation papers to the board of editors and the opposing case manager.</li>
+                <li>For each remaining challenged statement (starting with the highest-priority one), case managers prepare and submit substantiation papers to the board and the opposing case manager.</li>
                 <li>The substantiation is subject to cross-examination: Opposing case managers and board members may question claims, present contrary evidence from the posted materials, and cross-examine responses.</li>
                 <li>A second mediation attempt is made to reach agreement on a revised statement. If successful, the agreed statement is added to the output.</li>
-                <li>If mediation fails, the board of editors deliberates and issues a written opinion on the contested statement, stating their findings and confidence level.</li>
+                <li>If mediation fails, the board deliberates and issues a written opinion on the contested statement, stating their findings and confidence level.</li>
                 <li>This cycle of mediation, cross-examinination, and opinion if needed repeats for each remaining challenged statement, in order of priority.</li>
               </ol>
               <p className="text-gray-800 leading-7 mb-4">
@@ -196,7 +196,7 @@ function DocsContent() {
               </p>
               <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
                 <li>All statements accepted or mediated by both sides</li>
-                <li>The board of editors&apos; written opinions on any unresolved contested statements.</li>
+                <li>The board&apos;s written opinions on any unresolved contested statements.</li>
               </ul>
               <p className="text-gray-800 leading-7 mb-4">
                 This fact sheet constitutes the basis for the board&apos;s final judgment, resolving the market to Yes or No under the established burden of proof.
@@ -204,7 +204,7 @@ function DocsContent() {
 
               <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Trial Resolution</h2>
               <p className="text-gray-800 leading-7 mb-4">
-                Using only the fact sheet produced by the board of editors, each member independently issues a written opinion stating whether, in their view, the evidence meets the defined burden of proof - clear and convincing evidence that the CIA was involved in the assassination of JFK.
+                Using only the fact sheet produced by the board, each member independently issues a written opinion stating whether, in their view, the evidence meets the defined burden of proof - clear and convincing evidence that the CIA was involved in the assassination of JFK.
               </p>
               <p className="text-gray-800 leading-7 mb-4">
                 For the market to resolve Yes, at least two of the three board members must conclude that the burden has been satisfied. If fewer than two agree, the market resolves No.
