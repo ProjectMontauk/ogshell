@@ -38,7 +38,7 @@ function DocsContent() {
             </button>
             <button
               onClick={() => setActiveTab('economics')}
-              className={`pb-2 px-1 font-sans text-lg font-semibold transition-colors ${
+              className={`hidden pb-2 px-1 font-sans text-lg font-semibold transition-colors ${
                 activeTab === 'economics'
                   ? 'text-black border-b-2 border-black'
                   : 'text-gray-500 hover:text-gray-700'
@@ -48,7 +48,7 @@ function DocsContent() {
             </button>
             <button
               onClick={() => setActiveTab('idea-futures')}
-              className={`pb-2 px-1 font-sans text-lg font-semibold transition-colors ${
+              className={`hidden pb-2 px-1 font-sans text-lg font-semibold transition-colors ${
                 activeTab === 'idea-futures'
                   ? 'text-black border-b-2 border-black'
                   : 'text-gray-500 hover:text-gray-700'
@@ -58,7 +58,7 @@ function DocsContent() {
             </button>
             <button
               onClick={() => setActiveTab('review-boards')}
-              className={`pb-2 px-1 font-sans text-lg font-semibold transition-colors ${
+              className={`hidden pb-2 px-1 font-sans text-lg font-semibold transition-colors ${
                 activeTab === 'review-boards'
                   ? 'text-black border-b-2 border-black'
                   : 'text-gray-500 hover:text-gray-700'
@@ -72,7 +72,7 @@ function DocsContent() {
             <div>
               <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Introduction</h2>
               <p className="text-gray-800 leading-7 mb-4">
-                The trial procedure draws from the Science Court system developed by Prof. Ellad Tadmor, who has run a Science Court seminar at the University of Minnesota. The original concept of science courts originated with Prof. Arthur Kantrowitz, who proposed it in the 1960s and persuaded the Ford administration to explore establishing them. However, Ford&apos;s loss in the 1976 election prevented further research at the federal level. 
+                The trial procedure draws from the Science Court system developed by Professor Ellad Tadmor, who has run a Science Court seminar at the University of Minnesota. The original concept of science courts originated with Professor Arthur Kantrowitz, who proposed it in the 1960s and persuaded the Ford administration to explore establishing them. However, Ford&apos;s loss in the 1976 election prevented further research at the federal level. 
               </p>
               <p className="text-gray-800 leading-7 mb-4">
                 Professor Tadmor&apos;s science courts dealt with policy questions like &quot;should the US increase investment in nuclear energy&quot; and at the end of the deliberation process, volunteer jurors voted on what action they would recommend based on an agreed upon fact sheet produced by the trial procedure.
@@ -100,7 +100,7 @@ function DocsContent() {
                 <strong>Specific:</strong> Did multiple assassins shoot at JFK on November 22, 1963?
               </p>
               <p className="text-gray-800 leading-7 mb-4">
-                The specific version targets a single, testable factual claim (multiple shooters), while the general version encompasses a wider range of potential forms of involvement. Involved is explicitly defined as any of the following:
+                The specific version targets a single factual claim (multiple shooters), while the general version encompasses a wider range of potential forms of involvement. Involved is explicitly defined as any of the following:
               </p>
               <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
                 <li>Direct participation in planning or executing the assassination</li>
@@ -112,7 +112,7 @@ function DocsContent() {
                 Tadmor recommends the general question because it generates a broader, more comprehensive fact sheet. However, broader questions complicate trial proceedings because the more sub-claims a question invites, the more elements the jury must evaluate.
               </p>
               <p className="text-gray-800 leading-7 mb-4">
-                Despite this trade-off, the general formulation is adopted here to maximize informational value. The market will use the following question as the market quesiton:
+                Despite this trade-off, the general formulation is adopted here to maximize informational value. The market will use the following as the market quesiton:
               </p>
               <p className="text-gray-800 leading-7 mb-4">
                 Was the CIA involved in the assassination of JFK?
@@ -135,7 +135,7 @@ function DocsContent() {
                 Previous science courts did not seek final resolution so they did not define specific market rules. Tadmor&apos;s science court did define a &quot;pro-ish&quot; and &quot;con-ish&quot; side of their policy debate but this framework cannot be applied to a question of historical fact. 
               </p>
               <p className="text-gray-800 leading-7 mb-4">
-                Clear and convincing evidence is the recommended burden of proof because it uses clear language and it provides a reasonable threshold for proof. Beyond a reasonable doubt is too difficult to prove considering that The Citizen does not have the authority to subpoena any involved party. "More likely than not" might cause the trial proceedings to be too circumstantial leading to a flimsy resolution that could be easily overturned at a later date. The market rules will proceed with the following phrasing:
+                Clear and convincing evidence is the recommended burden of proof because it uses clear language and it provides a reasonable threshold for proof. Beyond a reasonable doubt is too difficult to prove considering that The Citizen does not have the authority to subpoena any involved party. More likely than not might cause the trial proceedings to be too circumstantial leading to a flimsy resolution that could be easily overturned at a later date. The market rules will proceed with the following phrasing:
               </p>
               <p className="text-gray-800 leading-7 mb-4">
                 The market will resolve &quot;Yes&quot; if the board of editors finds that there is clear and convincing evidence that the CIA was involved in the assassination of JFK. Otherwise, the market will resolve &quot;No.&quot;
@@ -204,7 +204,7 @@ function DocsContent() {
 
               <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Trial Resolution</h2>
               <p className="text-gray-800 leading-7 mb-4">
-                Using only the fact sheet produced by the board of editors, each member independently issues a written opinion stating whether, in their view, the evidence meets the defined burden of proof (clear and convincing evidence) that the CIA was involved in the assassination of JFK.
+                Using only the fact sheet produced by the board of editors, each member independently issues a written opinion stating whether, in their view, the evidence meets the defined burden of proof - clear and convincing evidence that the CIA was involved in the assassination of JFK.
               </p>
               <p className="text-gray-800 leading-7 mb-4">
                 For the market to resolve Yes, at least two of the three board members must conclude that the burden has been satisfied. If fewer than two agree, the market resolves No.
