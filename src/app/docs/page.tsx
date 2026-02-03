@@ -75,10 +75,10 @@ function DocsContent() {
                 The concept of science courts originated with Professor Arthur Kantrowitz, who proposed it in the 1960s and persuaded the Ford administration to explore establishing them. However, Ford&apos;s loss in the 1976 election prevented further research at the federal level. The trial procedure proposed below draws from Kantrowitz and the work of Professor Ellad Tadmor, who ran a Science Court seminar at the University of Minnesota from 2019 to 2022 for undergraduate students.
               </p>
               <p className="text-gray-800 leading-7 mb-4">
-                Kantrowitz&apos;s science courts dealt with questions of scientific fact like whether the Love Canal environmental disaster increased birth defects and genetic hazards among residents. After an adversarial process of cross examination, technical judges submitted opinions on the merits of each side&apos;s argument but the court avoided total resolution of the underlying question. Kantrowitz viewed the exercise as encouraging, noting that it added clarity on a complex issue.
+                Kantrowitz&apos;s courts dealt with questions of scientific fact like whether the Love Canal environmental disaster increased birth defects and genetic hazards among residents. After an adversarial process of cross examination, technical judges submitted opinions on the merits of each side&apos;s argument but the court avoided total resolution of the underlying question. Kantrowitz viewed the exercise as encouraging, noting that it added clarity on a complex issue.
               </p>
               <p className="text-gray-800 leading-7 mb-4">
-                Tadmor&apos;s science courts dealt with policy questions like &quot;should the US increase investment in nuclear energy&quot; and at the end of the deliberation process, jurors voted on what action they would recommend based on an agreed upon fact sheet produced by the trial procedure. Tadmor&apos;s court used unpaid volunteers since the course was run as a class at the University of Minnesota while Kantrowitz&apos;s court used jurors with technical expertise.
+                Tadmor&apos;s courts dealt with policy questions like &quot;should the US increase investment in nuclear energy&quot; and at the end of the deliberation process, jurors voted on what action they would recommend based on an agreed upon fact sheet produced by the trial procedure. Tadmor&apos;s court used unpaid volunteers since the course was run as a class at the University of Minnesota while Kantrowitz&apos;s court used jurors with technical expertise.
               </p>
               <p className="text-gray-800 leading-7 mb-4">
                 The trial procedure for the science courts run by Tadmor and Kantrowitz are nearly identical, so The Citizen will implement the same trial and procedure process from these previous attempts. The first point of differentiation between previous science courts is that The Citizen will venture to resolve the market by making a judgement about the underlying claim based on the factsheet produced by the trial. The second point of differentiation is that The Citizen&apos;s crowd-sourced evidence section will aid the case managers in their research. Case managers are responsible for representing a market position and responding to any challenges from opposing counsel regarding disputed facts. The case manager&apos;s research is not limited to the evidence section but the evidence section should be useful in finding good evidence in support of the respective positions. If the evidence section is effective at finding and ranking the best arguments, The Citizen will explore removing case managers entirely and proceed with having technical jurors review the claims made in the evidence section.
@@ -272,9 +272,9 @@ function DocsContent() {
               </p>
               <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 mb-4">
                 <li>No - beyond a reasonable doubt (estimated confidence of 95%)</li>
-                <li>No - clear preponderance of evidence (estimated confidence of 70%)</li>
+                <li>No - clear and convincing evidence (estimated confidence of 70%)</li>
                 <li>No - inconclusive for both sides (estimated confidence of less than 70%)</li>
-                <li>Yes - clear preponderance of evidence (estimated confidence of 70%)</li>
+                <li>Yes - clear and convincing evidence (estimated confidence of 70%)</li>
                 <li>Yes - beyond a reasonable doubt (estimated confidence of 95%)</li>
               </ol>
               <p className="text-gray-800 leading-7 mb-4">
@@ -1050,13 +1050,13 @@ function DocsContent() {
               </p>
               <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 mb-4">
                 <li>No - beyond a reasonable doubt (estimated confidence of 95%)</li>
-                <li>No - clear preponderance of evidence (estimated confidence of 70%)</li>
+                <li>No - clear and convincing evidence (estimated confidence of 70%)</li>
                 <li>No - inconclusive for both sides (estimated confidence of less than 70%)</li>
-                <li>Yes - clear preponderance of evidence (estimated confidence of 70%)</li>
+                <li>Yes - clear and convincing evidence (estimated confidence of 70%)</li>
                 <li>Yes - beyond a reasonable doubt (estimated confidence of 95%)</li>
               </ol>
               <p className="text-gray-800 leading-7 mb-4">
-                For the market to resolve &quot;Yes,&quot; two out of three judges need to rule in favor of the &quot;Yes&quot; position, meaning two out of three judges rule either &quot;Yes - clear preponderance of evidence&quot; or &quot;Yes - beyond a reasonable doubt.&quot; Any time less than two judges rules in favor of the &quot;Yes&quot; position, then the market will resolve &quot;No.&quot;
+                For the market to resolve &quot;Yes,&quot; two out of three judges need to rule in favor of the &quot;Yes&quot; position, meaning two out of three judges rule either &quot;Yes - clear and convincing evidence&quot; or &quot;Yes - beyond a reasonable doubt.&quot; Any time less than two judges rules in favor of the &quot;Yes&quot; position, then the market will resolve &quot;No.&quot;
               </p>
               <p className="text-gray-800 leading-7 mb-4">
                 After making their decision, the judges will author a case summary where they will review at least the top ten pieces of evidence promoted in the evidence section for each position. They will comment on the authenticity and truthfulness of each document.
