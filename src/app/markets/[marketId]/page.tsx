@@ -11,6 +11,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceL
 
 import { formatOddsToCents } from "../../../utils/formatOdds";
 import { submitTrade } from "../../../utils/tradeApi";
+import { calculateSharesFromBetAmount } from "../../../utils/calculateSharesFromBetAmount";
 import { getMarketById } from "../../../data/markets";
 import { notFound } from "next/navigation";
 import DenariusSymbol from "../../../components/DenariusSymbol";
@@ -317,14 +318,15 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
     
     let sharesToBuy: number;
     try {
-      const sharesResult = await readContract({
-        contract: marketContract,
-        method: "function calculateSharesFromBetAmount(uint256 _outcome, uint256 _betAmount) view returns (uint256 shares)",
-        params: [yesIndex, discountedBetAmountInUSDC],
-      });
-      
-      sharesToBuy = Number(sharesResult) / 1e18; // Shares returned in USDC units (6 decimals)
-      
+      const sharesResult = await calculateSharesFromBetAmount(
+        conditionalTokensContract,
+        marketContract.address as string,
+        outcome1PositionId,
+        outcome2PositionId,
+        0,
+        discountedBetAmountInUSDC
+      );
+      sharesToBuy = Number(sharesResult) / 1e18;
       if (isNaN(sharesToBuy) || sharesToBuy <= 0) {
         setBuyFeedback("Invalid price calculation. Please try again.");
         setTimeout(() => setBuyFeedback(null), 3000);
@@ -336,7 +338,6 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
       setTimeout(() => setBuyFeedback(null), 3000);
       return;
     }
-    
     const transaction = prepareContractCall({
       contract: marketContract,
       method: "function buy(uint256 _outcome, uint256 _betAmount) returns (uint256 shares)",
@@ -438,14 +439,15 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
     
     let sharesToBuy: number;
     try {
-      const sharesResult = await readContract({
-        contract: marketContract,
-        method: "function calculateSharesFromBetAmount(uint256 _outcome, uint256 _betAmount) view returns (uint256 shares)",
-        params: [noIndex, discountedBetAmountInUSDC],
-      });
-      
-      sharesToBuy = Number(sharesResult) / 1e18; // Shares returned in USDC units (6 decimals)
-      
+      const sharesResult = await calculateSharesFromBetAmount(
+        conditionalTokensContract,
+        marketContract.address as string,
+        outcome1PositionId,
+        outcome2PositionId,
+        1,
+        discountedBetAmountInUSDC
+      );
+      sharesToBuy = Number(sharesResult) / 1e18;
       if (isNaN(sharesToBuy) || sharesToBuy <= 0) {
         setBuyFeedback("Invalid price calculation. Please try again.");
         setTimeout(() => setBuyFeedback(null), 3000);
@@ -457,7 +459,6 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
       setTimeout(() => setBuyFeedback(null), 3000);
       return;
     }
-    
     const transaction = prepareContractCall({
       contract: marketContract,
       method: "function buy(uint256 _outcome, uint256 _betAmount) returns (uint256 shares)",
@@ -863,36 +864,34 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
       });
     } else {
       // For buy mode, apply 2% discount (overround) to the bet amount
-      const discountedBetAmount = amount * 0.99; // 2% discount
-      
-      // Convert discounted bet amount to USDC (multiply by 10^6 for Base Sepolia)
+      const discountedBetAmount = amount * 0.99;
       const betAmountInUSDC = BigInt(Math.floor(discountedBetAmount * 1e18));
-      
-      const result = await readContract({
-        contract: marketContract,
-        method: "function calculateSharesFromBetAmount(uint256 _outcome, uint256 _betAmount) view returns (uint256 shares)",
-        params: [BigInt(outcome), betAmountInUSDC],
-      });
+      const result = await calculateSharesFromBetAmount(
+        conditionalTokensContract,
+        marketContract.address as string,
+        outcome1PositionId,
+        outcome2PositionId,
+        outcome as 0 | 1,
+        betAmountInUSDC
+      );
       setPriceResult(result);
       console.log('Auto buy price result:', {
         rawResult: result.toString(),
         originalBetAmount: amount,
         discountedBetAmount: discountedBetAmount,
         betAmountInUSDC: betAmountInUSDC.toString(),
-        sharesReceived: Number(result) / 1e18, // Shares returned in USDC units (6 decimals)
+        sharesReceived: Number(result) / 1e18,
         outcome,
         amount
       });
     }
   } catch (error) {
     console.error('Auto price function error:', error);
-    
-    // Any error from the contract functions is likely due to amount being too high
     setPriceError(new Error("Please enter a smaller amount"));
   } finally {
     setIsPricePending(false);
   }
-}, [marketContract]);
+}, [marketContract, conditionalTokensContract, outcome1PositionId, outcome2PositionId]);
 
 useEffect(() => {
   if (selectedOutcome && amount && parseFloat(amount) > 0) {
@@ -1646,6 +1645,40 @@ useEffect(() => {
     }
   };
 
+  // Buy mode: calculate shares from bet amount and pre-fill Advanced Trade slip (trade() only; no buy() on contract).
+  const handlePreFillAdvancedTradeForBuy = async (amount: string) => {
+    if (!amount || !selectedOutcome || (selectedOutcome !== 'yes' && selectedOutcome !== 'no')) return;
+    const usdAmount = parseFloat(amount);
+    if (Number.isNaN(usdAmount) || usdAmount <= 0) return;
+    setBuyFeedback("Calculating shares...");
+    const betAmountWei = BigInt(Math.floor(usdAmount * 1e18));
+    const outcome = selectedOutcome === 'yes' ? 0 : 1;
+    try {
+      const sharesWei = await calculateSharesFromBetAmount(
+        conditionalTokensContract,
+        marketContract.address as string,
+        outcome1PositionId,
+        outcome2PositionId,
+        outcome as 0 | 1,
+        betAmountWei
+      );
+      const sharesHuman = Number(sharesWei) / 1e18;
+      const rounded = Math.round(sharesHuman * 100) / 100;
+      if (outcome === 0) {
+        setTradeVectorInput(`${rounded}, 0`);
+      } else {
+        setTradeVectorInput(`0, ${rounded}`);
+      }
+      setTradeCollateralLimitInput(amount);
+      setBuyFeedback("Filled Advanced Trade. Click \"Execute advanced trade\" below to submit.");
+      setTimeout(() => setBuyFeedback(null), 5000);
+    } catch (e) {
+      console.error("Pre-fill Advanced Trade (calculateSharesFromBetAmount):", e);
+      setBuyFeedback("Could not calculate shares. Try a smaller amount.");
+      setTimeout(() => setBuyFeedback(null), 4000);
+    }
+  };
+
   // Wrap recordNewOdds in useCallback
   const recordNewOdds = useCallback(async () => {
     try {
@@ -1989,10 +2022,11 @@ useEffect(() => {
                         disabled={!selectedOutcome || !amount || (selectedOutcome === 'yes' && (mode === 'buy' ? buyYesStatus === 'pending' : buyYesStatus === 'pending')) || (selectedOutcome === 'no' && (mode === 'buy' ? buyNoStatus === 'pending' : buyNoStatus === 'pending'))}
                         onClick={() => {
                           if (!selectedOutcome || !amount) return;
-                          if (selectedOutcome === 'yes') {
-                            if (mode === 'buy') { handleBuyYesWithApproval(amount); } else { handleSellYesWithApproval(amount); }
-                          } else if (selectedOutcome === 'no') {
-                            if (mode === 'buy') { handleBuyNoWithApproval(amount); } else { handleSellNoWithApproval(amount); }
+                          if (mode === 'buy') {
+                            handlePreFillAdvancedTradeForBuy(amount);
+                          } else {
+                            if (selectedOutcome === 'yes') handleSellYesWithApproval(amount);
+                            else if (selectedOutcome === 'no') handleSellNoWithApproval(amount);
                           }
                         }}
                       >
@@ -2592,10 +2626,11 @@ useEffect(() => {
                     disabled={!selectedOutcome || !amount || (selectedOutcome === 'yes' && (mode === 'buy' ? buyYesStatus === 'pending' : buyYesStatus === 'pending')) || (selectedOutcome === 'no' && (mode === 'buy' ? buyNoStatus === 'pending' : buyNoStatus === 'pending'))}
                     onClick={() => {
                       if (!selectedOutcome || !amount) return;
-                      if (selectedOutcome === 'yes') {
-                        if (mode === 'buy') { handleBuyYesWithApproval(amount); } else { handleSellYesWithApproval(amount); }
-                      } else if (selectedOutcome === 'no') {
-                        if (mode === 'buy') { handleBuyNoWithApproval(amount); } else { handleSellNoWithApproval(amount); }
+                      if (mode === 'buy') {
+                        handlePreFillAdvancedTradeForBuy(amount);
+                      } else {
+                        if (selectedOutcome === 'yes') handleSellYesWithApproval(amount);
+                        else if (selectedOutcome === 'no') handleSellNoWithApproval(amount);
                       }
                     }}
                   >
