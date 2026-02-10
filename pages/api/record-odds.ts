@@ -1,14 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import prisma from '../../lib/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Set CORS headers based on environment
   const origin = req.headers.origin;
   const isDevelopment = process.env.NODE_ENV === 'development';
-  
-  const allowedOrigins = isDevelopment 
+
+  const allowedOrigins = isDevelopment
     ? ['http://localhost:3000', 'https://localhost:3000']
     : ['https://www.thecitizen.io'];
-  
+
   if (origin && allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
@@ -38,48 +39,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Missing probability values' });
     }
 
-    // Get the API base URL
-    const API_BASE_URL = process.env.NODE_ENV === 'production' 
-      ? 'https://mvpshell.vercel.app' 
-      : '';
+    const yesNum = Number(yesProbability);
+    const noNum = Number(noProbability);
+    const ts = timestamp ? new Date(timestamp) : new Date();
 
-    // Call the protected odds-history endpoint with server-side secret key
-    const oddsResponse = await fetch(`${API_BASE_URL}/api/odds-history`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': process.env.API_SECRET_KEY || 'your-api-key-here'
-      },
-      body: JSON.stringify({
+    const entry = await prisma.oddsHistory.create({
+      data: {
         marketId,
-        yesProbability: Number(yesProbability),
-        noProbability: Number(noProbability),
-        timestamp: timestamp || new Date().toISOString()
-      })
+        yesProbability: yesNum,
+        noProbability: noNum,
+        timestamp: ts,
+      },
     });
 
-    if (!oddsResponse.ok) {
-      const errorText = await oddsResponse.text();
-      console.error('Failed to record odds:', oddsResponse.status, errorText);
-      return res.status(oddsResponse.status).json({ 
-        error: 'Failed to record odds to database',
-        details: errorText
-      });
-    }
-
-    const result = await oddsResponse.json();
-    console.log('Successfully recorded odds:', result);
-    
+    console.log('Successfully recorded odds:', entry);
     res.status(200).json({
       success: true,
-      data: result
+      data: entry,
     });
-
   } catch (error) {
     console.error('Error in record-odds API:', error);
-    res.status(500).json({ 
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    const details = error instanceof Error && error.cause ? String(error.cause) : undefined;
+    res.status(500).json({
       error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: message,
+      ...(details && { cause: details }),
     });
   }
 }
