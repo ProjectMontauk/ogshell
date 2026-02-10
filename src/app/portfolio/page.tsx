@@ -79,14 +79,14 @@ export default function PortfolioPage() {
         
         const oddsYes = await readContract({
           contract: marketContract,
-          method: "function odds(uint256 _outcome) view returns (int128)",
-          params: [0n],
+          method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
+          params: [0],
         });
         
         const oddsNo = await readContract({
           contract: marketContract,
-          method: "function odds(uint256 _outcome) view returns (int128)",
-          params: [1n],
+          method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
+          params: [1],
         });
         
         newMarketOdds[marketId] = {
@@ -150,12 +150,12 @@ export default function PortfolioPage() {
           const { marketContract } = getContractsForMarket(market.id);
           const oddsYes = await readContract({
             contract: marketContract,
-            method: "function odds(uint256 _outcome) view returns (int128)",
+            method: "function calcMarginalPrice(uint256 _outcome) view returns (uint256)",
             params: [0n],
           });
           const oddsNo = await readContract({
             contract: marketContract,
-            method: "function odds(uint256 _outcome) view returns (int128)",
+            method: "function calcMarginalPrice(uint256 _outcome) view returns (uint256)",
             params: [1n],
           });
 

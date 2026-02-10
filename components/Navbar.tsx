@@ -62,18 +62,6 @@ const Navbar = () => {
     params: [account?.address ?? "0x0000000000000000000000000000000000000000"],
   });
 
-  // Debug balance changes
-  useEffect(() => {
-    if (account?.address) {
-      console.log('Navbar balance debug:', {
-        account: account.address,
-        balance: balance?.toString(),
-        balanceNumber: balance ? Number(balance) / 1e18 : 'undefined',
-        isPending
-      });
-    }
-  }, [account?.address, balance, isPending]);
-
   const isDevelopment = process.env.NODE_ENV !== 'production';
 
   const wallets = isDevelopment
@@ -169,13 +157,13 @@ const Navbar = () => {
           const { marketContract } = getContractsForMarket(market.id);
           const oddsYes = await readContract({
             contract: marketContract,
-            method: "function odds(uint256 _outcome) view returns (int128)",
-            params: [0n],
+            method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
+            params: [0],
           });
           const oddsNo = await readContract({
             contract: marketContract,
-            method: "function odds(uint256 _outcome) view returns (int128)",
-            params: [1n],
+            method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
+            params: [1],
           });
 
           const currentPriceYes = Number(oddsYes) / Math.pow(2, 64);
@@ -204,8 +192,8 @@ const Navbar = () => {
               positionValue: noShares * currentPriceNo,
             });
           }
-        } catch (error) {
-          console.error(`Failed to fetch positions for market ${market.id}:`, error);
+        } catch {
+          // Skip this market (e.g. contract reverted: wrong chain, missing function, or not deployed)
         }
       }
 

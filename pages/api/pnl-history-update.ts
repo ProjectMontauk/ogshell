@@ -15,15 +15,15 @@ async function getCurrentPrice(outcome: string, marketId: string): Promise<numbe
       // Fetch odds for Yes (outcome 0)
       oddsResult = await readContract({
         contract: marketContract,
-        method: "function odds(uint256 _outcome) view returns (int128)",
-        params: [0n],
+        method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
+        params: [0],
       });
     } else if (outcome.toLowerCase().includes('no')) {
       // Fetch odds for No (outcome 1)
       oddsResult = await readContract({
         contract: marketContract,
-        method: "function odds(uint256 _outcome) view returns (int128)",
-        params: [1n],
+        method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
+        params: [1],
       });
     } else {
       // Default fallback

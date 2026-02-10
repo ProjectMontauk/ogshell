@@ -21,17 +21,17 @@ const MarketCard = ({ market }: { market: Market }) => {
     address: market.contractAddress,
   });
 
-  // Fetch current odds for Yes (0) and No (1) positions for this specific market
+  // Fetch current marginal odds for Yes (0) and No (1) using calcMarginalPrice(uint8)
   const { data: oddsYes } = useReadContract({
     contract: marketContractInstance,
-    method: "function odds(uint256 _outcome) view returns (int128)",
-    params: [0n],
+    method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
+    params: [0],
   });
   
   const { data: oddsNo } = useReadContract({
     contract: marketContractInstance,
-    method: "function odds(uint256 _outcome) view returns (int128)",
-    params: [1n],
+    method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
+    params: [1],
   });
 
   // Convert odds to probabilities
@@ -83,7 +83,7 @@ const MarketsContent = () => {
   
   // Filter markets based on category
   const getFilteredMarkets = () => {
-    const historyMarkets = ['jfk', 'moon-landing', 'alien'];
+    const historyMarkets = ['jfk'];
     const scienceMarkets = ['vaccine', 'string-theory', 'covid-vaccine'];
     
     switch (category) {

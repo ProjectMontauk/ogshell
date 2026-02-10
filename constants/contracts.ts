@@ -7,10 +7,6 @@ export const marketContractAddress = "0x3010D5d9C567763Fa90399BE5C82fA02a5a9295F
 export const tokenContractAddress = "0x7874Fea8563cdA853a0DaBF54B7e8E770F726dDb"; // Cash token on Base Sepolia
 export const conditionalTokensContractAddress = "0x9Db5368F8194c01eC668831F9fD9000D8aa73406"; // Conditional Tokens Contract on Base Sepolia
 
-// Moon Landing Market Contracts
-export const moonLandingMarketContractAddress = "0xeeaca4019f25e573c33a0de266ba0d1020932cc9"; // Moon Landing Market Contract on Base
-export const moonLandingConditionalTokensContractAddress = "0x7dFb064Ae49f5A7101C387717f1CDb1b4f2DF7d3"; // Moon Landing Conditional Tokens Contract on Base
-
 // Fluoridation IQ Market Contracts
 export const fluoridationIqMarketContractAddress = "0x1fef92c81b4ef16b099330d5cb5981b8bfc69383"; // Fluoridation IQ Market Contract on Base - TODO: Update with actual contract address
 export const fluoridationIqConditionalTokensContractAddress = "0xac1365907452b72b4015c7718a165e51439635f6"; // Fluoridation IQ Conditional Tokens Contract on Base - TODO: Update with actual contract address
@@ -43,19 +39,6 @@ export const conditionalTokensContract = getContract({
     client,
     chain: baseSepolia,
     address: conditionalTokensContractAddress,
-  });
-
-// Moon Landing Market Contract Instances
-export const moonLandingMarketContract = getContract({
-    client,
-    chain: baseSepolia,
-    address: moonLandingMarketContractAddress,
-  });
-
-export const moonLandingConditionalTokensContract = getContract({
-    client,
-    chain: baseSepolia,
-    address: moonLandingConditionalTokensContractAddress,
   });
 
 // Fluoridation IQ Market Contract Instances
@@ -113,13 +96,6 @@ export const mrnaTurboCancerConditionalTokensContract = getContract({
 // Helper function to get contracts based on market ID
 export function getContractsForMarket(marketId: string) {
   switch (marketId) {
-    case 'moon-landing':
-      return {
-        marketContract: moonLandingMarketContract,
-        conditionalTokensContract: moonLandingConditionalTokensContract,
-        outcome1PositionId: "97045190584393032725705126979012781984659070008452916210401226821468609683793", // Yes - Base position ID
-        outcome2PositionId: "78958204779993795274253300281532453836400562991479897783072243516005340819969", // No - Base position ID
-      };
     case 'fluoridation-iq':
       return {
         marketContract: fluoridationIqMarketContract,

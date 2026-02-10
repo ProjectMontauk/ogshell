@@ -93,17 +93,48 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
   const [outcome2Balance, setOutcome2Balance] = useState<string>("--");
   const [isBalanceLoading, setIsBalanceLoading] = useState(false);
 
-  // Odds for Yes (0) and No (1) - with polling for real-time updates
-  const { data: oddsYes } = useReadContract({
+  // Outcome indices: 0 = Yes, 1 = No (passed to calcMarginalPrice(uint8))
+  const YES_OUTCOME_INDEX = 0;
+  const NO_OUTCOME_INDEX = 1;
+
+  // Odds for Yes (0) and No (1) using calcMarginalPrice - raw return from contract, no math
+  const yesResult = useReadContract({
     contract: marketContract,
-    method: "function odds(uint256 _outcome) view returns (int128)",
-    params: [0n],
+    method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
+    params: [YES_OUTCOME_INDEX],
   });
-  const { data: oddsNo } = useReadContract({
+  const noResult = useReadContract({
     contract: marketContract,
-    method: "function odds(uint256 _outcome) view returns (int128)",
-    params: [1n],
+    method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
+    params: [NO_OUTCOME_INDEX],
   });
+
+  const oddsYes = yesResult.data;
+  const oddsNo = noResult.data;
+
+  // Debug: log exactly what calcMarginalPrice returns (raw) and any errors
+  useEffect(() => {
+    console.log("calcMarginalPrice raw return:", {
+      marketId: market.id,
+      contract: marketContract.address,
+      yes: {
+        raw: yesResult.data,
+        rawString: yesResult.data != null ? String(yesResult.data) : undefined,
+        error: yesResult.error ? String(yesResult.error) : undefined,
+        isSuccess: yesResult.isSuccess,
+        isError: yesResult.isError,
+        isLoading: yesResult.isLoading,
+      },
+      no: {
+        raw: noResult.data,
+        rawString: noResult.data != null ? String(noResult.data) : undefined,
+        error: noResult.error ? String(noResult.error) : undefined,
+        isSuccess: noResult.isSuccess,
+        isError: noResult.isError,
+        isLoading: noResult.isLoading,
+      },
+    });
+  }, [market.id, marketContract.address, yesResult.data, yesResult.error, yesResult.isSuccess, yesResult.isError, yesResult.isLoading, noResult.data, noResult.error, noResult.isSuccess, noResult.isError, noResult.isLoading]);
 
   const [showRules, setShowRules] = useState(false);
   const rulesShort = market.rules;
@@ -1604,13 +1635,13 @@ useEffect(() => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       const currentYesOdds = await readContract({
         contract: marketContract,
-        method: "function odds(uint256 _outcome) view returns (int128)",
-        params: [0n],
+        method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
+        params: [0],
       });
       const currentNoOdds = await readContract({
         contract: marketContract,
-        method: "function odds(uint256 _outcome) view returns (int128)",
-        params: [1n],
+        method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
+        params: [1],
       });
       console.log('Raw odds from contract (after delay):', {
         yesOdds: currentYesOdds.toString(),
