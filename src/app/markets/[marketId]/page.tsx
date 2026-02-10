@@ -164,10 +164,17 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showWalletError, setShowWalletError] = useState(false);
 
+  // Advanced trade slip (direct trade() call) state
+  const [tradeVectorInput, setTradeVectorInput] = useState("");
+  const [tradeCollateralLimitInput, setTradeCollateralLimitInput] = useState("");
+  const [tradeFeedback, setTradeFeedback] = useState<string | null>(null);
+
   // For Buy Yes
   const { mutate: sendBuyYesTransaction, status: buyYesStatus } = useSendTransaction();
   // For Buy No
   const { mutate: sendBuyNoTransaction, status: buyNoStatus } = useSendTransaction();
+  // For direct trade() call
+  const { mutate: sendTradeTransaction, status: tradeStatus } = useSendTransaction();
 
   const yesIndex = BigInt(0);
   const noIndex = BigInt(1);
@@ -659,6 +666,87 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
           setSuccessMessage(null);
         }, 10000);
       }
+    });
+  };
+
+  // Advanced trade slip: call AMM trade(int256[] outcomeTokenAmounts, int256 collateralLimit)
+  const handleAdvancedTrade = async () => {
+    if (!handleWalletCheck()) return;
+
+    const raw = tradeVectorInput.trim().replace(/^\[|\]$/g, "");
+    const parts = raw.split(/[\s,]+/).filter(Boolean);
+    if (parts.length !== 2) {
+      setTradeFeedback("Enter two amounts, e.g. 100, -50");
+      setTimeout(() => setTradeFeedback(null), 4000);
+      return;
+    }
+
+    const nums = parts.map((p) => parseFloat(p));
+    if (nums.some((n) => Number.isNaN(n))) {
+      setTradeFeedback("Outcome amounts must be numbers (can be negative to sell).");
+      setTimeout(() => setTradeFeedback(null), 4000);
+      return;
+    }
+
+    // Scale to 18‑decimals and allow negatives (int256)
+    const outcomeTokenAmounts = nums.map((n) =>
+      BigInt(Math.trunc(n * 1e18))
+    );
+
+    // Collateral limit: 0 means "no limit" per contract logic
+    const collStr = tradeCollateralLimitInput.trim();
+    let collateralLimit: bigint;
+    if (!collStr || collStr === "0") {
+      collateralLimit = 0n;
+    } else {
+      const collNum = parseFloat(collStr);
+      if (Number.isNaN(collNum) || collNum < 0) {
+        setTradeFeedback("Collateral limit must be a non‑negative number.");
+        setTimeout(() => setTradeFeedback(null), 4000);
+        return;
+      }
+      collateralLimit = BigInt(Math.trunc(collNum * 1e18));
+    }
+
+    setTradeFeedback("Preparing trade...");
+    const approved = await handleApproveIfNeeded();
+    if (!approved && (!allowance || BigInt(allowance) < userDeposit)) {
+      setTradeFeedback("Approval failed or incomplete. Please try again.");
+      setTimeout(() => setTradeFeedback(null), 6000);
+      return;
+    }
+
+    const tx = prepareContractCall({
+      contract: marketContract,
+      method:
+        "function trade(int256[] outcomeTokenAmounts, int256 collateralLimit) returns (int256 netCost)",
+      params: [outcomeTokenAmounts, collateralLimit],
+    });
+
+    sendTradeTransaction(tx, {
+      onError: (error: any) => {
+        console.error("Advanced trade() error:", error);
+        const msg = (error?.message || "").toLowerCase();
+        let friendly = "Trade failed. Check your inputs and try again.";
+        if (msg.includes("user rejected") || msg.includes("denied"))
+          friendly = "Transaction cancelled in wallet.";
+        else if (msg.includes("insufficient"))
+          friendly = "Insufficient balance or approval for this trade.";
+        else if (msg.includes("revert"))
+          friendly = "Transaction reverted by contract. Try a smaller trade or looser limit.";
+        setTradeFeedback(friendly);
+        setTimeout(() => setTradeFeedback(null), 8000);
+      },
+      onSuccess: async (result: any) => {
+        setTradeFeedback("Transaction submitted...");
+        await waitForTransactionConfirmation(result, "Advanced trade completed.");
+        setTradeVectorInput("");
+        setTradeCollateralLimitInput("");
+        recordNewOdds();
+        setTradeFeedback("Advanced trade completed.");
+        setTimeout(() => setTradeFeedback(null), 6000);
+      },
+      onSettled: () => {},
     });
   };
 
@@ -1857,6 +1945,58 @@ useEffect(() => {
                       </button>
                     </>
                   )}
+                  {/* Advanced Trade Slip (calls trade(int[] outcomeTokenAmounts, int collateralLimit)) */}
+                  <div className="border-t border-gray-200 pt-4 mt-4">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Advanced Trade</h3>
+                    <p className="text-xs text-gray-600 mb-3">
+                      Specify outcome token vector and an optional collateral limit. Positive numbers buy shares, negative numbers sell.
+                    </p>
+                    <div className="space-y-3 mb-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Outcome token amounts [Yes, No]
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 100, -50"
+                          value={tradeVectorInput}
+                          onChange={(e) => setTradeVectorInput(e.target.value)}
+                          className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Collateral limit (0 = no limit)
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Max cost in collateral token (e.g. 100)"
+                            value={tradeCollateralLimitInput}
+                            onChange={(e) =>
+                              setTradeCollateralLimitInput(
+                                e.target.value.replace(/[^0-9.\-]/g, "")
+                              )
+                            }
+                            className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAdvancedTrade}
+                      disabled={tradeStatus === "pending"}
+                      className="w-full font-semibold px-4 py-2 rounded-lg shadow transition disabled:opacity-50 bg-gray-800 text-white hover:bg-gray-900 text-sm"
+                    >
+                      {tradeStatus === "pending" ? "Executing advanced trade..." : "Execute advanced trade"}
+                    </button>
+                    {tradeFeedback && (
+                      <div className="mt-2 text-xs font-medium text-gray-700">
+                        {tradeFeedback}
+                      </div>
+                    )}
+                  </div>
                   {/* Your Balance Section */}
                   <div className="border-t border-gray-200 pt-4 mt-4 hidden lg:block">
                     <h3 className="text-lg font-bold text-gray-900 mb-4">Purchased Shares</h3>
@@ -2408,6 +2548,58 @@ useEffect(() => {
                   </button>
                 </>
               )}
+              {/* Advanced Trade Slip (calls trade(int[] outcomeTokenAmounts, int collateralLimit)) */}
+              <div className="border-t border-gray-200 pt-4 mt-4">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Advanced Trade</h3>
+                <p className="text-xs text-gray-600 mb-3">
+                  Specify outcome token vector and an optional collateral limit. Positive numbers buy shares, negative numbers sell.
+                </p>
+                <div className="space-y-3 mb-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Outcome token amounts [Yes, No]
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 100, -50"
+                      value={tradeVectorInput}
+                      onChange={(e) => setTradeVectorInput(e.target.value)}
+                      className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Collateral limit (0 = no limit)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Max cost in collateral token (e.g. 100)"
+                        value={tradeCollateralLimitInput}
+                        onChange={(e) =>
+                          setTradeCollateralLimitInput(
+                            e.target.value.replace(/[^0-9.\-]/g, "")
+                          )
+                        }
+                        className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAdvancedTrade}
+                  disabled={tradeStatus === "pending"}
+                  className="w-full font-semibold px-4 py-2 rounded-lg shadow transition disabled:opacity-50 bg-gray-800 text-white hover:bg-gray-900 text-sm"
+                >
+                  {tradeStatus === "pending" ? "Executing advanced trade..." : "Execute advanced trade"}
+                </button>
+                {tradeFeedback && (
+                  <div className="mt-2 text-xs font-medium text-gray-700">
+                    {tradeFeedback}
+                  </div>
+                )}
+              </div>
               {/* Your Balance Section */}
               <div className="border-t border-gray-200 pt-4 mt-4 hidden lg:block">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Purchased Shares</h3>
