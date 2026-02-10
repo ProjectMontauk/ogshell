@@ -725,9 +725,12 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
     });
 
     sendTradeTransaction(tx, {
-      onError: (error: any) => {
+      onError: (error: unknown) => {
         console.error("Advanced trade() error:", error);
-        const msg = (error?.message || "").toLowerCase();
+        const msg =
+          typeof error === "object" && error !== null && "message" in error
+            ? String((error as { message?: string }).message || "").toLowerCase()
+            : "";
         let friendly = "Trade failed. Check your inputs and try again.";
         if (msg.includes("user rejected") || msg.includes("denied"))
           friendly = "Transaction cancelled in wallet.";
@@ -738,7 +741,7 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
         setTradeFeedback(friendly);
         setTimeout(() => setTradeFeedback(null), 8000);
       },
-      onSuccess: async (result: any) => {
+      onSuccess: async (result: unknown) => {
         setTradeFeedback("Transaction submitted...");
         await waitForTransactionConfirmation(result, "Advanced trade completed.");
         setTradeVectorInput("");
