@@ -1,10 +1,11 @@
 import { client } from "../src/client";
 import { getContract } from "thirdweb";
-import { base } from "thirdweb/chains";
+import { baseSepolia } from "thirdweb/chains";
 
-export const marketContractAddress = "0xa015eBbaB5c6db0748a504ea71589BE21B2Cbe22"; // JFK Market Contract on Base
+// CIA / JFK Market on Base Sepolia
+export const marketContractAddress = "0x3010D5d9C567763Fa90399BE5C82fA02a5a9295F";
 export const tokenContractAddress = "0x025bF090c6A0155bCe81D3D75b58Dac6b37EF82f"; // Token Contract on Base
-export const conditionalTokensContractAddress = "0xFEE92177cCA79c985b95FB7c1437245340BCaAE2"; // Conditional Tokens Contract on Base
+export const conditionalTokensContractAddress = "0x9Db5368F8194c01eC668831F9fD9000D8aa73406"; // Conditional Tokens Contract on Base Sepolia
 
 // Moon Landing Market Contracts
 export const moonLandingMarketContractAddress = "0xeeaca4019f25e573c33a0de266ba0d1020932cc9"; // Moon Landing Market Contract on Base
@@ -28,84 +29,84 @@ export const mrnaTurboCancerConditionalTokensContractAddress = "0x5CdFEE6602ABDE
 
 export const tokenContract = getContract({
     client: client,
-    chain: base,
+    chain: baseSepolia,
     address: tokenContractAddress,
 })
 
 export const marketContract = getContract({
     client,
-    chain: base,
+    chain: baseSepolia,
     address: marketContractAddress,
   });
 
 export const conditionalTokensContract = getContract({
     client,
-    chain: base,
+    chain: baseSepolia,
     address: conditionalTokensContractAddress,
   });
 
 // Moon Landing Market Contract Instances
 export const moonLandingMarketContract = getContract({
     client,
-    chain: base,
+    chain: baseSepolia,
     address: moonLandingMarketContractAddress,
   });
 
 export const moonLandingConditionalTokensContract = getContract({
     client,
-    chain: base,
+    chain: baseSepolia,
     address: moonLandingConditionalTokensContractAddress,
   });
 
 // Fluoridation IQ Market Contract Instances
 export const fluoridationIqMarketContract = getContract({
     client,
-    chain: base,
+    chain: baseSepolia,
     address: fluoridationIqMarketContractAddress,
   });
 
 export const fluoridationIqConditionalTokensContract = getContract({
     client,
-    chain: base,
+    chain: baseSepolia,
     address: fluoridationIqConditionalTokensContractAddress,
   });
 
 // Vaccines Autism Market Contract Instances
 export const vaccinesAutismMarketContract = getContract({
     client,
-    chain: base,
+    chain: baseSepolia,
     address: vaccinesAutismMarketContractAddress,
   });
 
 export const vaccinesAutismConditionalTokensContract = getContract({
     client,
-    chain: base,
+    chain: baseSepolia,
     address: vaccinesAutismConditionalTokensContractAddress,
   });
 
 // Trump-Epstein Market Contract Instances
 export const trumpEpsteinMarketContract = getContract({
     client,
-    chain: base,
+    chain: baseSepolia,
     address: trumpEpsteinMarketContractAddress,
   });
 
 export const trumpEpsteinConditionalTokensContract = getContract({
     client,
-    chain: base,
+    chain: baseSepolia,
     address: trumpEpsteinConditionalTokensContractAddress,
   });
 
 // MRNA TurboCancer Market Contract Instances
 export const mrnaTurboCancerMarketContract = getContract({
     client,
-    chain: base,
+    chain: baseSepolia,
     address: mrnaTurboCancerMarketContractAddress,
   });
 
 export const mrnaTurboCancerConditionalTokensContract = getContract({
     client,
-    chain: base,
+    chain: baseSepolia,
     address: mrnaTurboCancerConditionalTokensContractAddress,
   });
 
@@ -152,8 +153,8 @@ export function getContractsForMarket(marketId: string) {
       return {
         marketContract: marketContract,
         conditionalTokensContract: conditionalTokensContract,
-        outcome1PositionId: "63109534412325451546451217737273315801307940086008058061930328791531947950174", // JFK Yes - Base position ID
-        outcome2PositionId: "66301810619553321140640091715448846820451689612222731173839422851370585795126", // JFK No - Base position ID
+        outcome1PositionId: "73447690177222413629606936100319296564166817602168097874164059020795331550290", // JFK Yes - Base Sepolia position ID
+        outcome2PositionId: "22215270987214765251435732829113647193435911842071361932816156198960676215195", // JFK No - Base Sepolia position ID
       };
   }
 }

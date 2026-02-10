@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useReadContract } from "thirdweb/react";
 import { getContract } from "thirdweb";
 import { client } from "../src/client";
-import { base } from "thirdweb/chains";
+import { baseSepolia } from "thirdweb/chains";
 import { getAllMarkets, Market } from "../src/data/markets";
 
 // MarketCard component that fetches its own odds
@@ -16,7 +16,7 @@ const MarketCard = ({ market }: { market: Market }) => {
   // Create contract instance for this specific market
   const marketContractInstance = getContract({
     client,
-    chain: base,
+    chain: baseSepolia,
     address: market.contractAddress,
   });
 

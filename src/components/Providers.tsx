@@ -1,7 +1,6 @@
 "use client";
 
 import { ThirdwebProvider } from "thirdweb/react";
-// 
 import AccountSetupLoader from "./AccountSetupLoader";
 
 interface ProvidersProps {

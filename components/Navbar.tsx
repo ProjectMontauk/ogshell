@@ -5,7 +5,7 @@ import { ConnectButton, useActiveAccount, useReadContract } from "thirdweb/react
 import { client } from "../src/client";
 import { useRouter } from "next/navigation";
 import { tokenContract, getContractsForMarket } from "../constants/contracts";
-import { inAppWallet} from "thirdweb/wallets";
+import { inAppWallet, createWallet} from "thirdweb/wallets";
 import { base } from "thirdweb/chains";
 import { readContract } from "thirdweb";
 import { usePortfolio } from "../src/contexts/PortfolioContext";
@@ -87,6 +87,11 @@ const Navbar = () => {
             sponsorGas: true,
           },
         }),
+        createWallet("io.metamask"),
+        createWallet("com.coinbase.wallet"),
+        createWallet("me.rainbow"),
+        createWallet("io.rabby"),
+        createWallet("io.zerion.wallet"),
       ]
     : [
         inAppWallet({
@@ -98,6 +103,11 @@ const Navbar = () => {
             sponsorGas: true,
           },
         }),
+        createWallet("io.metamask"),
+        createWallet("com.coinbase.wallet"),
+        createWallet("me.rainbow"),
+        createWallet("io.rabby"),
+        createWallet("io.zerion.wallet"),
       ];
 
   // Polling mechanism for cash balance updates
