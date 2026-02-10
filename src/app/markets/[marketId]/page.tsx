@@ -111,6 +111,10 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
 
   const oddsYes = yesResult.data;
   const oddsNo = noResult.data;
+  const refetchOddsFromContract = useCallback(() => {
+    yesResult.refetch();
+    noResult.refetch();
+  }, [yesResult.refetch, noResult.refetch]);
 
   // Debug: log exactly what calcMarginalPrice returns (raw) and any errors
   useEffect(() => {
@@ -718,6 +722,20 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
       setTradeFeedback("Outcome amounts must be numbers (can be negative to sell).");
       setTimeout(() => setTradeFeedback(null), 4000);
       return;
+    }
+
+    // If any outcome amount is negative, this indicates selling outcome tokens.
+    // Ensure ConditionalTokens contract has setApprovalForAll(marketContract, true) before proceeding.
+    const hasSell = nums.some((n) => n < 0);
+    if (hasSell) {
+      setTradeFeedback("Checking approval for selling outcome tokens (0/3)...");
+      const tokensApproved = await handleSetApprovalForAllIfNeeded();
+      if (!tokensApproved) {
+        setTradeFeedback("Approval for selling outcome tokens failed or not completed.");
+        setTimeout(() => setTradeFeedback(null), 6000);
+        return;
+      }
+      setTradeFeedback("Approval confirmed. Preparing advanced trade...");
     }
 
     // Scale to 18‑decimals and allow negatives (int256)
@@ -1671,16 +1689,18 @@ useEffect(() => {
       } else {
         console.log('Recorded new odds to database after trade:', { yesProbability, noProbability });
       }
-      // Refresh the odds history to show the new entry
+      // Refresh the odds history to show the new entry (chart)
       try {
         await fetchOddsHistory();
       } catch (error) {
         console.error('Failed to refresh odds history:', error);
       }
+      // Refetch live odds so Market Odds header and Yes/No buttons update
+      refetchOddsFromContract();
     } catch (error) {
       console.error('Failed to record odds:', error);
     }
-  }, [marketContract, market.id, fetchOddsHistory]);
+  }, [marketContract, market.id, fetchOddsHistory, refetchOddsFromContract]);
 
   return (
     <div>
