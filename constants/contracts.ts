@@ -4,7 +4,7 @@ import { baseSepolia } from "thirdweb/chains";
 
 // CIA / JFK Market on Base Sepolia
 export const marketContractAddress = "0x3010D5d9C567763Fa90399BE5C82fA02a5a9295F";
-export const tokenContractAddress = "0x025bF090c6A0155bCe81D3D75b58Dac6b37EF82f"; // Token Contract on Base
+export const tokenContractAddress = "0x7874Fea8563cdA853a0DaBF54B7e8E770F726dDb"; // Cash token on Base Sepolia
 export const conditionalTokensContractAddress = "0x9Db5368F8194c01eC668831F9fD9000D8aa73406"; // Conditional Tokens Contract on Base Sepolia
 
 // Moon Landing Market Contracts
