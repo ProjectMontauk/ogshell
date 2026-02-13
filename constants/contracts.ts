@@ -23,6 +23,10 @@ export const trumpEpsteinConditionalTokensContractAddress = "0x3d06ef3054f4b7103
 export const mrnaTurboCancerMarketContractAddress = "0xdc57601061c30DCdFbE849e2440CC36A929C7205"; // MRNA TurboCancer Market Contract on Base
 export const mrnaTurboCancerConditionalTokensContractAddress = "0x5CdFEE6602ABDE289bBDEdBD28BDd7ddC310F416"; // MRNA TurboCancer Conditional Tokens Contract on Base
 
+// Apollo 11 Moon Landing Fake Market Contracts
+export const apollo11MoonLandingFakeMarketContractAddress = "0xC27Ff60bC9521c9E883932734f90858b1315FdC3";
+export const apollo11MoonLandingFakeConditionalTokensContractAddress = "0x95563661760dd5eb69574d0359dfd7350a7Ffc1a";
+
 export const tokenContract = getContract({
     client: client,
     chain: baseSepolia,
@@ -93,6 +97,19 @@ export const mrnaTurboCancerConditionalTokensContract = getContract({
     address: mrnaTurboCancerConditionalTokensContractAddress,
   });
 
+// Apollo 11 Moon Landing Fake Market Contract Instances
+export const apollo11MoonLandingFakeMarketContract = getContract({
+  client,
+  chain: baseSepolia,
+  address: apollo11MoonLandingFakeMarketContractAddress,
+});
+
+export const apollo11MoonLandingFakeConditionalTokensContract = getContract({
+  client,
+  chain: baseSepolia,
+  address: apollo11MoonLandingFakeConditionalTokensContractAddress,
+});
+
 // Helper function to get contracts based on market ID
 export function getContractsForMarket(marketId: string) {
   switch (marketId) {
@@ -123,6 +140,13 @@ export function getContractsForMarket(marketId: string) {
         conditionalTokensContract: mrnaTurboCancerConditionalTokensContract,
         outcome1PositionId: "34168952953386005158914283859524538537850500849951758432076805194426472551804", // Yes - Base position ID
         outcome2PositionId: "31399717836710254760347926979497604263634699268784540145161572320974812433148", // No - Base position ID
+      };
+    case 'apollo-11-moon-landing-fake':
+      return {
+        marketContract: apollo11MoonLandingFakeMarketContract,
+        conditionalTokensContract: apollo11MoonLandingFakeConditionalTokensContract,
+        outcome1PositionId: "95490272304416126408686449956911461245802498919393119598916935595755964608883", // Yes
+        outcome2PositionId: "26291979376186366265669937439449814098814933685580383626977846891067939489555", // No
       };
     case 'jfk':
     default:

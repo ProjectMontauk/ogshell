@@ -201,10 +201,20 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showWalletError, setShowWalletError] = useState(false);
 
+  // Buy mode: cost from calcNetCost (displayed as "Cost: X.XX")
+  const [buyCostDisplay, setBuyCostDisplay] = useState<string | null>(null);
+  const [buyCostLoading, setBuyCostLoading] = useState(false);
+  // Sell mode: receive amount from calcNetCost with negative amounts (displayed as "Receive: X.XX")
+  const [sellReceiveDisplay, setSellReceiveDisplay] = useState<string | null>(null);
+  const [sellReceiveLoading, setSellReceiveLoading] = useState(false);
+
   // Advanced trade slip (direct trade() call) state
   const [tradeVectorInput, setTradeVectorInput] = useState("");
   const [tradeCollateralLimitInput, setTradeCollateralLimitInput] = useState("");
   const [tradeFeedback, setTradeFeedback] = useState<string | null>(null);
+  const [advancedNetCost, setAdvancedNetCost] = useState<number | null>(null);
+  const [advancedNetCostError, setAdvancedNetCostError] = useState<string | null>(null);
+  const [advancedNetCostLoading, setAdvancedNetCostLoading] = useState(false);
 
   // For Buy Yes
   const { mutate: sendBuyYesTransaction, status: buyYesStatus } = useSendTransaction();
@@ -577,9 +587,9 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
     
     setBuyFeedback("Preparing transaction (1/3)");
     
-    // For sell functions, input is number of shares, not USD
+    // For sell functions, input is number of shares — pass through as-is (no wei scaling)
     const shareAmount = parseFloat(amount);
-    const parsedAmount = BigInt(Math.floor(shareAmount * Math.pow(2, 64)));
+    const parsedAmount = BigInt(Math.floor(shareAmount));
     
     const transaction = prepareContractCall({
       contract: marketContract,
@@ -655,9 +665,9 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
     
     setBuyFeedback("Preparing transaction (1/3)");
     
-    // For sell functions, input is number of shares, not USD
+    // For sell functions, input is number of shares — pass through as-is (no wei scaling)
     const shareAmount = parseFloat(amount);
-    const parsedAmount = BigInt(Math.floor(shareAmount * Math.pow(2, 64)));
+    const parsedAmount = BigInt(Math.floor(shareAmount));
     
     const transaction = prepareContractCall({
       contract: marketContract,
@@ -706,64 +716,87 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
     });
   };
 
-  // Advanced trade slip: call AMM trade(int256[] outcomeTokenAmounts, int256 collateralLimit)
-  const handleAdvancedTrade = async () => {
+  // Call AMM trade(int256[] outcomeTokenAmounts, int256 collateralLimit).
+  // When overrideOutcomeTokenAmounts and overrideCollateralLimit are passed (e.g. from Submit Trade), use them
+  // so we don't rely on state that may not have updated yet.
+  const handleAdvancedTrade = async (
+    overrideOutcomeTokenAmounts?: bigint[],
+    overrideCollateralLimit?: bigint
+  ) => {
     if (!handleWalletCheck()) return;
 
-    const raw = tradeVectorInput.trim().replace(/^\[|\]$/g, "");
-    const parts = raw.split(/[\s,]+/).filter(Boolean);
-    if (parts.length !== 2) {
-      setTradeFeedback("Enter two amounts, e.g. 100, -50");
-      setTimeout(() => setTradeFeedback(null), 4000);
-      return;
-    }
-
-    const nums = parts.map((p) => parseFloat(p));
-    if (nums.some((n) => Number.isNaN(n))) {
-      setTradeFeedback("Outcome amounts must be numbers (can be negative to sell).");
-      setTimeout(() => setTradeFeedback(null), 4000);
-      return;
-    }
-
-    // If any outcome amount is negative, this indicates selling outcome tokens.
-    // Ensure ConditionalTokens contract has setApprovalForAll(marketContract, true) before proceeding.
-    const hasSell = nums.some((n) => n < 0);
-    if (hasSell) {
-      setTradeFeedback("Checking approval for selling outcome tokens (0/3)...");
-      const tokensApproved = await handleSetApprovalForAllIfNeeded();
-      if (!tokensApproved) {
-        setTradeFeedback("Approval for selling outcome tokens failed or not completed.");
-        setTimeout(() => setTradeFeedback(null), 6000);
-        return;
-      }
-      setTradeFeedback("Approval confirmed. Preparing advanced trade...");
-    }
-
-    // Scale to 18‑decimals and allow negatives (int256)
-    const outcomeTokenAmounts = nums.map((n) =>
-      BigInt(Math.trunc(n * 1e18))
-    );
-
-    // Collateral limit: 0 means "no limit" per contract logic
-    const collStr = tradeCollateralLimitInput.trim();
+    let outcomeTokenAmounts: bigint[];
     let collateralLimit: bigint;
-    if (!collStr || collStr === "0") {
-      collateralLimit = 0n;
+
+    if (
+      overrideOutcomeTokenAmounts?.length === 2 &&
+      overrideCollateralLimit !== undefined
+    ) {
+      outcomeTokenAmounts = overrideOutcomeTokenAmounts;
+      collateralLimit = overrideCollateralLimit;
+      // When selling (any negative amount), ensure conditional tokens approval
+      const hasSell = outcomeTokenAmounts.some((a) => a < 0n);
+      if (hasSell) {
+        setTradeFeedback("Checking approval for selling outcome tokens...");
+        const tokensApproved = await handleSetApprovalForAllIfNeeded();
+        if (!tokensApproved) {
+          setBuyFeedback("Approval for selling outcome tokens failed or not completed.");
+          setTradeFeedback(null);
+          setTimeout(() => setBuyFeedback(null), 6000);
+          return;
+        }
+        setTradeFeedback(null);
+      }
     } else {
-      const collNum = parseFloat(collStr);
-      if (Number.isNaN(collNum) || collNum < 0) {
-        setTradeFeedback("Collateral limit must be a non‑negative number.");
+      const raw = tradeVectorInput.trim().replace(/^\[|\]$/g, "");
+      const parts = raw.split(/[\s,]+/).filter(Boolean);
+      if (parts.length !== 2) {
+        setTradeFeedback("Enter two amounts, e.g. 100, -50");
         setTimeout(() => setTradeFeedback(null), 4000);
         return;
       }
-      collateralLimit = BigInt(Math.trunc(collNum * 1e18));
+
+      const nums = parts.map((p) => parseFloat(p));
+      if (nums.some((n) => Number.isNaN(n))) {
+        setTradeFeedback("Outcome amounts must be numbers (can be negative to sell).");
+        setTimeout(() => setTradeFeedback(null), 4000);
+        return;
+      }
+
+      const hasSell = nums.some((n) => n < 0);
+      if (hasSell) {
+        setTradeFeedback("Checking approval for selling outcome tokens (0/3)...");
+        const tokensApproved = await handleSetApprovalForAllIfNeeded();
+        if (!tokensApproved) {
+          setTradeFeedback("Approval for selling outcome tokens failed or not completed.");
+          setTimeout(() => setTradeFeedback(null), 6000);
+          return;
+        }
+        setTradeFeedback("Approval confirmed. Preparing advanced trade...");
+      }
+
+      outcomeTokenAmounts = nums.map((n) => BigInt(Math.trunc(n * 1e18)));
+
+      const collStr = tradeCollateralLimitInput.trim();
+      if (!collStr || collStr === "0") {
+        collateralLimit = 0n;
+      } else {
+        const collNum = parseFloat(collStr);
+        if (Number.isNaN(collNum) || collNum < 0) {
+          setTradeFeedback("Collateral limit must be a non‑negative number.");
+          setTimeout(() => setTradeFeedback(null), 4000);
+          return;
+        }
+        collateralLimit = BigInt(Math.trunc(collNum * 1e18));
+      }
     }
 
     setTradeFeedback("Preparing trade...");
     const approved = await handleApproveIfNeeded();
     if (!approved && (!allowance || BigInt(allowance) < userDeposit)) {
-      setTradeFeedback("Approval failed or incomplete. Please try again.");
-      setTimeout(() => setTradeFeedback(null), 6000);
+      setBuyFeedback("Approval failed or incomplete. Please try again.");
+      setTradeFeedback(null);
+      setTimeout(() => setBuyFeedback(null), 6000);
       return;
     }
 
@@ -788,17 +821,17 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
           friendly = "Insufficient balance or approval for this trade.";
         else if (msg.includes("revert"))
           friendly = "Transaction reverted by contract. Try a smaller trade or looser limit.";
-        setTradeFeedback(friendly);
-        setTimeout(() => setTradeFeedback(null), 8000);
+        setBuyFeedback(friendly);
+        setTradeFeedback(null);
+        setTimeout(() => setBuyFeedback(null), 8000);
       },
       onSuccess: async (result: unknown) => {
-        setTradeFeedback("Transaction submitted...");
-        await waitForTransactionConfirmation(result, "Advanced trade completed.");
+        setBuyFeedback("Trade Submitted");
+        await waitForTransactionConfirmation(result, "Trade Completed");
         setTradeVectorInput("");
         setTradeCollateralLimitInput("");
         recordNewOdds();
-        setTradeFeedback("Advanced trade completed.");
-        setTimeout(() => setTradeFeedback(null), 6000);
+        setTradeFeedback(null);
       },
       onSettled: () => {},
     });
@@ -837,73 +870,95 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
   // Add state for sign-in modal
   const [showSignInModal, setShowSignInModal] = useState(false);
 
- // Handle automatic price calculation
- const handleAutoGetPrice = useCallback(async (outcome: number, amount: number, isSellMode: boolean = false) => {
-  setIsPricePending(true);
-  setPriceError(null);
-  setPriceResult(undefined);
-  try {
-    if (isSellMode) {
-      // For sell mode, input is number of shares, convert to Wei format (like buy functions)
-      const shareAmount = amount;
-      const shareAmountInUSDC = BigInt(Math.floor(shareAmount * 1e18));
-      
-      const result = await readContract({
-        contract: marketContract,
-        method: "function calculateSellRefund(uint256 _outcome, uint256 _amount) view returns (uint256 refund)",
-        params: [BigInt(outcome), shareAmountInUSDC],
-      });
-      setPriceResult(result);
-      console.log('Auto sell price result:', {
-        rawResult: result.toString(),
-        shareAmount: shareAmount,
-        shareAmountInUSDC: shareAmountInUSDC.toString(),
-        refundReceived: Number(result) / 1e18,
-        outcome,
-        amount
-      });
-    } else {
-      // For buy mode, apply 2% discount (overround) to the bet amount
-      const discountedBetAmount = amount * 0.99;
-      const betAmountInUSDC = BigInt(Math.floor(discountedBetAmount * 1e18));
-      const result = await calculateSharesFromBetAmount(
-        conditionalTokensContract,
-        marketContract.address as string,
-        outcome1PositionId,
-        outcome2PositionId,
-        outcome as 0 | 1,
-        betAmountInUSDC
-      );
-      setPriceResult(result);
-      console.log('Auto buy price result:', {
-        rawResult: result.toString(),
-        originalBetAmount: amount,
-        discountedBetAmount: discountedBetAmount,
-        betAmountInUSDC: betAmountInUSDC.toString(),
-        sharesReceived: Number(result) / 1e18,
-        outcome,
-        amount
-      });
-    }
-  } catch (error) {
-    console.error('Auto price function error:', error);
-    setPriceError(new Error("Please enter a smaller amount"));
-  } finally {
-    setIsPricePending(false);
-  }
-}, [marketContract, conditionalTokensContract, outcome1PositionId, outcome2PositionId]);
+// Cost (buy) and Receive (sell) now come from contract calcNetCost; no auto price / calculateSellRefund.
 
+// Auto-fill Advanced Trade Slip collateral limit with user's cash balance
 useEffect(() => {
-  if (selectedOutcome && amount && parseFloat(amount) > 0) {
-    const outcome = selectedOutcome === 'yes' ? 0 : 1;
-    const amountValue = parseFloat(amount);
-    if (!isNaN(amountValue) && amountValue > 0) {
-      handleAutoGetPrice(outcome, amountValue, mode === 'sell');
-    }
+  if (userTokenBalance !== undefined) {
+    const balanceHuman = Number(userTokenBalance) / 1e18;
+    setTradeCollateralLimitInput(balanceHuman % 1 === 0
+      ? balanceHuman.toFixed(0)
+      : balanceHuman.toFixed(2));
   }
-}, [selectedOutcome, amount, mode, handleAutoGetPrice]);
+}, [userTokenBalance]);
 
+// Buy mode: fetch cost via contract calcNetCost(outcomeTokenAmounts)
+useEffect(() => {
+  if (mode !== 'buy' || !selectedOutcome || !amount) {
+    setBuyCostDisplay(null);
+    return;
+  }
+  const shareQty = parseFloat(amount);
+  if (Number.isNaN(shareQty) || shareQty <= 0) {
+    setBuyCostDisplay(null);
+    return;
+  }
+  let cancelled = false;
+  setBuyCostLoading(true);
+  setBuyCostDisplay(null);
+  const outcome = selectedOutcome === 'yes' ? 0 : 1;
+  const outcomeTokenAmounts = outcome === 0
+    ? [BigInt(Math.floor(shareQty * 1e18)), 0n]
+    : [0n, BigInt(Math.floor(shareQty * 1e18))];
+  readContract({
+    contract: marketContract,
+    method: "function calcNetCost(int256[] outcomeTokenAmounts) view returns (int256 netCost)",
+    params: [outcomeTokenAmounts],
+  })
+    .then((netCost) => {
+      if (cancelled) return;
+      const netCostBig = typeof netCost === "bigint" ? netCost : BigInt(netCost);
+      const costHuman = Number(netCostBig) / 1e18;
+      setBuyCostDisplay(costHuman >= 0 ? costHuman.toFixed(2) : "--");
+    })
+    .catch(() => {
+      if (!cancelled) setBuyCostDisplay("--");
+    })
+    .finally(() => {
+      if (!cancelled) setBuyCostLoading(false);
+    });
+  return () => { cancelled = true; };
+}, [mode, selectedOutcome, amount, marketContract]);
 
+// Sell mode: fetch receive amount via calcNetCost with negative outcome token amounts
+useEffect(() => {
+  if (mode !== 'sell' || !selectedOutcome || !amount) {
+    setSellReceiveDisplay(null);
+    return;
+  }
+  const shareQty = parseFloat(amount);
+  if (Number.isNaN(shareQty) || shareQty <= 0) {
+    setSellReceiveDisplay(null);
+    return;
+  }
+  let cancelled = false;
+  setSellReceiveLoading(true);
+  setSellReceiveDisplay(null);
+  const outcome = selectedOutcome === 'yes' ? 0 : 1;
+  const negWei = -BigInt(Math.floor(shareQty * 1e18));
+  const outcomeTokenAmounts = outcome === 0
+    ? [negWei, 0n]
+    : [0n, negWei];
+  readContract({
+    contract: marketContract,
+    method: "function calcNetCost(int256[] outcomeTokenAmounts) view returns (int256 netCost)",
+    params: [outcomeTokenAmounts],
+  })
+    .then((netCost) => {
+      if (cancelled) return;
+      const netCostBig = typeof netCost === "bigint" ? netCost : BigInt(netCost);
+      const receiveHuman = Number(netCostBig) / 1e18;
+      // Negative netCost = user receives; show absolute value
+      setSellReceiveDisplay(receiveHuman <= 0 ? Math.abs(receiveHuman).toFixed(2) : "0.00");
+    })
+    .catch(() => {
+      if (!cancelled) setSellReceiveDisplay("--");
+    })
+    .finally(() => {
+      if (!cancelled) setSellReceiveLoading(false);
+    });
+  return () => { cancelled = true; };
+}, [mode, selectedOutcome, amount, marketContract]);
 
 
 
@@ -1430,65 +1485,42 @@ useEffect(() => {
   let payoutDisplay = '--';
   let avgPriceDisplay = '--';
   if (selectedOutcome && amount && !isNaN(Number(amount)) && Number(amount) > 0) {
-    if (priceResult !== undefined && !isPricePending && !priceError) {
-      if (mode === 'sell') {
-        // Use the actual refund amount from calculateSellRefund for sell mode
-        const refundReceived = Number(priceResult) / 1e18; // Convert from Wei to USD
-        const shareAmount = parseFloat(amount);
-        
-        // For sell mode, the refund amount is the payout
-        payoutDisplay = refundReceived.toFixed(2);
-        // Calculate average price: (refund received / shares sold) * 100 cents
-        const avgPriceInCents = (refundReceived / shareAmount) * 100;
-        avgPriceDisplay = `¢${avgPriceInCents.toFixed(0)}`;
-        
-        // Debug logging for sell priceResult calculations
-        console.log('=== SELL PRICE RESULT CALCULATIONS ===');
-        console.log('Raw priceResult (refund in Wei):', priceResult.toString());
-        console.log('refundReceived (converted from Wei):', refundReceived);
-        console.log('shareAmount (user input):', shareAmount);
-        console.log('payoutDisplay (refund received):', payoutDisplay);
-        console.log('avgPrice calculation: (refundReceived / shareAmount) * 100 =', avgPriceInCents);
-        console.log('avgPriceDisplay (rounded):', avgPriceDisplay);
-        console.log('================================');
-      } else {
-        // Use the actual shares from calculateSharesFromBetAmount for buy mode
-        const sharesReceived = Number(priceResult) / 1e18; // Convert from Wei to shares
-        const amountNum = parseFloat(amount);
-        
-        // Calculate average price: (user's bet amount / shares received) * 100 cents
-        const avgPriceInCents = (amountNum / sharesReceived) * 100;
-        const totalReturn = sharesReceived; // $1 per share * number of shares
-        payoutDisplay = totalReturn.toFixed(2);
-        avgPriceDisplay = `¢${avgPriceInCents.toFixed(0)}`;
-        
-        // Debug logging for buy priceResult calculations
-        console.log('=== BUY PRICE RESULT CALCULATIONS ===');
-        console.log('Raw priceResult (shares in Wei):', priceResult.toString());
-        console.log('sharesReceived (converted from Wei):', sharesReceived);
-        console.log('amountNum (user input):', amountNum);
-        console.log('Discounted amount used in contract call:', amountNum * 0.98);
-        console.log('Overround adjustment: 2% discount applied');
-        console.log('avgPrice calculation: (amountNum / sharesReceived) * 100 =', avgPriceInCents);
-        console.log('avgPriceDisplay (rounded):', avgPriceDisplay);
-        console.log('totalReturn (shares received):', totalReturn);
-        console.log('================================');
+    if (mode === 'buy') {
+      // Buy mode: Cost from calcNetCost; Avg. Price = Cost / shares
+      const shareQty = parseFloat(amount);
+      payoutDisplay = shareQty.toFixed(2);
+      if (buyCostDisplay && shareQty > 0) {
+        const costNum = Number(buyCostDisplay);
+        if (Number.isFinite(costNum)) {
+          const avgPriceInCents = (costNum / shareQty) * 100;
+          avgPriceDisplay = `¢${avgPriceInCents.toFixed(0)}`;
+        }
       }
     } else {
-      // Fallback to odds-based calculation if priceResult not available
-      const odds = selectedOutcome === 'yes' ? oddsYes : oddsNo;
-      if (typeof odds === 'bigint' || typeof odds === 'number') {
-        const oddsNum = Number(odds) / ODDS_DIVISOR;
-        let payout = 0;
-        if (mode === 'buy') {
-          payout = Number(amount) / oddsNum;
-        } else {
-          payout = Number(amount) * oddsNum;
+      // Sell mode: receive amount from calcNetCost(negative amounts); Avg. Price = Receive / shares
+      const shareQty = parseFloat(amount);
+      if (sellReceiveLoading) {
+        payoutDisplay = '...';
+      } else if (sellReceiveDisplay && shareQty > 0) {
+        payoutDisplay = sellReceiveDisplay;
+        const receiveNum = Number(sellReceiveDisplay);
+        if (Number.isFinite(receiveNum)) {
+          const avgPriceInCents = (receiveNum / shareQty) * 100;
+          avgPriceDisplay = `¢${avgPriceInCents.toFixed(0)}`;
         }
-        if (isFinite(payout)) {
-          payoutDisplay = payout.toFixed(2);
+      } else if (priceResult !== undefined && !isPricePending && !priceError) {
+        const refundReceived = Number(priceResult) / 1e18;
+        payoutDisplay = refundReceived.toFixed(2);
+        const avgPriceInCents = (refundReceived / shareQty) * 100;
+        avgPriceDisplay = `¢${avgPriceInCents.toFixed(0)}`;
+      } else {
+        const odds = selectedOutcome === 'yes' ? oddsYes : oddsNo;
+        if (typeof odds === 'bigint' || typeof odds === 'number') {
+          const oddsNum = Number(odds) / ODDS_DIVISOR;
+          const payout = Number(amount) * oddsNum;
+          if (isFinite(payout)) payoutDisplay = payout.toFixed(2);
+          avgPriceDisplay = `¢${(oddsNum * 100).toFixed(0)}`;
         }
-        avgPriceDisplay = `¢${(oddsNum * 100).toFixed(0)}`;
       }
     }
   }
@@ -1553,9 +1585,10 @@ useEffect(() => {
         }
       }
       
-      // Show success message immediately after balance is updated
+      // Show success message immediately after balance is updated; clear after 10 seconds
       setBuyFeedback(null);
       setSuccessMessage(successMessage);
+      setTimeout(() => setSuccessMessage(null), 10000);
       setAmount(""); // Clear the amount only after transaction is fully completed
       
       // Set up a retry mechanism to ensure balances are updated
@@ -1571,9 +1604,10 @@ useEffect(() => {
       console.error("Error waiting for transaction confirmation:", error);
       // Fallback to immediate balance update
       await fetchUserBalancesWithoutLoading();
-      // Still show success message even if there's an error
+      // Still show success message even if there's an error; clear after 10 seconds
       setBuyFeedback(null);
       setSuccessMessage(successMessage);
+      setTimeout(() => setSuccessMessage(null), 10000);
       setAmount(""); // Clear the amount even if there's an error
     }
   };
@@ -1645,36 +1679,111 @@ useEffect(() => {
     }
   };
 
-  // Buy mode: calculate shares from bet amount and pre-fill Advanced Trade slip (trade() only; no buy() on contract).
+  // Advanced Trade: manual net cost calculation using calcNetCost(outcomeTokenAmounts)
+  const handleCalculateAdvancedNetCost = async () => {
+    const input = tradeVectorInput.trim();
+    if (!input) {
+      setAdvancedNetCost(null);
+      setAdvancedNetCostError("Enter outcome token amounts first.");
+      return;
+    }
+
+    const raw = input.replace(/^\[|\]$/g, "");
+    const parts = raw.split(/[\s,]+/).filter(Boolean);
+    if (parts.length !== 2) {
+      setAdvancedNetCost(null);
+      setAdvancedNetCostError("Enter two amounts, e.g. 100, -50");
+      return;
+    }
+
+    const nums = parts.map((p) => parseFloat(p));
+    if (nums.some((n) => Number.isNaN(n))) {
+      setAdvancedNetCost(null);
+      setAdvancedNetCostError("Outcome amounts must be numbers.");
+      return;
+    }
+
+    const outcomeTokenAmounts = nums.map((n) =>
+      BigInt(Math.trunc(n * 1e18))
+    );
+
+    try {
+      setAdvancedNetCostLoading(true);
+      setAdvancedNetCostError(null);
+
+      const netCost = await readContract({
+        contract: marketContract,
+        method:
+          "function calcNetCost(int256[] outcomeTokenAmounts) view returns (int256 netCost)",
+        params: [outcomeTokenAmounts],
+      });
+
+      const netCostBig = typeof netCost === "bigint" ? netCost : BigInt(netCost);
+      const netCostHuman = Number(netCostBig) / 1e18;
+      setAdvancedNetCost(netCostHuman);
+    } catch (error) {
+      console.error("calcNetCost error:", error);
+      setAdvancedNetCost(null);
+      setAdvancedNetCostError("Could not estimate cost. Check your inputs.");
+    } finally {
+      setAdvancedNetCostLoading(false);
+    }
+  };
+
+  // Buy mode: user entered share quantity; pass it into the trade function (outcome token amounts + collateral limit)
   const handlePreFillAdvancedTradeForBuy = async (amount: string) => {
     if (!amount || !selectedOutcome || (selectedOutcome !== 'yes' && selectedOutcome !== 'no')) return;
-    const usdAmount = parseFloat(amount);
-    if (Number.isNaN(usdAmount) || usdAmount <= 0) return;
-    setBuyFeedback("Calculating shares...");
-    const betAmountWei = BigInt(Math.floor(usdAmount * 1e18));
+    if (!handleWalletCheck()) return;
+
+    const shareQty = parseFloat(amount);
+    if (Number.isNaN(shareQty) || shareQty <= 0) return;
+
+    setBuyFeedback("Trade Submitted");
+
     const outcome = selectedOutcome === 'yes' ? 0 : 1;
+    const rounded = Math.round(shareQty * 100) / 100;
+    const outcomeTokenAmounts =
+      outcome === 0
+        ? [BigInt(Math.floor(rounded * 1e18)), 0n]
+        : [0n, BigInt(Math.floor(rounded * 1e18))];
+    const cashBalance = userTokenBalance ? Number(userTokenBalance) / 1e18 : 0;
+    const collateralLimit = BigInt(Math.trunc(cashBalance * 1e18));
+
     try {
-      const sharesWei = await calculateSharesFromBetAmount(
-        conditionalTokensContract,
-        marketContract.address as string,
-        outcome1PositionId,
-        outcome2PositionId,
-        outcome as 0 | 1,
-        betAmountWei
+      setTradeVectorInput(outcome === 0 ? `${rounded}, 0` : `0, ${rounded}`);
+      setTradeCollateralLimitInput(
+        cashBalance % 1 === 0 ? cashBalance.toFixed(0) : cashBalance.toFixed(2)
       );
-      const sharesHuman = Number(sharesWei) / 1e18;
-      const rounded = Math.round(sharesHuman * 100) / 100;
-      if (outcome === 0) {
-        setTradeVectorInput(`${rounded}, 0`);
-      } else {
-        setTradeVectorInput(`0, ${rounded}`);
-      }
-      setTradeCollateralLimitInput(amount);
-      setBuyFeedback("Filled Advanced Trade. Click \"Execute advanced trade\" below to submit.");
-      setTimeout(() => setBuyFeedback(null), 5000);
+      await handleAdvancedTrade(outcomeTokenAmounts, collateralLimit);
     } catch (e) {
-      console.error("Pre-fill Advanced Trade (calculateSharesFromBetAmount):", e);
-      setBuyFeedback("Could not calculate shares. Try a smaller amount.");
+      console.error("Buy (trade) error:", e);
+      setBuyFeedback("Trade failed. Check your input and try again.");
+      setTimeout(() => setBuyFeedback(null), 4000);
+    }
+  };
+
+  // Sell mode: pass negative outcome token amounts into trade() (same scale as buy: 1e18)
+  const handlePreFillAdvancedTradeForSell = async (amount: string) => {
+    if (!amount || !selectedOutcome || (selectedOutcome !== 'yes' && selectedOutcome !== 'no')) return;
+    if (!handleWalletCheck()) return;
+
+    const shareQty = parseFloat(amount);
+    if (Number.isNaN(shareQty) || shareQty <= 0) return;
+
+    setBuyFeedback("Trade Submitted");
+
+    const rounded = Math.round(shareQty * 100) / 100;
+    const negAmount = -BigInt(Math.floor(rounded * 1e18));
+    const outcomeTokenAmounts =
+      selectedOutcome === 'yes'
+        ? [negAmount, 0n]
+        : [0n, negAmount];
+
+    try {
+      await handleAdvancedTrade(outcomeTokenAmounts, 0n);
+    } catch (e) {
+      console.error("Sell (trade) error:", e);
+      setBuyFeedback("Trade failed. Check your input and try again.");
       setTimeout(() => setBuyFeedback(null), 4000);
     }
   };
@@ -1887,26 +1996,21 @@ useEffect(() => {
                       )}
                     </div>
                   </div>
-                  {/* Bet Amount sub-title */}
-                  <div className="text-lg font-bold mb-2">{mode === 'buy' ? <>Bet Amount (<DenariusSymbol size={12} />)</> : 'Sell Shares'}</div>
+                  {/* Buy: shares to buy. Sell: shares to sell. */}
+                  <div className="text-lg font-bold mb-2">{mode === 'buy' ? 'Buy Shares' : 'Sell Shares'}</div>
                   {/* Amount input */}
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder={`Enter ${mode === 'buy' ? 'Buy' : 'Sell'} Amount`}
+                      placeholder={mode === 'buy' ? 'Number of outcome shares' : 'Enter Sell Amount'}
                       value={amount || ''}
                       onChange={e => {
                         const value = e.target.value.replace(/[^0-9.]/g, '');
                         setAmount(value);
                         setSellAllClicked(false);
                       }}
-                      className={`w-full ${mode === 'buy' && amount ? 'pl-4' : 'pl-3'} pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-base mb-4`}
+                      className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-base mb-4"
                     />
-                    {mode === 'buy' && amount && (
-                      <div className="absolute left-1" style={{ top: '50%', transform: 'translateY(-50%)', marginTop: '-8px' }}>
-                        <DenariusSymbol size={11} />
-                      </div>
-                    )}
                   </div>
                   {/* Yes/No Cent Price buttons */}
                   <div className="flex flex-row w-full mb-4 gap-2">
@@ -1917,9 +2021,9 @@ useEffect(() => {
                       setSelectedOutcome('yes');
                       // If Sell All is active, update input to show Yes shares
                       if (sellAllClicked) {
-                        const yesShares = outcome1Balance !== '--' && outcome1Balance !== 'Error' ? parseFloat(outcome1Balance) : 0;
-                        setAmount(truncateOneDigit(yesShares));
-                        console.log('Sell All active - updated input to Yes shares:', yesShares);
+                        const value = outcome1Balance !== '--' && outcome1Balance !== 'Error' ? outcome1Balance : '0';
+                        setAmount(value);
+                        console.log('Sell All active - updated input to Yes shares:', value);
                       } else {
                         setSellAllClicked(false);
                       }
@@ -1936,9 +2040,9 @@ useEffect(() => {
                       setSelectedOutcome('no');
                       // If Sell All is active, update input to show No shares
                       if (sellAllClicked) {
-                        const noShares = outcome2Balance !== '--' && outcome2Balance !== 'Error' ? parseFloat(outcome2Balance) : 0;
-                        setAmount(truncateOneDigit(noShares));
-                        console.log('Sell All active - updated input to No shares:', noShares);
+                        const value = outcome2Balance !== '--' && outcome2Balance !== 'Error' ? outcome2Balance : '0';
+                        setAmount(value);
+                        console.log('Sell All active - updated input to No shares:', value);
                       } else {
                         setSellAllClicked(false);
                       }
@@ -1974,19 +2078,18 @@ useEffect(() => {
                             
                             // Check if user has already selected an outcome
                             if (selectedOutcome === 'yes') {
-                              // User already selected Yes - input Yes shares (truncated)
-                              setAmount(truncateOneDigit(yesShares));
-                              console.log('User already selected Yes - inputting Yes shares:', yesShares);
+                              setAmount(outcome1Balance !== '--' && outcome1Balance !== 'Error' ? outcome1Balance : '0');
+                              console.log('User already selected Yes - inputting Yes shares:', outcome1Balance);
                             } else if (selectedOutcome === 'no') {
-                              // User already selected No - input No shares (truncated)
-                              setAmount(truncateOneDigit(noShares));
-                              console.log('User already selected No - inputting No shares:', noShares);
+                              setAmount(outcome2Balance !== '--' && outcome2Balance !== 'Error' ? outcome2Balance : '0');
+                              console.log('User already selected No - inputting No shares:', outcome2Balance);
                             } else {
-                              // No outcome selected - default to larger position (truncated)
                               const largerPosition = Math.max(yesShares, noShares);
                               const outcomeWithMoreShares = yesShares >= noShares ? 'yes' : 'no';
-                              
-                              setAmount(truncateOneDigit(largerPosition));
+                              const balanceToUse = yesShares >= noShares
+                                ? (outcome1Balance !== '--' && outcome1Balance !== 'Error' ? outcome1Balance : '0')
+                                : (outcome2Balance !== '--' && outcome2Balance !== 'Error' ? outcome2Balance : '0');
+                              setAmount(balanceToUse);
                               setSelectedOutcome(outcomeWithMoreShares);
                               
                               console.log('No outcome selected - defaulting to larger position:', largerPosition);
@@ -2004,11 +2107,11 @@ useEffect(() => {
                       </button>
                     </div>
                   )}
-                  {/* Only show Max. Win, Avg Price, and Submit Trade if amount and selectedOutcome are set */}
+                  {/* Only show Cost/Receive, Avg Price, and Submit Trade if amount and selectedOutcome are set */}
                   {amount && !isNaN(Number(amount)) && selectedOutcome && (
                     <>
-                      {/* Max. Win/Receive sub-title */}
-                      <div className="text-[1.15rem] font-medium text-black">{mode === 'buy' ? 'Max. Win:' : 'Receive:'} <span className="text-green-600 font-bold"><span className="font-normal"><DenariusSymbol size={13} /></span> {payoutDisplay}</span></div>
+                      {/* Cost (buy) or Receive (sell) */}
+                      <div className="text-[1.15rem] font-medium text-black">{mode === 'buy' ? 'Cost:' : 'Receive:'} <span className="text-green-600 font-bold"><span className="font-normal"><DenariusSymbol size={13} /></span> {mode === 'buy' ? (buyCostLoading ? '...' : (buyCostDisplay ?? '--')) : payoutDisplay}</span></div>
                       {/* Avg. Price display */}
                       <div className="text-left text-sm text-gray-600 mb-4">
                         Avg. Price
@@ -2019,14 +2122,13 @@ useEffect(() => {
                       {/* Trade button */}
                       <button
                         className="w-full font-semibold px-6 py-2 rounded-lg shadow transition disabled:opacity-50 bg-black text-white mb-4"
-                        disabled={!selectedOutcome || !amount || (selectedOutcome === 'yes' && (mode === 'buy' ? buyYesStatus === 'pending' : buyYesStatus === 'pending')) || (selectedOutcome === 'no' && (mode === 'buy' ? buyNoStatus === 'pending' : buyNoStatus === 'pending'))}
+                        disabled={!selectedOutcome || !amount || (mode === 'buy' && tradeStatus === 'pending') || (selectedOutcome === 'yes' && (mode === 'sell' && buyYesStatus === 'pending')) || (selectedOutcome === 'no' && (mode === 'sell' && buyNoStatus === 'pending'))}
                         onClick={() => {
                           if (!selectedOutcome || !amount) return;
                           if (mode === 'buy') {
                             handlePreFillAdvancedTradeForBuy(amount);
                           } else {
-                            if (selectedOutcome === 'yes') handleSellYesWithApproval(amount);
-                            else if (selectedOutcome === 'no') handleSellNoWithApproval(amount);
+                            handlePreFillAdvancedTradeForSell(amount);
                           }
                         }}
                       >
@@ -2034,58 +2136,6 @@ useEffect(() => {
                       </button>
                     </>
                   )}
-                  {/* Advanced Trade Slip (calls trade(int[] outcomeTokenAmounts, int collateralLimit)) */}
-                  <div className="border-t border-gray-200 pt-4 mt-4">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">Advanced Trade</h3>
-                    <p className="text-xs text-gray-600 mb-3">
-                      Specify outcome token vector and an optional collateral limit. Positive numbers buy shares, negative numbers sell.
-                    </p>
-                    <div className="space-y-3 mb-3">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Outcome token amounts [Yes, No]
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="e.g. 100, -50"
-                          value={tradeVectorInput}
-                          onChange={(e) => setTradeVectorInput(e.target.value)}
-                          className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Collateral limit (0 = no limit)
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="Max cost in collateral token (e.g. 100)"
-                            value={tradeCollateralLimitInput}
-                            onChange={(e) =>
-                              setTradeCollateralLimitInput(
-                                e.target.value.replace(/[^0-9.\-]/g, "")
-                              )
-                            }
-                            className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleAdvancedTrade}
-                      disabled={tradeStatus === "pending"}
-                      className="w-full font-semibold px-4 py-2 rounded-lg shadow transition disabled:opacity-50 bg-gray-800 text-white hover:bg-gray-900 text-sm"
-                    >
-                      {tradeStatus === "pending" ? "Executing advanced trade..." : "Execute advanced trade"}
-                    </button>
-                    {tradeFeedback && (
-                      <div className="mt-2 text-xs font-medium text-gray-700">
-                        {tradeFeedback}
-                      </div>
-                    )}
-                  </div>
                   {/* Your Balance Section */}
                   <div className="border-t border-gray-200 pt-4 mt-4 hidden lg:block">
                     <h3 className="text-lg font-bold text-gray-900 mb-4">Purchased Shares</h3>
@@ -2105,11 +2155,11 @@ useEffect(() => {
                     <div className={`text-center mt-4 font-semibold flex items-center justify-center gap-1 ${
                       buyFeedback.includes('Purchase Successful') || buyFeedback.includes('Sale Successful') || buyFeedback.includes('🎉')
                         ? 'text-green-600' 
-                        : buyFeedback.includes('Preparing transaction') || buyFeedback.includes('Checking approval') || buyFeedback.includes('Transaction submitted')
+                        : buyFeedback.includes('Preparing transaction') || buyFeedback.includes('Checking approval') || buyFeedback === 'Trade Submitted'
                           ? 'text-black' 
                           : 'text-red-600'
                     }`}>
-                      {(buyFeedback.includes('Preparing transaction') || buyFeedback.includes('Checking approval') || buyFeedback.includes('Transaction submitted')) && (
+                      {(buyFeedback.includes('Preparing transaction') || buyFeedback.includes('Checking approval') || buyFeedback === 'Trade Submitted') && (
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black flex-shrink-0"></div>
                       )}
                       {(buyFeedback.includes('Purchase Successful') || buyFeedback.includes('Sale Successful') || buyFeedback.includes('🎉')) && (
@@ -2120,7 +2170,7 @@ useEffect(() => {
                       <span className="whitespace-nowrap">{buyFeedback}</span>
                     </div>
                   )}
-                  {/* Success message after balance update */}
+                  {/* Success message after trade completes */}
                   {successMessage && (
                     <div className="text-center mt-4 text-green-600 font-semibold flex items-center justify-center gap-2">
                       <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
@@ -2491,26 +2541,21 @@ useEffect(() => {
                   </button>
                 </div>
               </div>
-              {/* Bet Amount sub-title */}
-              <div className="text-lg font-bold mb-2">{mode === 'buy' ? <>Bet Amount (<DenariusSymbol size={11} />)</> : 'Sell Shares'}</div>
+              {/* Buy: shares to buy. Sell: shares to sell. */}
+              <div className="text-lg font-bold mb-2">{mode === 'buy' ? 'Buy Shares' : 'Sell Shares'}</div>
               {/* Amount input */}
               <div className="relative">
                 <input
                   type="text"
-                  placeholder={`Enter ${mode === 'buy' ? 'Buy' : 'Sell'} Amount`}
+                  placeholder={mode === 'buy' ? 'Number of outcome shares' : 'Enter Sell Amount'}
                   value={amount || ''}
                   onChange={e => {
                     const value = e.target.value.replace(/[^0-9.]/g, '');
                     setAmount(value);
                     setSellAllClicked(false);
                   }}
-                  className={`w-full ${mode === 'buy' && amount ? 'pl-5' : 'pl-3'} pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-base mb-4`}
+                  className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-base mb-4"
                 />
-                {mode === 'buy' && amount && (
-                  <div className="absolute left-2" style={{ top: '50%', transform: 'translateY(-50%)', marginTop: '-8px' }}>
-                    <DenariusSymbol size={11} />
-                  </div>
-                )}
               </div>
               {/* Yes/No Cent Price buttons */}
               <div className="flex flex-row w-full mb-4 gap-2">
@@ -2521,9 +2566,9 @@ useEffect(() => {
                         setSelectedOutcome('yes');
                         // If Sell All is active, update input to show Yes shares
                         if (sellAllClicked) {
-                          const yesShares = outcome1Balance !== '--' && outcome1Balance !== 'Error' ? parseFloat(outcome1Balance) : 0;
-                          setAmount(truncateOneDigit(yesShares));
-                          console.log('Sell All active - updated input to Yes shares:', yesShares);
+                          const value = outcome1Balance !== '--' && outcome1Balance !== 'Error' ? outcome1Balance : '0';
+                          setAmount(value);
+                          console.log('Sell All active - updated input to Yes shares:', value);
                         } else {
                           setSellAllClicked(false);
                         }
@@ -2540,9 +2585,9 @@ useEffect(() => {
                         setSelectedOutcome('no');
                         // If Sell All is active, update input to show No shares
                         if (sellAllClicked) {
-                          const noShares = outcome2Balance !== '--' && outcome2Balance !== 'Error' ? parseFloat(outcome2Balance) : 0;
-                          setAmount(truncateOneDigit(noShares));
-                          console.log('Sell All active - updated input to No shares:', noShares);
+                          const value = outcome2Balance !== '--' && outcome2Balance !== 'Error' ? outcome2Balance : '0';
+                          setAmount(value);
+                          console.log('Sell All active - updated input to No shares:', value);
                         } else {
                           setSellAllClicked(false);
                         }
@@ -2578,19 +2623,18 @@ useEffect(() => {
                             
                             // Check if user has already selected an outcome
                             if (selectedOutcome === 'yes') {
-                              // User already selected Yes - input Yes shares (truncated)
-                              setAmount(truncateOneDigit(yesShares));
-                              console.log('User already selected Yes - inputting Yes shares:', yesShares);
+                              setAmount(outcome1Balance !== '--' && outcome1Balance !== 'Error' ? outcome1Balance : '0');
+                              console.log('User already selected Yes - inputting Yes shares:', outcome1Balance);
                             } else if (selectedOutcome === 'no') {
-                              // User already selected No - input No shares (truncated)
-                              setAmount(truncateOneDigit(noShares));
-                              console.log('User already selected No - inputting No shares:', noShares);
+                              setAmount(outcome2Balance !== '--' && outcome2Balance !== 'Error' ? outcome2Balance : '0');
+                              console.log('User already selected No - inputting No shares:', outcome2Balance);
                             } else {
-                              // No outcome selected - default to larger position (truncated)
                               const largerPosition = Math.max(yesShares, noShares);
                               const outcomeWithMoreShares = yesShares >= noShares ? 'yes' : 'no';
-                              
-                              setAmount(truncateOneDigit(largerPosition));
+                              const balanceToUse = yesShares >= noShares
+                                ? (outcome1Balance !== '--' && outcome1Balance !== 'Error' ? outcome1Balance : '0')
+                                : (outcome2Balance !== '--' && outcome2Balance !== 'Error' ? outcome2Balance : '0');
+                              setAmount(balanceToUse);
                               setSelectedOutcome(outcomeWithMoreShares);
                               
                               console.log('No outcome selected - defaulting to larger position:', largerPosition);
@@ -2608,11 +2652,11 @@ useEffect(() => {
                   </button>
                 </div>
               )}
-              {/* Only show Max. Win, Avg Price, and Submit Trade if amount and selectedOutcome are set */}
+              {/* Only show Cost/Receive, Avg Price, and Submit Trade if amount and selectedOutcome are set */}
               {amount && !isNaN(Number(amount)) && selectedOutcome && (
                 <>
-                  {/* Max. Win/Receive sub-title */}
-                  <div className="text-[1.15rem] font-medium text-black">{mode === 'buy' ? 'Max. Win:' : 'Receive:'} <span className="text-green-600 font-bold"><span className="font-normal"><DenariusSymbol size={13} /></span> {payoutDisplay}</span></div>
+                  {/* Cost (buy) or Receive (sell) */}
+                  <div className="text-[1.15rem] font-medium text-black">{mode === 'buy' ? 'Cost:' : 'Receive:'} <span className="text-green-600 font-bold"><span className="font-normal"><DenariusSymbol size={13} /></span> {mode === 'buy' ? (buyCostLoading ? '...' : (buyCostDisplay ?? '--')) : payoutDisplay}</span></div>
                   {/* Avg. Price display */}
                   <div className="text-left text-sm text-gray-600 mb-4">
                     Avg. Price
@@ -2623,14 +2667,13 @@ useEffect(() => {
                   {/* Trade button */}
                   <button
                     className="w-full font-semibold px-6 py-2 rounded-lg shadow transition disabled:opacity-50 bg-black text-white mb-4"
-                    disabled={!selectedOutcome || !amount || (selectedOutcome === 'yes' && (mode === 'buy' ? buyYesStatus === 'pending' : buyYesStatus === 'pending')) || (selectedOutcome === 'no' && (mode === 'buy' ? buyNoStatus === 'pending' : buyNoStatus === 'pending'))}
+                    disabled={!selectedOutcome || !amount || (mode === 'buy' && tradeStatus === 'pending') || (selectedOutcome === 'yes' && (mode === 'sell' && buyYesStatus === 'pending')) || (selectedOutcome === 'no' && (mode === 'sell' && buyNoStatus === 'pending'))}
                     onClick={() => {
                       if (!selectedOutcome || !amount) return;
                       if (mode === 'buy') {
                         handlePreFillAdvancedTradeForBuy(amount);
                       } else {
-                        if (selectedOutcome === 'yes') handleSellYesWithApproval(amount);
-                        else if (selectedOutcome === 'no') handleSellNoWithApproval(amount);
+                        handlePreFillAdvancedTradeForSell(amount);
                       }
                     }}
                   >
@@ -2638,58 +2681,6 @@ useEffect(() => {
                   </button>
                 </>
               )}
-              {/* Advanced Trade Slip (calls trade(int[] outcomeTokenAmounts, int collateralLimit)) */}
-              <div className="border-t border-gray-200 pt-4 mt-4">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Advanced Trade</h3>
-                <p className="text-xs text-gray-600 mb-3">
-                  Specify outcome token vector and an optional collateral limit. Positive numbers buy shares, negative numbers sell.
-                </p>
-                <div className="space-y-3 mb-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Outcome token amounts [Yes, No]
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 100, -50"
-                      value={tradeVectorInput}
-                      onChange={(e) => setTradeVectorInput(e.target.value)}
-                      className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Collateral limit (0 = no limit)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Max cost in collateral token (e.g. 100)"
-                        value={tradeCollateralLimitInput}
-                        onChange={(e) =>
-                          setTradeCollateralLimitInput(
-                            e.target.value.replace(/[^0-9.\-]/g, "")
-                          )
-                        }
-                        className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAdvancedTrade}
-                  disabled={tradeStatus === "pending"}
-                  className="w-full font-semibold px-4 py-2 rounded-lg shadow transition disabled:opacity-50 bg-gray-800 text-white hover:bg-gray-900 text-sm"
-                >
-                  {tradeStatus === "pending" ? "Executing advanced trade..." : "Execute advanced trade"}
-                </button>
-                {tradeFeedback && (
-                  <div className="mt-2 text-xs font-medium text-gray-700">
-                    {tradeFeedback}
-                  </div>
-                )}
-              </div>
               {/* Your Balance Section */}
               <div className="border-t border-gray-200 pt-4 mt-4 hidden lg:block">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Purchased Shares</h3>
@@ -2709,11 +2700,11 @@ useEffect(() => {
                 <div className={`text-center mt-4 font-semibold flex items-center justify-center gap-1 ${
                   buyFeedback.includes('Purchase Successful') || buyFeedback.includes('Sale Successful') || buyFeedback.includes('🎉')
                     ? 'text-green-600' 
-                    : buyFeedback.includes('Preparing transaction') || buyFeedback.includes('Checking approval') || buyFeedback.includes('Transaction submitted')
+                    : buyFeedback.includes('Preparing transaction') || buyFeedback.includes('Checking approval') || buyFeedback === 'Trade Submitted'
                       ? 'text-black' 
                       : 'text-red-600'
                 }`}>
-                  {(buyFeedback.includes('Preparing transaction') || buyFeedback.includes('Checking approval') || buyFeedback.includes('Transaction submitted')) && (
+                  {(buyFeedback.includes('Preparing transaction') || buyFeedback.includes('Checking approval') || buyFeedback === 'Trade Submitted') && (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black flex-shrink-0"></div>
                   )}
                   {(buyFeedback.includes('Purchase Successful') || buyFeedback.includes('Sale Successful') || buyFeedback.includes('🎉')) && (
@@ -2724,7 +2715,7 @@ useEffect(() => {
                   <span className="whitespace-nowrap">{buyFeedback}</span>
                 </div>
               )}
-              {/* Success message after balance update */}
+              {/* Success message after trade completes */}
               {successMessage && (
                 <div className="text-center mt-4 text-green-600 font-semibold flex items-center justify-center gap-2">
                   <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
