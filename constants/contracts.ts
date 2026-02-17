@@ -27,6 +27,14 @@ export const mrnaTurboCancerConditionalTokensContractAddress = "0x5CdFEE6602ABDE
 export const apollo11MoonLandingFakeMarketContractAddress = "0xC27Ff60bC9521c9E883932734f90858b1315FdC3";
 export const apollo11MoonLandingFakeConditionalTokensContractAddress = "0x95563661760dd5eb69574d0359dfd7350a7Ffc1a";
 
+// The Citizen Market Contracts
+export const citizenMarketContractAddress = "0xE4E32338d091655b18E455db908249960D451916";
+export const citizenConditionalTokensContractAddress = "0xceced0465456427d7e14B2F5d07F442D99f0aaAf";
+
+// Placeholder Market Contracts
+export const placeholderMarketContractAddress = "0x4b468b0d30d0ff3fcf70d87ef55efc9568dbecc0";
+export const placeholderConditionalTokensContractAddress = "0x89A801b50B5E9A0340C1DF407Ae5D20B015Ca6a9";
+
 export const tokenContract = getContract({
     client: client,
     chain: baseSepolia,
@@ -110,6 +118,32 @@ export const apollo11MoonLandingFakeConditionalTokensContract = getContract({
   address: apollo11MoonLandingFakeConditionalTokensContractAddress,
 });
 
+// The Citizen Market Contract Instances
+export const citizenMarketContract = getContract({
+  client,
+  chain: baseSepolia,
+  address: citizenMarketContractAddress,
+});
+
+export const citizenConditionalTokensContract = getContract({
+  client,
+  chain: baseSepolia,
+  address: citizenConditionalTokensContractAddress,
+});
+
+// Placeholder Market Contract Instances
+export const placeholderMarketContract = getContract({
+  client,
+  chain: baseSepolia,
+  address: placeholderMarketContractAddress,
+});
+
+export const placeholderConditionalTokensContract = getContract({
+  client,
+  chain: baseSepolia,
+  address: placeholderConditionalTokensContractAddress,
+});
+
 // Helper function to get contracts based on market ID
 export function getContractsForMarket(marketId: string) {
   switch (marketId) {
@@ -147,6 +181,20 @@ export function getContractsForMarket(marketId: string) {
         conditionalTokensContract: apollo11MoonLandingFakeConditionalTokensContract,
         outcome1PositionId: "95490272304416126408686449956911461245802498919393119598916935595755964608883", // Yes
         outcome2PositionId: "26291979376186366265669937439449814098814933685580383626977846891067939489555", // No
+      };
+    case 'citizen':
+      return {
+        marketContract: citizenMarketContract,
+        conditionalTokensContract: citizenConditionalTokensContract,
+        outcome1PositionId: "16326463588456548794948675197748979834858391442065313448595939841384195798947", // Yes
+        outcome2PositionId: "37009161893588049852213392339562664054984176696844293083857276301498461775743", // No
+      };
+    case 'placeholder':
+      return {
+        marketContract: placeholderMarketContract,
+        conditionalTokensContract: placeholderConditionalTokensContract,
+        outcome1PositionId: "34321969156276252832540035184912602797922486034869202153177790862479039378421", // Yes
+        outcome2PositionId: "34687737297839139828055368304399121060443909232783750040345663744531312450236", // No
       };
     case 'jfk':
     default:

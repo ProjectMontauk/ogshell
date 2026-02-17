@@ -26,6 +26,24 @@ export const markets: Market[] = [
     contractAddress: "0xC27Ff60bC9521c9E883932734f90858b1315FdC3",
     outcomes: ["Yes, Apollo 11 moon landing was faked", "No, Apollo 11 moon landing was real"],
     rules: "The market resolves \"Yes\" if it is determined that the Apollo 11 moon landing was faked or staged. Otherwise the market resolves \"No.\""
+  },
+  {
+    id: 'citizen',
+    title: "Does Water Fluoridation Decrease IQ?",
+    description: "The Citizen market.",
+    image: "/Fluoride.png",
+    contractAddress: "0xE4E32338d091655b18E455db908249960D451916",
+    outcomes: ["Yes, fluoridation decreases IQ:", "No, fluoridation does not decrease IQ"],
+    rules: "Update with market resolution rules."
+  },
+  {
+    id: 'placeholder',
+    title: "Childhood Vaccines Linked to Autism?",
+    description: "Is there clear and convincing evidence linking the CDC-recommended childhood vaccine schedule to a higher likelihood of developing Autism Spectrum Disorder?",
+    image: "/RFK.png",
+    contractAddress: "0x4b468b0d30d0ff3fcf70d87ef55efc9568dbecc0",
+    outcomes: ["Yes, childhood vaccines linked to autism:", "No, childhood vaccines not linked to autism:"],
+    rules: "The market will resolve \"Yes\" if the WSJ scientific review board finds that there is a clear and convincing evidence establishing the link between children following the CDC-recommended childhood vaccine schedule and a higher likelihood of developing Autism Spectrum Disorder over their lifetime compared to unvaccinated children.\n\nOtherwise, the market will resolve \"No.\" This means the WSJ scientific review board did not find a clear and convincing evidence supporting the link between childhood vaccines and a higher likelihood of developing Autism Spectrum Disorder.\n\nThis market will close February 20th, 2026 at 11:59 AM EDT and within three days of market close, the review board will resolve the market and author the case summary.\n\nFind out more about the WSJ scientific review board <a href=\"/docs?tab=review-boards\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: #2563eb; text-decoration: underline;\">here</a>."
   }
 ];
 
