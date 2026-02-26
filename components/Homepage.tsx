@@ -1,18 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useReadContract } from "thirdweb/react";
-import { getContract } from "thirdweb";
+import { getContract, readContract } from "thirdweb";
 import { client } from "../src/client";
 import { baseSepolia } from "thirdweb/chains";
 import { getAllMarkets, Market } from "../src/data/markets";
 
+const INVESTMENT_AMOUNT = BigInt("1000000000000000000"); // 1e18 for FPMM calcBuyAmount
+
 // MarketCard component that fetches its own odds
 const MarketCard = ({ market }: { market: Market }) => {
   const router = useRouter();
-  
+  const [fpmmProbs, setFpmmProbs] = useState<{ yes: number; no: number } | null>(null);
+
   // Create contract instance for this specific market
   const marketContractInstance = getContract({
     client,
@@ -20,22 +23,66 @@ const MarketCard = ({ market }: { market: Market }) => {
     address: market.contractAddress,
   });
 
-  // Fetch current marginal odds for Yes (0) and No (1) using calcMarginalPrice(uint8)
+  // JFK uses FPMM: fetch odds via calcBuyAmount(1e18, outcomeIndex), then odds = investment/shares, normalized to probability
+  const fetchFpmmOdds = useCallback(async () => {
+    if (market.id !== "jfk") return;
+    try {
+      const [sharesYes, sharesNo] = await Promise.all([
+        readContract({
+          contract: marketContractInstance,
+          method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
+          params: [INVESTMENT_AMOUNT, 0n],
+        }),
+        readContract({
+          contract: marketContractInstance,
+          method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
+          params: [INVESTMENT_AMOUNT, 1n],
+        }),
+      ]);
+      const inv = Number(INVESTMENT_AMOUNT);
+      const sY = Number(sharesYes);
+      const sN = Number(sharesNo);
+      if (sY <= 0 || sN <= 0) return;
+      const oddsYesRaw = inv / sY;
+      const oddsNoRaw = inv / sN;
+      const probYes = oddsYesRaw / (oddsYesRaw + oddsNoRaw);
+      const probNo = oddsNoRaw / (oddsYesRaw + oddsNoRaw);
+      setFpmmProbs({ yes: probYes, no: probNo });
+    } catch (e) {
+      console.error("Homepage FPMM odds error:", e);
+      setFpmmProbs(null);
+    }
+  }, [market.id, marketContractInstance]);
+
+  useEffect(() => {
+    if (market.id === "jfk") fetchFpmmOdds();
+  }, [market.id, fetchFpmmOdds]);
+
+  // Fetch current marginal odds for Yes (0) and No (1) using calcMarginalPrice (non-FPMM markets)
   const { data: oddsYes } = useReadContract({
     contract: marketContractInstance,
     method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
     params: [0],
   });
-  
   const { data: oddsNo } = useReadContract({
     contract: marketContractInstance,
     method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
     params: [1],
   });
 
-  // Convert odds to probabilities
-  const yesProbability = oddsYes !== undefined ? Number(oddsYes) / Math.pow(2, 64) : 0;
-  const noProbability = oddsNo !== undefined ? Number(oddsNo) / Math.pow(2, 64) : 0;
+  // Convert odds to probabilities: JFK uses FPMM-derived probs; others use calcMarginalPrice / 2^64
+  const yesProbability =
+    market.id === "jfk" && fpmmProbs
+      ? fpmmProbs.yes
+      : oddsYes !== undefined
+        ? Number(oddsYes) / Math.pow(2, 64)
+        : 0;
+  const noProbability =
+    market.id === "jfk" && fpmmProbs
+      ? fpmmProbs.no
+      : oddsNo !== undefined
+        ? Number(oddsNo) / Math.pow(2, 64)
+        : 0;
 
   return (
     <div

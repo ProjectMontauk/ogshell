@@ -94,11 +94,56 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
   const [outcome2Balance, setOutcome2Balance] = useState<string>("--");
   const [isBalanceLoading, setIsBalanceLoading] = useState(false);
 
-  // Outcome indices: 0 = Yes, 1 = No (passed to calcMarginalPrice(uint8))
+  // Outcome indices: 0 = Yes, 1 = No (passed to calcMarginalPrice(uint8) or calcBuyAmount)
   const YES_OUTCOME_INDEX = 0;
   const NO_OUTCOME_INDEX = 1;
 
-  // Odds for Yes (0) and No (1) using calcMarginalPrice - raw return from contract, no math
+  // JFK uses FPMM: odds from calcBuyAmount(1e18, outcomeIndex) -> odds = investment / shares, then normalized to 2^64 for display
+  const INVESTMENT_AMOUNT = BigInt("1000000000000000000"); // 1 = 1e18
+  const [fpmmOddsYes, setFpmmOddsYes] = useState<bigint | undefined>(undefined);
+  const [fpmmOddsNo, setFpmmOddsNo] = useState<bigint | undefined>(undefined);
+  const [fpmmOddsLoading, setFpmmOddsLoading] = useState(false);
+
+  const fetchFpmmOdds = useCallback(async () => {
+    if (market.id !== "jfk") return;
+    setFpmmOddsLoading(true);
+    try {
+      const [sharesYes, sharesNo] = await Promise.all([
+        readContract({
+          contract: marketContract,
+          method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
+          params: [INVESTMENT_AMOUNT, 0n],
+        }),
+        readContract({
+          contract: marketContract,
+          method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
+          params: [INVESTMENT_AMOUNT, 1n],
+        }),
+      ]);
+      const inv = Number(INVESTMENT_AMOUNT);
+      const sY = Number(sharesYes);
+      const sN = Number(sharesNo);
+      if (sY <= 0 || sN <= 0) return;
+      const oddsYesRaw = inv / sY;
+      const oddsNoRaw = inv / sN;
+      const probYes = oddsYesRaw / (oddsYesRaw + oddsNoRaw);
+      const probNo = oddsNoRaw / (oddsYesRaw + oddsNoRaw);
+      setFpmmOddsYes(BigInt(Math.round(probYes * 2 ** 64)));
+      setFpmmOddsNo(BigInt(Math.round(probNo * 2 ** 64)));
+    } catch (e) {
+      console.error("FPMM calcBuyAmount odds error:", e);
+      setFpmmOddsYes(undefined);
+      setFpmmOddsNo(undefined);
+    } finally {
+      setFpmmOddsLoading(false);
+    }
+  }, [market.id, marketContract]);
+
+  useEffect(() => {
+    if (market.id === "jfk") fetchFpmmOdds();
+  }, [market.id, fetchFpmmOdds]);
+
+  // Odds for Yes (0) and No (1) using calcMarginalPrice - raw return from contract (non-FPMM markets)
   const yesResult = useReadContract({
     contract: marketContract,
     method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
@@ -110,12 +155,16 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
     params: [NO_OUTCOME_INDEX],
   });
 
-  const oddsYes = yesResult.data;
-  const oddsNo = noResult.data;
+  const oddsYes = market.id === "jfk" ? fpmmOddsYes : yesResult.data;
+  const oddsNo = market.id === "jfk" ? fpmmOddsNo : noResult.data;
   const refetchOddsFromContract = useCallback(() => {
-    yesResult.refetch();
-    noResult.refetch();
-  }, [yesResult.refetch, noResult.refetch]);
+    if (market.id === "jfk") {
+      fetchFpmmOdds();
+    } else {
+      yesResult.refetch();
+      noResult.refetch();
+    }
+  }, [market.id, fetchFpmmOdds, yesResult.refetch, noResult.refetch]);
 
   // Debug: log exactly what calcMarginalPrice returns (raw) and any errors
   useEffect(() => {
@@ -1793,25 +1842,50 @@ useEffect(() => {
     try {
       // Wait a bit for the transaction to be processed
       await new Promise(resolve => setTimeout(resolve, 2000));
-      const currentYesOdds = await readContract({
-        contract: marketContract,
-        method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
-        params: [0],
-      });
-      const currentNoOdds = await readContract({
-        contract: marketContract,
-        method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
-        params: [1],
-      });
-      console.log('Raw odds from contract (after delay):', {
-        yesOdds: currentYesOdds.toString(),
-        noOdds: currentNoOdds.toString(),
-        yesOddsNumber: Number(currentYesOdds),
-        noOddsNumber: Number(currentNoOdds)
-      });
-      // Store the raw odds values (not converted to probabilities)
-      const yesProbability = Number(currentYesOdds);
-      const noProbability = Number(currentNoOdds);
+      let yesProbability: number;
+      let noProbability: number;
+      if (market.id === "jfk") {
+        const [sharesYes, sharesNo] = await Promise.all([
+          readContract({
+            contract: marketContract,
+            method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
+            params: [INVESTMENT_AMOUNT, 0n],
+          }),
+          readContract({
+            contract: marketContract,
+            method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
+            params: [INVESTMENT_AMOUNT, 1n],
+          }),
+        ]);
+        const inv = Number(INVESTMENT_AMOUNT);
+        const sY = Number(sharesYes);
+        const sN = Number(sharesNo);
+        const oddsYesRaw = sY > 0 ? inv / sY : 0;
+        const oddsNoRaw = sN > 0 ? inv / sN : 0;
+        const sum = oddsYesRaw + oddsNoRaw;
+        const pY = sum > 0 ? oddsYesRaw / sum : 0;
+        const pN = sum > 0 ? oddsNoRaw / sum : 0;
+        yesProbability = pY * 2 ** 64;
+        noProbability = pN * 2 ** 64;
+        console.log("FPMM odds (after delay):", { sharesYes: sharesYes.toString(), sharesNo: sharesNo.toString(), probYes: pY, probNo: pN });
+      } else {
+        const currentYesOdds = await readContract({
+          contract: marketContract,
+          method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
+          params: [0],
+        });
+        const currentNoOdds = await readContract({
+          contract: marketContract,
+          method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
+          params: [1],
+        });
+        console.log("Raw odds from contract (after delay):", {
+          yesOdds: currentYesOdds.toString(),
+          noOdds: currentNoOdds.toString(),
+        });
+        yesProbability = Number(currentYesOdds);
+        noProbability = Number(currentNoOdds);
+      }
       // Record to database (after trade, odds should have changed)
       const oddsResponse = await fetch(`${API_BASE_URL}/api/record-odds`, {
         method: 'POST',

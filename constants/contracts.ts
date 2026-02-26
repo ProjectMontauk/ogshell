@@ -3,9 +3,9 @@ import { getContract } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
 
 // CIA / JFK Market on Base Sepolia
-export const marketContractAddress = "0x3010D5d9C567763Fa90399BE5C82fA02a5a9295F";
+export const marketContractAddress = "0xC8A498Bd0726036F7cdF9bb83f92E9D969970600";
 export const tokenContractAddress = "0x7874Fea8563cdA853a0DaBF54B7e8E770F726dDb"; // Cash token on Base Sepolia
-export const conditionalTokensContractAddress = "0x9Db5368F8194c01eC668831F9fD9000D8aa73406"; // Conditional Tokens Contract on Base Sepolia
+export const conditionalTokensContractAddress = "0x89A801b50B5E9A0340C1DF407Ae5D20B015Ca6a9"; // Conditional Tokens Contract on Base Sepolia
 
 // Fluoridation IQ Market Contracts
 export const fluoridationIqMarketContractAddress = "0x1fef92c81b4ef16b099330d5cb5981b8bfc69383"; // Fluoridation IQ Market Contract on Base - TODO: Update with actual contract address
@@ -201,8 +201,8 @@ export function getContractsForMarket(marketId: string) {
       return {
         marketContract: marketContract,
         conditionalTokensContract: conditionalTokensContract,
-        outcome1PositionId: "73447690177222413629606936100319296564166817602168097874164059020795331550290", // JFK Yes - Base Sepolia position ID
-        outcome2PositionId: "22215270987214765251435732829113647193435911842071361932816156198960676215195", // JFK No - Base Sepolia position ID
+        outcome1PositionId: "106261875985794048016015173960046707849790672402976848528328852263946132372637", // JFK Yes - Base Sepolia position ID
+        outcome2PositionId: "32733382695058793248258855857256065534850992451102373040084989402733589471956", // JFK No - Base Sepolia position ID
       };
   }
 }

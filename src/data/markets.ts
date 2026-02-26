@@ -14,7 +14,7 @@ export const markets: Market[] = [
     title: "CIA Involved in JFK Assassination?",
     description: "Did the CIA aid in the planning or execution of John F. Kennedy's Assassination?",
     image: "/JFKCar.png",
-    contractAddress: "0x3010D5d9C567763Fa90399BE5C82fA02a5a9295F", // CIA / JFK Market on Base Sepolia
+    contractAddress: "0xC8A498Bd0726036F7cdF9bb83f92E9D969970600", // CIA / JFK Market on Base Sepolia
     outcomes: ["Yes, CIA involved in JFK's death", "No, CIA innocent in JFK's death"],
     rules: "The market will resolve \"Yes\" if the WSJ history review board finds that there is a clear and convincing evidence establishing that current or former CIA personnel aided in the planning or execution of President John F. Kennedy's Assassination.\n\nOtherwise, the market will resolve \"No.\" This means the WSJ history review board did not find a clear and convincing evidence supporting that current or former CIA personnel aided in the planning or execution of President John F. Kennedy's Assassination.\n\nThis market will close February 20th, 2026 at 11:59 AM EDT and within three days of market close, the review board will resolve the market and author the case summary.\n\nFind out more about the WSJ history review board <a href=\"/docs?tab=review-boards\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: #2563eb; text-decoration: underline;\">here</a>."
   },
