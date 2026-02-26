@@ -253,6 +253,9 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
   // Buy mode: cost from calcNetCost (displayed as "Cost: X.XX")
   const [buyCostDisplay, setBuyCostDisplay] = useState<string | null>(null);
   const [buyCostLoading, setBuyCostLoading] = useState(false);
+  // JFK FPMM buy: output of calcBuyAmount (est. shares received)
+  const [buyEstSharesDisplay, setBuyEstSharesDisplay] = useState<string | null>(null);
+  const [buyEstSharesLoading, setBuyEstSharesLoading] = useState(false);
   // Sell mode: receive amount from calcNetCost with negative amounts (displayed as "Receive: X.XX")
   const [sellReceiveDisplay, setSellReceiveDisplay] = useState<string | null>(null);
   const [sellReceiveLoading, setSellReceiveLoading] = useState(false);
@@ -973,6 +976,41 @@ useEffect(() => {
   return () => { cancelled = true; };
 }, [mode, selectedOutcome, amount, market.id, marketContract]);
 
+// JFK FPMM buy: fetch est. shares from calcBuyAmount(investmentAmount, outcomeIndex)
+useEffect(() => {
+  if (market.id !== 'jfk' || mode !== 'buy' || !selectedOutcome || !amount) {
+    setBuyEstSharesDisplay(null);
+    return;
+  }
+  const num = parseFloat(amount);
+  if (Number.isNaN(num) || num <= 0) {
+    setBuyEstSharesDisplay(null);
+    return;
+  }
+  let cancelled = false;
+  setBuyEstSharesLoading(true);
+  setBuyEstSharesDisplay(null);
+  const investmentAmount = BigInt(Math.floor(num * 1e18));
+  const outcomeIndex = selectedOutcome === 'yes' ? 0 : 1;
+  readContract({
+    contract: marketContract,
+    method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
+    params: [investmentAmount, BigInt(outcomeIndex)],
+  })
+    .then((sharesWei) => {
+      if (cancelled) return;
+      const sharesHuman = Number(sharesWei) / 1e18;
+      setBuyEstSharesDisplay(sharesHuman >= 0 ? sharesHuman.toFixed(2) : "--");
+    })
+    .catch(() => {
+      if (!cancelled) setBuyEstSharesDisplay("--");
+    })
+    .finally(() => {
+      if (!cancelled) setBuyEstSharesLoading(false);
+    });
+  return () => { cancelled = true; };
+}, [market.id, mode, selectedOutcome, amount, marketContract]);
+
 // Sell mode: fetch receive amount via calcNetCost with negative outcome token amounts
 useEffect(() => {
   if (mode !== 'sell' || !selectedOutcome || !amount) {
@@ -1492,10 +1530,17 @@ useEffect(() => {
   let avgPriceDisplay = '--';
   if (selectedOutcome && amount && !isNaN(Number(amount)) && Number(amount) > 0) {
     if (mode === 'buy') {
-      // Buy mode: Cost from calcNetCost; Avg. Price = Cost / shares
       const shareQty = parseFloat(amount);
       payoutDisplay = shareQty.toFixed(2);
-      if (buyCostDisplay && shareQty > 0) {
+      // JFK FPMM: Avg. Price = User wager / CalcBuyShares (cost per share in cents)
+      if (market.id === 'jfk' && buyEstSharesDisplay) {
+        const calcBuyShares = parseFloat(buyEstSharesDisplay);
+        if (Number.isFinite(calcBuyShares) && calcBuyShares > 0) {
+          const avgPriceInCents = (shareQty / calcBuyShares) * 100;
+          avgPriceDisplay = `¢${Math.round(avgPriceInCents)}`;
+        }
+      } else if (buyCostDisplay && shareQty > 0) {
+        // Non-JFK: Avg. Price = Cost / shares
         const costNum = Number(buyCostDisplay);
         if (Number.isFinite(costNum)) {
           const avgPriceInCents = (costNum / shareQty) * 100;
@@ -2205,8 +2250,13 @@ useEffect(() => {
                   {/* Only show Cost/Receive, Avg Price, and Submit Trade if amount and selectedOutcome are set */}
                   {amount && !isNaN(Number(amount)) && selectedOutcome && (
                     <>
-                      {/* Cost (buy) or Receive (sell) */}
-                      <div className="text-[1.15rem] font-medium text-black">{mode === 'buy' ? 'Cost:' : 'Receive:'} <span className="text-green-600 font-bold"><span className="font-normal"><DenariusSymbol size={13} /></span> {mode === 'buy' ? (buyCostLoading ? '...' : (buyCostDisplay ?? '--')) : payoutDisplay}</span></div>
+                      {/* Max. Win (JFK buy) or Receive (sell) */}
+                      {market.id === 'jfk' && mode === 'buy' && (
+                        <div className="text-[1.15rem] font-medium text-black">Max. Win: <span className="text-green-600 font-bold"><span className="font-normal"><DenariusSymbol size={13} /></span> {buyEstSharesLoading ? '...' : (buyEstSharesDisplay ?? '--')}</span></div>
+                      )}
+                      {mode === 'sell' && (
+                        <div className="text-[1.15rem] font-medium text-black">Receive: <span className="text-green-600 font-bold"><span className="font-normal"><DenariusSymbol size={13} /></span> {payoutDisplay}</span></div>
+                      )}
                       {/* Avg. Price display */}
                       <div className="text-left text-sm text-gray-600 mb-4">
                         Avg. Price
@@ -2751,8 +2801,13 @@ useEffect(() => {
               {/* Only show Cost/Receive, Avg Price, and Submit Trade if amount and selectedOutcome are set */}
               {amount && !isNaN(Number(amount)) && selectedOutcome && (
                 <>
-                  {/* Cost (buy) or Receive (sell) */}
-                  <div className="text-[1.15rem] font-medium text-black">{mode === 'buy' ? 'Cost:' : 'Receive:'} <span className="text-green-600 font-bold"><span className="font-normal"><DenariusSymbol size={13} /></span> {mode === 'buy' ? (buyCostLoading ? '...' : (buyCostDisplay ?? '--')) : payoutDisplay}</span></div>
+                  {/* Max. Win (JFK buy) or Receive (sell) */}
+                  {market.id === 'jfk' && mode === 'buy' && (
+                    <div className="text-[1.15rem] font-medium text-black">Max. Win: <span className="text-green-600 font-bold"><span className="font-normal"><DenariusSymbol size={13} /></span> {buyEstSharesLoading ? '...' : (buyEstSharesDisplay ?? '--')}</span></div>
+                  )}
+                  {mode === 'sell' && (
+                    <div className="text-[1.15rem] font-medium text-black">Receive: <span className="text-green-600 font-bold"><span className="font-normal"><DenariusSymbol size={13} /></span> {payoutDisplay}</span></div>
+                  )}
                   {/* Avg. Price display */}
                   <div className="text-left text-sm text-gray-600 mb-4">
                     Avg. Price
