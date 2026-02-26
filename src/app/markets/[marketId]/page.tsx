@@ -931,15 +931,19 @@ useEffect(() => {
   }
 }, [userTokenBalance]);
 
-// Buy mode: fetch cost via contract calcNetCost(outcomeTokenAmounts)
+// Buy mode: fetch cost via contract calcNetCost(outcomeTokenAmounts); JFK FPMM uses amount as cost (investment)
 useEffect(() => {
   if (mode !== 'buy' || !selectedOutcome || !amount) {
     setBuyCostDisplay(null);
     return;
   }
-  const shareQty = parseFloat(amount);
-  if (Number.isNaN(shareQty) || shareQty <= 0) {
+  const num = parseFloat(amount);
+  if (Number.isNaN(num) || num <= 0) {
     setBuyCostDisplay(null);
+    return;
+  }
+  if (market.id === 'jfk') {
+    setBuyCostDisplay(num.toFixed(2));
     return;
   }
   let cancelled = false;
@@ -947,8 +951,8 @@ useEffect(() => {
   setBuyCostDisplay(null);
   const outcome = selectedOutcome === 'yes' ? 0 : 1;
   const outcomeTokenAmounts = outcome === 0
-    ? [BigInt(Math.floor(shareQty * 1e18)), 0n]
-    : [0n, BigInt(Math.floor(shareQty * 1e18))];
+    ? [BigInt(Math.floor(num * 1e18)), 0n]
+    : [0n, BigInt(Math.floor(num * 1e18))];
   readContract({
     contract: marketContract,
     method: "function calcNetCost(int256[] outcomeTokenAmounts) view returns (int256 netCost)",
@@ -967,7 +971,7 @@ useEffect(() => {
       if (!cancelled) setBuyCostLoading(false);
     });
   return () => { cancelled = true; };
-}, [mode, selectedOutcome, amount, marketContract]);
+}, [mode, selectedOutcome, amount, market.id, marketContract]);
 
 // Sell mode: fetch receive amount via calcNetCost with negative outcome token amounts
 useEffect(() => {
@@ -1779,6 +1783,76 @@ useEffect(() => {
     }
   };
 
+  // JFK FPMM: buy(investmentAmount, outcomeIndex, minOutcomeTokensToBuy)
+  const handleFpmmBuy = async (amount: string) => {
+    if (!amount || !selectedOutcome || (selectedOutcome !== "yes" && selectedOutcome !== "no")) return;
+    if (!handleWalletCheck()) return;
+
+    const investmentNum = parseFloat(amount);
+    if (Number.isNaN(investmentNum) || investmentNum <= 0) return;
+
+    setBuyFeedback("Trade Submitted");
+
+    const investmentAmount = BigInt(Math.floor(investmentNum * 1e18));
+    const outcomeIndex = selectedOutcome === "yes" ? 0 : 1;
+
+    try {
+      const expectedShares = await readContract({
+        contract: marketContract,
+        method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
+        params: [investmentAmount, BigInt(outcomeIndex)],
+      });
+      const minOutcomeTokensToBuy = (expectedShares * 95n) / 100n;
+
+      setTradeFeedback("Preparing trade...");
+      const approved = await handleApproveIfNeeded();
+      if (!approved && (!allowance || BigInt(allowance) < investmentAmount)) {
+        setBuyFeedback("Approval failed or incomplete. Please try again.");
+        setTradeFeedback(null);
+        setTimeout(() => setBuyFeedback(null), 6000);
+        return;
+      }
+
+      const tx = prepareContractCall({
+        contract: marketContract,
+        method: "function buy(uint256 investmentAmount, uint256 outcomeIndex, uint256 minOutcomeTokensToBuy)",
+        params: [investmentAmount, BigInt(outcomeIndex), minOutcomeTokensToBuy],
+      });
+
+      sendTradeTransaction(tx, {
+        onError: (error: unknown) => {
+          console.error("FPMM buy() error:", error);
+          const msg =
+            typeof error === "object" && error !== null && "message" in error
+              ? String((error as { message?: string }).message || "").toLowerCase()
+              : "";
+          let friendly = "Buy failed. Check your inputs and try again.";
+          if (msg.includes("user rejected") || msg.includes("denied"))
+            friendly = "Transaction cancelled in wallet.";
+          else if (msg.includes("insufficient"))
+            friendly = "Insufficient balance or approval for this trade.";
+          else if (msg.includes("revert") || msg.includes("minimum"))
+            friendly = "Transaction reverted. Try a smaller amount or try again.";
+          setBuyFeedback(friendly);
+          setTradeFeedback(null);
+          setTimeout(() => setBuyFeedback(null), 8000);
+        },
+        onSuccess: async (result: unknown) => {
+          setBuyFeedback("Trade Submitted");
+          await waitForTransactionConfirmation(result, "Trade Completed");
+          recordNewOdds();
+          setTradeFeedback(null);
+        },
+        onSettled: () => {},
+      });
+    } catch (e) {
+      console.error("FPMM buy error:", e);
+      setBuyFeedback("Trade failed. Check your input and try again.");
+      setTradeFeedback(null);
+      setTimeout(() => setBuyFeedback(null), 4000);
+    }
+  };
+
   // Buy mode: user entered share quantity; pass it into the trade function (outcome token amounts + collateral limit)
   const handlePreFillAdvancedTradeForBuy = async (amount: string) => {
     if (!amount || !selectedOutcome || (selectedOutcome !== 'yes' && selectedOutcome !== 'no')) return;
@@ -2071,7 +2145,7 @@ useEffect(() => {
                     </div>
                   </div>
                   {/* Buy: shares to buy. Sell: shares to sell. */}
-                  <div className="text-lg font-bold mb-2">{mode === 'buy' ? 'Buy Shares' : 'Sell Shares'}</div>
+                  <div className="text-lg font-bold mb-2">{mode === 'buy' ? (market.id === 'jfk' ? 'Amount to invest' : 'Buy Shares') : 'Sell Shares'}</div>
                   {/* Amount input */}
                   <div className="relative">
                     <input
@@ -2200,7 +2274,8 @@ useEffect(() => {
                         onClick={() => {
                           if (!selectedOutcome || !amount) return;
                           if (mode === 'buy') {
-                            handlePreFillAdvancedTradeForBuy(amount);
+                            if (market.id === 'jfk') handleFpmmBuy(amount);
+                            else handlePreFillAdvancedTradeForBuy(amount);
                           } else {
                             handlePreFillAdvancedTradeForSell(amount);
                           }
@@ -2616,7 +2691,7 @@ useEffect(() => {
                 </div>
               </div>
               {/* Buy: shares to buy. Sell: shares to sell. */}
-              <div className="text-lg font-bold mb-2">{mode === 'buy' ? 'Buy Shares' : 'Sell Shares'}</div>
+              <div className="text-lg font-bold mb-2">{mode === 'buy' ? (market.id === 'jfk' ? 'Amount to invest' : 'Buy Shares') : 'Sell Shares'}</div>
               {/* Amount input */}
               <div className="relative">
                 <input
@@ -2745,7 +2820,8 @@ useEffect(() => {
                     onClick={() => {
                       if (!selectedOutcome || !amount) return;
                       if (mode === 'buy') {
-                        handlePreFillAdvancedTradeForBuy(amount);
+                        if (market.id === 'jfk') handleFpmmBuy(amount);
+                        else handlePreFillAdvancedTradeForBuy(amount);
                       } else {
                         handlePreFillAdvancedTradeForSell(amount);
                       }
