@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
 import { useActiveAccount, useReadContract, useSendTransaction } from "thirdweb/react";
 import { prepareContractCall, readContract } from "thirdweb";
-import { getContractsForMarket, tokenContract} from "../../../../constants/contracts";
+import { getContractsForMarket, tokenContract } from "../../../../constants/contracts";
 import { Tab } from "@headlessui/react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
@@ -1090,54 +1090,32 @@ useEffect(() => {
     }
   }, [account?.address, fetchUserVotes]);
 
-  // Fetch user balances function (with loading state)
+  // Fetch user balances: readContract on Conditional Tokens (balanceOf(owner, positionId)) using config CT and position IDs per market
   const fetchUserBalances = useCallback(async () => {
     if (!account?.address) return;
-    
+
     setIsBalanceLoading(true);
-    
     try {
-      // Fetch balance for Outcome 1 (Yes)
       const balance1 = await readContract({
         contract: conditionalTokensContract,
         method: "function balanceOf(address account, uint256 id) view returns (uint256)",
-        params: [
-          account.address as `0x${string}`,
-          BigInt(outcome1PositionId)
-        ],
+        params: [account.address as `0x${string}`, BigInt(outcome1PositionId)],
       });
-      
-      // Fetch balance for Outcome 2 (No)
       const balance2 = await readContract({
         contract: conditionalTokensContract,
         method: "function balanceOf(address account, uint256 id) view returns (uint256)",
-        params: [
-          account.address as `0x${string}`,
-          BigInt(outcome2PositionId)
-        ],
+        params: [account.address as `0x${string}`, BigInt(outcome2PositionId)],
       });
-      
-      // Convert balances to strings and format them
-      const balance1Str = balance1.toString();
-      const balance2Str = balance2.toString();
-
-      console.log('balance1Str:', balance1Str);
-      console.log('balance2Str:', balance2Str);
-      
-      // Convert to real token amounts by dividing by 10^18 and remove decimals
-      const yesShares = (Number(balance1Str) / 1e18).toString();
-      const noShares = (Number(balance2Str) / 1e18).toString();
-      
-      
+      const yesShares = (Number(balance1.toString()) / 1e18).toString();
+      const noShares = (Number(balance2.toString()) / 1e18).toString();
       setOutcome1Balance(yesShares);
       setOutcome2Balance(noShares);
-      
     } catch (err) {
       console.error("Error fetching user balances:", err);
       setOutcome1Balance("Error");
       setOutcome2Balance("Error");
     } finally {
-    setIsBalanceLoading(false);
+      setIsBalanceLoading(false);
     }
   }, [account?.address, outcome1PositionId, outcome2PositionId, conditionalTokensContract]);
 
@@ -1147,53 +1125,28 @@ useEffect(() => {
   // Fetch user balances without showing loading state (for polling)
   const fetchUserBalancesWithoutLoading = useCallback(async () => {
     if (!account?.address) return;
-    
-    // Add a simple debounce to prevent excessive calls
+
     const currentTime = Date.now();
-    if (lastCallTime.current && currentTime - lastCallTime.current < 5000) {
-      return; // Don't call if last call was less than 5 seconds ago
-    }
+    if (lastCallTime.current && currentTime - lastCallTime.current < 5000) return;
     lastCallTime.current = currentTime;
-    
+
     try {
-      // Fetch balance for Outcome 1 (Yes)
       const balance1 = await readContract({
         contract: conditionalTokensContract,
         method: "function balanceOf(address account, uint256 id) view returns (uint256)",
-        params: [
-          account.address as `0x${string}`,
-          BigInt(outcome1PositionId)
-        ],
+        params: [account.address as `0x${string}`, BigInt(outcome1PositionId)],
       });
-      
-      // Fetch balance for Outcome 2 (No)
       const balance2 = await readContract({
         contract: conditionalTokensContract,
         method: "function balanceOf(address account, uint256 id) view returns (uint256)",
-        params: [
-          account.address as `0x${string}`,
-          BigInt(outcome2PositionId)
-        ],
+        params: [account.address as `0x${string}`, BigInt(outcome2PositionId)],
       });
-      
-      // Convert balances to strings and format them
-      const balance1Str = balance1.toString();
-      const balance2Str = balance2.toString();
-      
-      // Convert to real token amounts by dividing by 10^18 and remove decimals
-      const yesShares = (Number(balance1Str) / 1e18).toString();
-      const noShares = (Number(balance2Str) / 1e18).toString();
-      
-      // Only update state if values actually changed to prevent blinking
-      setOutcome1Balance(prev => prev !== yesShares ? yesShares : prev);
-      setOutcome2Balance(prev => prev !== noShares ? noShares : prev);
-      
+      const yesShares = (Number(balance1.toString()) / 1e18).toString();
+      const noShares = (Number(balance2.toString()) / 1e18).toString();
+      setOutcome1Balance(prev => (prev !== yesShares ? yesShares : prev));
+      setOutcome2Balance(prev => (prev !== noShares ? noShares : prev));
     } catch (err) {
-      // Only log errors if wallet is still connected (to avoid spam when disconnecting)
-      if (account?.address) {
-      console.error("Error fetching user balances:", err);
-      }
-      // Don't set error state during polling to prevent blinking
+      if (account?.address) console.error("Error fetching user balances:", err);
     }
   }, [account?.address, outcome1PositionId, outcome2PositionId, conditionalTokensContract]);
 
@@ -1590,7 +1543,7 @@ useEffect(() => {
       // Refetch user's token balance to update cash display
       await refetchUserTokenBalance();
       
-      // Fetch latest balances directly from contract
+      // Fetch latest balances from Conditional Tokens (balanceOf(owner, positionId))
       let latestYesShares = 0;
       let latestNoShares = 0;
       if (account?.address) {
@@ -1598,18 +1551,12 @@ useEffect(() => {
           const balance1 = await readContract({
             contract: conditionalTokensContract,
             method: "function balanceOf(address account, uint256 id) view returns (uint256)",
-            params: [
-              account.address as `0x${string}`,
-              BigInt(outcome1PositionId)
-            ],
+            params: [account.address as `0x${string}`, BigInt(outcome1PositionId)],
           });
           const balance2 = await readContract({
             contract: conditionalTokensContract,
             method: "function balanceOf(address account, uint256 id) view returns (uint256)",
-            params: [
-              account.address as `0x${string}`,
-              BigInt(outcome2PositionId)
-            ],
+            params: [account.address as `0x${string}`, BigInt(outcome2PositionId)],
           });
           latestYesShares = Math.floor(Number(balance1.toString()) / 1e18);
           latestNoShares = Math.floor(Number(balance2.toString()) / 1e18);

@@ -6,6 +6,7 @@ import { baseSepolia } from "thirdweb/chains";
 export const marketContractAddress = "0xC8A498Bd0726036F7cdF9bb83f92E9D969970600";
 export const tokenContractAddress = "0x7874Fea8563cdA853a0DaBF54B7e8E770F726dDb"; // Cash token on Base Sepolia
 export const conditionalTokensContractAddress = "0x89A801b50B5E9A0340C1DF407Ae5D20B015Ca6a9"; // Conditional Tokens Contract on Base Sepolia
+export const jfkConditionalTokensContractAddress = "0x38418d6F5DC98280506E0EFd609754EcA5c6BFd3"; // JFK market Conditional Tokens (balanceOf for purchased shares)
 
 // Fluoridation IQ Market Contracts
 export const fluoridationIqMarketContractAddress = "0x1fef92c81b4ef16b099330d5cb5981b8bfc69383"; // Fluoridation IQ Market Contract on Base - TODO: Update with actual contract address
@@ -52,6 +53,12 @@ export const conditionalTokensContract = getContract({
     chain: baseSepolia,
     address: conditionalTokensContractAddress,
   });
+
+export const jfkConditionalTokensContract = getContract({
+  client,
+  chain: baseSepolia,
+  address: jfkConditionalTokensContractAddress,
+});
 
 // Fluoridation IQ Market Contract Instances
 export const fluoridationIqMarketContract = getContract({
@@ -197,6 +204,12 @@ export function getContractsForMarket(marketId: string) {
         outcome2PositionId: "34687737297839139828055368304399121060443909232783750040345663744531312450236", // No
       };
     case 'jfk':
+      return {
+        marketContract: marketContract,
+        conditionalTokensContract: jfkConditionalTokensContract,
+        outcome1PositionId: "106261875985794048016015173960046707849790672402976848528328852263946132372637", // JFK Yes
+        outcome2PositionId: "32733382695058793248258855857256065534850992451102373040084989402733589471956", // JFK No
+      };
     default:
       return {
         marketContract: marketContract,
