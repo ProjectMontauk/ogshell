@@ -182,14 +182,14 @@ export function getContractsForMarket(marketId: string) {
         outcome1PositionId: "95490272304416126408686449956911461245802498919393119598916935595755964608883", // Yes
         outcome2PositionId: "26291979376186366265669937439449814098814933685580383626977846891067939489555", // No
       };
-    case 'citizen':
+    case 'fluoride':
       return {
         marketContract: citizenMarketContract,
         conditionalTokensContract: citizenConditionalTokensContract,
         outcome1PositionId: "16326463588456548794948675197748979834858391442065313448595939841384195798947", // Yes
         outcome2PositionId: "37009161893588049852213392339562664054984176696844293083857276301498461775743", // No
       };
-    case 'placeholder':
+    case 'autism':
       return {
         marketContract: placeholderMarketContract,
         conditionalTokensContract: placeholderConditionalTokensContract,

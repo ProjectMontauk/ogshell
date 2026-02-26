@@ -28,7 +28,7 @@ export const markets: Market[] = [
     rules: "The market resolves \"Yes\" if it is determined that the Apollo 11 moon landing was faked or staged. Otherwise the market resolves \"No.\""
   },
   {
-    id: 'citizen',
+    id: 'fluoride',
     title: "Does Water Fluoridation Decrease IQ?",
     description: "The Citizen market.",
     image: "/Fluoride.png",
@@ -37,7 +37,7 @@ export const markets: Market[] = [
     rules: "Update with market resolution rules."
   },
   {
-    id: 'placeholder',
+    id: 'autism',
     title: "Childhood Vaccines Linked to Autism?",
     description: "Is there clear and convincing evidence linking the CDC-recommended childhood vaccine schedule to a higher likelihood of developing Autism Spectrum Disorder?",
     image: "/RFK.png",
