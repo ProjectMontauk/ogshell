@@ -23,7 +23,7 @@ export const markets: Market[] = [
     title: "Apollo 11 Moon Landing Fake",
     description: "Was the Apollo 11 moon landing faked or staged?",
     image: "/Moon.png",
-    contractAddress: "0xC27Ff60bC9521c9E883932734f90858b1315FdC3",
+    contractAddress: "0x5Af20651c5a8fAd0d1E38122183fEB8bC0838716",
     outcomes: ["Yes, Apollo 11 moon landing was faked", "No, Apollo 11 moon landing was real"],
     rules: "The market resolves \"Yes\" if it is determined that the Apollo 11 moon landing was faked or staged. Otherwise the market resolves \"No.\""
   },

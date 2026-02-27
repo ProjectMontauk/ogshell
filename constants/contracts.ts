@@ -25,8 +25,8 @@ export const mrnaTurboCancerMarketContractAddress = "0xdc57601061c30DCdFbE849e24
 export const mrnaTurboCancerConditionalTokensContractAddress = "0x5CdFEE6602ABDE289bBDEdBD28BDd7ddC310F416"; // MRNA TurboCancer Conditional Tokens Contract on Base
 
 // Apollo 11 Moon Landing Fake Market Contracts
-export const apollo11MoonLandingFakeMarketContractAddress = "0xC27Ff60bC9521c9E883932734f90858b1315FdC3";
-export const apollo11MoonLandingFakeConditionalTokensContractAddress = "0x95563661760dd5eb69574d0359dfd7350a7Ffc1a";
+export const apollo11MoonLandingFakeMarketContractAddress = "0x5Af20651c5a8fAd0d1E38122183fEB8bC0838716";
+export const apollo11MoonLandingFakeConditionalTokensContractAddress = "0x097c4e0Bf45223Ef238B5B8eD26970Ce6c0281f3";
 
 // The Citizen Market Contracts
 export const citizenMarketContractAddress = "0xE4E32338d091655b18E455db908249960D451916";
@@ -186,8 +186,8 @@ export function getContractsForMarket(marketId: string) {
       return {
         marketContract: apollo11MoonLandingFakeMarketContract,
         conditionalTokensContract: apollo11MoonLandingFakeConditionalTokensContract,
-        outcome1PositionId: "95490272304416126408686449956911461245802498919393119598916935595755964608883", // Yes
-        outcome2PositionId: "26291979376186366265669937439449814098814933685580383626977846891067939489555", // No
+        outcome1PositionId: "19240072908051422858567531872907377759204560755767841038267344394720196826061", // Yes
+        outcome2PositionId: "94149467698680814353316726576100038444402729322933448584166012738934466766066", // No
       };
     case 'fluoride':
       return {
