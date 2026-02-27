@@ -94,18 +94,17 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
   const [outcome2Balance, setOutcome2Balance] = useState<string>("--");
   const [isBalanceLoading, setIsBalanceLoading] = useState(false);
 
-  // Outcome indices: 0 = Yes, 1 = No (passed to calcMarginalPrice(uint8) or calcBuyAmount)
+  // Outcome indices: 0 = Yes, 1 = No (passed to FPMM calcBuyAmount / calcSellAmount)
   const YES_OUTCOME_INDEX = 0;
   const NO_OUTCOME_INDEX = 1;
 
-  // JFK uses FPMM: odds from calcBuyAmount(1e18, outcomeIndex) -> odds = investment / shares, then normalized to 2^64 for display
+  // All markets use FPMM-style odds: calcBuyAmount(1e18, outcomeIndex) -> odds = investment / shares, then normalized to 2^64 for display
   const INVESTMENT_AMOUNT = BigInt("1000000000000000000"); // 1 = 1e18
   const [fpmmOddsYes, setFpmmOddsYes] = useState<bigint | undefined>(undefined);
   const [fpmmOddsNo, setFpmmOddsNo] = useState<bigint | undefined>(undefined);
   const [fpmmOddsLoading, setFpmmOddsLoading] = useState(false);
 
   const fetchFpmmOdds = useCallback(async () => {
-    if (market.id !== "jfk") return;
     setFpmmOddsLoading(true);
     try {
       const [sharesYes, sharesNo] = await Promise.all([
@@ -137,58 +136,17 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
     } finally {
       setFpmmOddsLoading(false);
     }
-  }, [market.id, marketContract]);
+  }, [marketContract]);
 
   useEffect(() => {
-    if (market.id === "jfk") fetchFpmmOdds();
-  }, [market.id, fetchFpmmOdds]);
+    fetchFpmmOdds();
+  }, [fetchFpmmOdds]);
 
-  // Odds for Yes (0) and No (1) using calcMarginalPrice - raw return from contract (non-FPMM markets)
-  const yesResult = useReadContract({
-    contract: marketContract,
-    method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
-    params: [YES_OUTCOME_INDEX],
-  });
-  const noResult = useReadContract({
-    contract: marketContract,
-    method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
-    params: [NO_OUTCOME_INDEX],
-  });
-
-  const oddsYes = market.id === "jfk" ? fpmmOddsYes : yesResult.data;
-  const oddsNo = market.id === "jfk" ? fpmmOddsNo : noResult.data;
+  const oddsYes = fpmmOddsYes;
+  const oddsNo = fpmmOddsNo;
   const refetchOddsFromContract = useCallback(() => {
-    if (market.id === "jfk") {
-      fetchFpmmOdds();
-    } else {
-      yesResult.refetch();
-      noResult.refetch();
-    }
-  }, [market.id, fetchFpmmOdds, yesResult.refetch, noResult.refetch]);
-
-  // Debug: log exactly what calcMarginalPrice returns (raw) and any errors
-  useEffect(() => {
-    console.log("calcMarginalPrice raw return:", {
-      marketId: market.id,
-      contract: marketContract.address,
-      yes: {
-        raw: yesResult.data,
-        rawString: yesResult.data != null ? String(yesResult.data) : undefined,
-        error: yesResult.error ? String(yesResult.error) : undefined,
-        isSuccess: yesResult.isSuccess,
-        isError: yesResult.isError,
-        isLoading: yesResult.isLoading,
-      },
-      no: {
-        raw: noResult.data,
-        rawString: noResult.data != null ? String(noResult.data) : undefined,
-        error: noResult.error ? String(noResult.error) : undefined,
-        isSuccess: noResult.isSuccess,
-        isError: noResult.isError,
-        isLoading: noResult.isLoading,
-      },
-    });
-  }, [market.id, marketContract.address, yesResult.data, yesResult.error, yesResult.isSuccess, yesResult.isError, yesResult.isLoading, noResult.data, noResult.error, noResult.isSuccess, noResult.isError, noResult.isLoading]);
+    fetchFpmmOdds();
+  }, [fetchFpmmOdds]);
 
   const [showRules, setShowRules] = useState(false);
   const rulesShort = market.rules;
@@ -250,7 +208,7 @@ export default function MarketPage({ params }: { params: Promise<{ marketId: str
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showWalletError, setShowWalletError] = useState(false);
 
-  // Buy mode: cost from calcNetCost (displayed as "Cost: X.XX")
+// Buy mode: simple cost display (amount entered)
   const [buyCostDisplay, setBuyCostDisplay] = useState<string | null>(null);
   const [buyCostLoading, setBuyCostLoading] = useState(false);
   // JFK FPMM buy: output of calcBuyAmount (est. shares received)
@@ -945,40 +903,13 @@ useEffect(() => {
     setBuyCostDisplay(null);
     return;
   }
-  if (market.id === 'jfk') {
-    setBuyCostDisplay(num.toFixed(2));
-    return;
-  }
-  let cancelled = false;
-  setBuyCostLoading(true);
-  setBuyCostDisplay(null);
-  const outcome = selectedOutcome === 'yes' ? 0 : 1;
-  const outcomeTokenAmounts = outcome === 0
-    ? [BigInt(Math.floor(num * 1e18)), 0n]
-    : [0n, BigInt(Math.floor(num * 1e18))];
-  readContract({
-    contract: marketContract,
-    method: "function calcNetCost(int256[] outcomeTokenAmounts) view returns (int256 netCost)",
-    params: [outcomeTokenAmounts],
-  })
-    .then((netCost) => {
-      if (cancelled) return;
-      const netCostBig = typeof netCost === "bigint" ? netCost : BigInt(netCost);
-      const costHuman = Number(netCostBig) / 1e18;
-      setBuyCostDisplay(costHuman >= 0 ? costHuman.toFixed(2) : "--");
-    })
-    .catch(() => {
-      if (!cancelled) setBuyCostDisplay("--");
-    })
-    .finally(() => {
-      if (!cancelled) setBuyCostLoading(false);
-    });
-  return () => { cancelled = true; };
-}, [mode, selectedOutcome, amount, market.id, marketContract]);
+  setBuyCostDisplay(num.toFixed(2));
+  setBuyCostLoading(false);
+}, [mode, selectedOutcome, amount]);
 
-// JFK FPMM buy: fetch est. shares from calcBuyAmount(investmentAmount, outcomeIndex)
+// FPMM buy: fetch est. shares from calcBuyAmount(investmentAmount, outcomeIndex)
 useEffect(() => {
-  if (market.id !== 'jfk' || mode !== 'buy' || !selectedOutcome || !amount) {
+  if (mode !== 'buy' || !selectedOutcome || !amount) {
     setBuyEstSharesDisplay(null);
     return;
   }
@@ -1009,9 +940,9 @@ useEffect(() => {
       if (!cancelled) setBuyEstSharesLoading(false);
     });
   return () => { cancelled = true; };
-}, [market.id, mode, selectedOutcome, amount, marketContract]);
+}, [mode, selectedOutcome, amount, marketContract]);
 
-// Sell mode: Receive display — JFK uses FPMM calcSellAmount(returnAmount, outcomeIndex) → outcomeTokenSellAmount; others use calcNetCost(negative amounts)
+// Sell mode: Receive display — all markets use FPMM calcSellAmount(returnAmount, outcomeIndex) → outcomeTokenSellAmount
 useEffect(() => {
   if (mode !== 'sell' || !selectedOutcome || !amount) {
     setSellReceiveDisplay(null);
@@ -1027,41 +958,15 @@ useEffect(() => {
   setSellReceiveDisplay(null);
   const outcomeIndex = selectedOutcome === 'yes' ? 0 : 1;
 
-  if (market.id === 'jfk') {
-    // FPMM: user inputs returnAmount (desired collateral) and outcomeIndex; display outcomeTokenSellAmount as Receive
-    const returnAmountWei = BigInt(Math.floor(amountNum * 1e18));
-    readContract({
-      contract: marketContract,
-      method: "function calcSellAmount(uint256 returnAmount, uint256 outcomeIndex) view returns (uint256)",
-      params: [returnAmountWei, BigInt(outcomeIndex)],
-    })
-      .then((outcomeTokenSellAmount) => {
-        if (cancelled) return;
-        const human = Number(outcomeTokenSellAmount) / 1e18;
-        setSellReceiveDisplay(human.toFixed(2));
-      })
-      .catch(() => {
-        if (!cancelled) setSellReceiveDisplay("--");
-      })
-      .finally(() => {
-        if (!cancelled) setSellReceiveLoading(false);
-      });
-    return () => { cancelled = true; };
-  }
-
-  // Non-JFK: calcNetCost with negative outcome token amounts (collateral received)
-  const negWei = -BigInt(Math.floor(amountNum * 1e18));
-  const outcomeTokenAmounts = outcomeIndex === 0 ? [negWei, 0n] : [0n, negWei];
   readContract({
     contract: marketContract,
-    method: "function calcNetCost(int256[] outcomeTokenAmounts) view returns (int256 netCost)",
-    params: [outcomeTokenAmounts],
+    method: "function calcSellAmount(uint256 returnAmount, uint256 outcomeIndex) view returns (uint256)",
+    params: [BigInt(Math.floor(amountNum * 1e18)), BigInt(outcomeIndex)],
   })
-    .then((netCost) => {
+    .then((outcomeTokenSellAmount) => {
       if (cancelled) return;
-      const netCostBig = typeof netCost === "bigint" ? netCost : BigInt(netCost);
-      const receiveHuman = Number(netCostBig) / 1e18;
-      setSellReceiveDisplay(receiveHuman <= 0 ? Math.abs(receiveHuman).toFixed(2) : "0.00");
+      const human = Number(outcomeTokenSellAmount) / 1e18;
+      setSellReceiveDisplay(human.toFixed(2));
     })
     .catch(() => {
       if (!cancelled) setSellReceiveDisplay("--");
@@ -1551,41 +1456,33 @@ useEffect(() => {
   let avgPriceDisplay = '--';
   if (selectedOutcome && amount && !isNaN(Number(amount)) && Number(amount) > 0) {
     if (mode === 'buy') {
-      const shareQty = parseFloat(amount);
-      payoutDisplay = shareQty.toFixed(2);
-      // JFK FPMM: Avg. Price = User wager / CalcBuyShares (cost per share in cents)
-      if (market.id === 'jfk' && buyEstSharesDisplay) {
+      const investmentAmount = parseFloat(amount);
+      payoutDisplay = investmentAmount.toFixed(2);
+      // FPMM: Avg. Price = User wager / CalcBuyShares (cost per share in cents)
+      if (buyEstSharesDisplay) {
         const calcBuyShares = parseFloat(buyEstSharesDisplay);
         if (Number.isFinite(calcBuyShares) && calcBuyShares > 0) {
-          const avgPriceInCents = (shareQty / calcBuyShares) * 100;
+          const avgPriceInCents = (investmentAmount / calcBuyShares) * 100;
           avgPriceDisplay = `¢${Math.round(avgPriceInCents)}`;
-        }
-      } else if (buyCostDisplay && shareQty > 0) {
-        // Non-JFK: Avg. Price = Cost / shares
-        const costNum = Number(buyCostDisplay);
-        if (Number.isFinite(costNum)) {
-          const avgPriceInCents = (costNum / shareQty) * 100;
-          avgPriceDisplay = `¢${avgPriceInCents.toFixed(0)}`;
         }
       }
     } else {
-      // Sell mode: JFK = calcSellAmount(returnAmount, outcomeIndex) → Receive shows outcomeTokenSellAmount; others = calcNetCost
-      const shareQty = parseFloat(amount);
+      // Sell mode: FPMM = calcSellAmount(returnAmount, outcomeIndex)
+      // Amount field is desired returnAmount (collateral); Receive shows outcomeTokenSellAmount (shares sold)
+      const returnAmount = parseFloat(amount);
       if (sellReceiveLoading) {
         payoutDisplay = '...';
-      } else if (sellReceiveDisplay && shareQty > 0) {
+      } else if (sellReceiveDisplay && returnAmount > 0) {
         payoutDisplay = sellReceiveDisplay;
         const receiveNum = Number(sellReceiveDisplay);
-        if (Number.isFinite(receiveNum)) {
-          const avgPriceInCents = market.id === 'jfk'
-            ? (shareQty / receiveNum) * 100
-            : (receiveNum / shareQty) * 100;
+        if (Number.isFinite(receiveNum) && receiveNum > 0) {
+          const avgPriceInCents = (returnAmount / receiveNum) * 100;
           avgPriceDisplay = `¢${avgPriceInCents.toFixed(0)}`;
         }
       } else if (priceResult !== undefined && !isPricePending && !priceError) {
         const refundReceived = Number(priceResult) / 1e18;
         payoutDisplay = refundReceived.toFixed(2);
-        const avgPriceInCents = (refundReceived / shareQty) * 100;
+        const avgPriceInCents = (refundReceived / returnAmount) * 100;
         avgPriceDisplay = `¢${avgPriceInCents.toFixed(0)}`;
       } else {
         const odds = selectedOutcome === 'yes' ? oddsYes : oddsNo;
@@ -2022,48 +1919,29 @@ useEffect(() => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       let yesProbability: number;
       let noProbability: number;
-      if (market.id === "jfk") {
-        const [sharesYes, sharesNo] = await Promise.all([
-          readContract({
-            contract: marketContract,
-            method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
-            params: [INVESTMENT_AMOUNT, 0n],
-          }),
-          readContract({
-            contract: marketContract,
-            method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
-            params: [INVESTMENT_AMOUNT, 1n],
-          }),
-        ]);
-        const inv = Number(INVESTMENT_AMOUNT);
-        const sY = Number(sharesYes);
-        const sN = Number(sharesNo);
-        const oddsYesRaw = sY > 0 ? inv / sY : 0;
-        const oddsNoRaw = sN > 0 ? inv / sN : 0;
-        const sum = oddsYesRaw + oddsNoRaw;
-        const pY = sum > 0 ? oddsYesRaw / sum : 0;
-        const pN = sum > 0 ? oddsNoRaw / sum : 0;
-        yesProbability = pY * 2 ** 64;
-        noProbability = pN * 2 ** 64;
-        console.log("FPMM odds (after delay):", { sharesYes: sharesYes.toString(), sharesNo: sharesNo.toString(), probYes: pY, probNo: pN });
-      } else {
-        const currentYesOdds = await readContract({
+      const [sharesYes, sharesNo] = await Promise.all([
+        readContract({
           contract: marketContract,
-          method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
-          params: [0],
-        });
-        const currentNoOdds = await readContract({
+          method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
+          params: [INVESTMENT_AMOUNT, 0n],
+        }),
+        readContract({
           contract: marketContract,
-          method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
-          params: [1],
-        });
-        console.log("Raw odds from contract (after delay):", {
-          yesOdds: currentYesOdds.toString(),
-          noOdds: currentNoOdds.toString(),
-        });
-        yesProbability = Number(currentYesOdds);
-        noProbability = Number(currentNoOdds);
-      }
+          method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
+          params: [INVESTMENT_AMOUNT, 1n],
+        }),
+      ]);
+      const inv = Number(INVESTMENT_AMOUNT);
+      const sY = Number(sharesYes);
+      const sN = Number(sharesNo);
+      const oddsYesRaw = sY > 0 ? inv / sY : 0;
+      const oddsNoRaw = sN > 0 ? inv / sN : 0;
+      const sum = oddsYesRaw + oddsNoRaw;
+      const pY = sum > 0 ? oddsYesRaw / sum : 0;
+      const pN = sum > 0 ? oddsNoRaw / sum : 0;
+      yesProbability = pY * 2 ** 64;
+      noProbability = pN * 2 ** 64;
+      console.log("FPMM odds (after delay):", { sharesYes: sharesYes.toString(), sharesNo: sharesNo.toString(), probYes: pY, probNo: pN });
       // Record to database (after trade, odds should have changed)
       const oddsResponse = await fetch(`${API_BASE_URL}/api/record-odds`, {
         method: 'POST',
@@ -2249,7 +2127,7 @@ useEffect(() => {
                     </div>
                   </div>
                   {/* Buy: shares to buy. Sell: shares to sell. */}
-                  <div className="text-lg font-bold mb-2">{mode === 'buy' ? (market.id === 'jfk' ? 'Amount to invest' : 'Buy Shares') : (market.id === 'jfk' ? 'Desired return (collateral)' : 'Sell Shares')}</div>
+                  <div className="text-lg font-bold mb-2">{mode === 'buy' ? 'Amount to invest' : 'Desired return (collateral)'}</div>
                   {/* Amount input */}
                   <div className="relative">
                     <input
@@ -2359,11 +2237,11 @@ useEffect(() => {
                       </button>
                     </div>
                   )}
-                  {/* Only show Cost/Receive, Avg Price, and Submit Trade if amount and selectedOutcome are set */}
+                  {/* Only show Max Win/Receive, Avg Price, and Submit Trade if amount and selectedOutcome are set */}
                   {amount && !isNaN(Number(amount)) && selectedOutcome && (
                     <>
-                      {/* Max. Win (JFK buy) or Receive (sell) */}
-                      {market.id === 'jfk' && mode === 'buy' && (
+                      {/* Max. Win (buy) or Receive (sell) */}
+                      {mode === 'buy' && (
                         <div className="text-[1.15rem] font-medium text-black">Max. Win: <span className="text-green-600 font-bold"><span className="font-normal"><DenariusSymbol size={13} /></span> {buyEstSharesLoading ? '...' : (buyEstSharesDisplay ?? '--')}</span></div>
                       )}
                       {mode === 'sell' && (
@@ -2379,15 +2257,20 @@ useEffect(() => {
                       {/* Trade button */}
                       <button
                         className="w-full font-semibold px-6 py-2 rounded-lg shadow transition disabled:opacity-50 bg-black text-white mb-4"
-                        disabled={!selectedOutcome || !amount || (mode === 'buy' && tradeStatus === 'pending') || (mode === 'sell' && market.id === 'jfk' && !sellReceiveDisplay) || (selectedOutcome === 'yes' && (mode === 'sell' && buyYesStatus === 'pending')) || (selectedOutcome === 'no' && (mode === 'sell' && buyNoStatus === 'pending'))}
+                        disabled={
+                          !selectedOutcome ||
+                          !amount ||
+                          (mode === 'buy' && tradeStatus === 'pending') ||
+                          (mode === 'sell' && !sellReceiveDisplay) ||
+                          (selectedOutcome === 'yes' && mode === 'sell' && buyYesStatus === 'pending') ||
+                          (selectedOutcome === 'no' && mode === 'sell' && buyNoStatus === 'pending')
+                        }
                         onClick={() => {
                           if (!selectedOutcome || !amount) return;
                           if (mode === 'buy') {
-                            if (market.id === 'jfk') handleFpmmBuy(amount);
-                            else handlePreFillAdvancedTradeForBuy(amount);
+                            handleFpmmBuy(amount);
                           } else {
-                            if (market.id === 'jfk') handleFpmmSell(sellReceiveDisplay ?? amount);
-                            else handlePreFillAdvancedTradeForSell(amount);
+                            handleFpmmSell(sellReceiveDisplay ?? amount);
                           }
                         }}
                       >
@@ -2801,7 +2684,7 @@ useEffect(() => {
                 </div>
               </div>
               {/* Buy: shares to buy. Sell: shares to sell. */}
-              <div className="text-lg font-bold mb-2">{mode === 'buy' ? (market.id === 'jfk' ? 'Amount to invest' : 'Buy Shares') : (market.id === 'jfk' ? 'Desired return (collateral)' : 'Sell Shares')}</div>
+              <div className="text-lg font-bold mb-2">{mode === 'buy' ? 'Amount to invest' : 'Desired return (collateral)'}</div>
               {/* Amount input */}
               <div className="relative">
                 <input
@@ -2911,11 +2794,11 @@ useEffect(() => {
                   </button>
                 </div>
               )}
-              {/* Only show Cost/Receive, Avg Price, and Submit Trade if amount and selectedOutcome are set */}
+              {/* Only show Max Win/Receive, Avg Price, and Submit Trade if amount and selectedOutcome are set */}
               {amount && !isNaN(Number(amount)) && selectedOutcome && (
                 <>
-                  {/* Max. Win (JFK buy) or Receive (sell) */}
-                  {market.id === 'jfk' && mode === 'buy' && (
+                  {/* Max. Win (buy) or Receive (sell) */}
+                  {mode === 'buy' && (
                     <div className="text-[1.15rem] font-medium text-black">Max. Win: <span className="text-green-600 font-bold"><span className="font-normal"><DenariusSymbol size={13} /></span> {buyEstSharesLoading ? '...' : (buyEstSharesDisplay ?? '--')}</span></div>
                   )}
                   {mode === 'sell' && (
@@ -2931,15 +2814,20 @@ useEffect(() => {
                   {/* Trade button */}
                   <button
                     className="w-full font-semibold px-6 py-2 rounded-lg shadow transition disabled:opacity-50 bg-black text-white mb-4"
-                    disabled={!selectedOutcome || !amount || (mode === 'buy' && tradeStatus === 'pending') || (mode === 'sell' && market.id === 'jfk' && !sellReceiveDisplay) || (selectedOutcome === 'yes' && (mode === 'sell' && buyYesStatus === 'pending')) || (selectedOutcome === 'no' && (mode === 'sell' && buyNoStatus === 'pending'))}
+                    disabled={
+                      !selectedOutcome ||
+                      !amount ||
+                      (mode === 'buy' && tradeStatus === 'pending') ||
+                      (mode === 'sell' && !sellReceiveDisplay) ||
+                      (selectedOutcome === 'yes' && mode === 'sell' && buyYesStatus === 'pending') ||
+                      (selectedOutcome === 'no' && mode === 'sell' && buyNoStatus === 'pending')
+                    }
                     onClick={() => {
                       if (!selectedOutcome || !amount) return;
                       if (mode === 'buy') {
-                        if (market.id === 'jfk') handleFpmmBuy(amount);
-                        else handlePreFillAdvancedTradeForBuy(amount);
+                        handleFpmmBuy(amount);
                       } else {
-                        if (market.id === 'jfk') handleFpmmSell(sellReceiveDisplay ?? amount);
-                        else handlePreFillAdvancedTradeForSell(amount);
+                        handleFpmmSell(sellReceiveDisplay ?? amount);
                       }
                     }}
                   >

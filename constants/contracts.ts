@@ -12,9 +12,9 @@ export const jfkConditionalTokensContractAddress = "0x38418d6F5DC98280506E0EFd60
 export const fluoridationIqMarketContractAddress = "0x1fef92c81b4ef16b099330d5cb5981b8bfc69383"; // Fluoridation IQ Market Contract on Base - TODO: Update with actual contract address
 export const fluoridationIqConditionalTokensContractAddress = "0xac1365907452b72b4015c7718a165e51439635f6"; // Fluoridation IQ Conditional Tokens Contract on Base - TODO: Update with actual contract address
 
-// Vaccines Autism Market Contracts
-export const vaccinesAutismMarketContractAddress = "0x9db8664c16dcffb5b1bb8cde365fd174d46b3c25"; // Vaccines Autism Market Contract on Base
-export const vaccinesAutismConditionalTokensContractAddress = "0x49f79f8938bbfc48275903bf0c9deef82efd42a6"; // Vaccines Autism Conditional Tokens Contract on Base
+// Vaccines Autism / Childhood Vaccines Market Contracts
+export const vaccinesAutismMarketContractAddress = "0x80863c2f689b293049564a68e781fd4d4ae01858"; // Childhood Vaccines Linked to Autism Market Contract on Base
+export const vaccinesAutismConditionalTokensContractAddress = "0x8Bb4f3bc065332c284dB19D0013e44b0732b544c"; // Childhood Vaccines Linked to Autism Conditional Tokens Contract on Base
 
 // Trump-Epstein Market Contracts
 export const trumpEpsteinMarketContractAddress = "0xbf7b301d6b0542f2b69da5816eda102bbcc2aaf2"; // Trump-Epstein Market Contract on Base
@@ -28,9 +28,9 @@ export const mrnaTurboCancerConditionalTokensContractAddress = "0x5CdFEE6602ABDE
 export const apollo11MoonLandingFakeMarketContractAddress = "0x5Af20651c5a8fAd0d1E38122183fEB8bC0838716";
 export const apollo11MoonLandingFakeConditionalTokensContractAddress = "0x097c4e0Bf45223Ef238B5B8eD26970Ce6c0281f3";
 
-// The Citizen Market Contracts
-export const citizenMarketContractAddress = "0xE4E32338d091655b18E455db908249960D451916";
-export const citizenConditionalTokensContractAddress = "0xceced0465456427d7e14B2F5d07F442D99f0aaAf";
+// The Citizen / Water Fluoridation Market Contracts
+export const citizenMarketContractAddress = "0xC845FAdec3f3A1B6c513d0D9928faEa02eBeFcdb";
+export const citizenConditionalTokensContractAddress = "0x530663011BaC49d889175c5397Ad593f1AD1b2Ad";
 
 // Placeholder Market Contracts
 export const placeholderMarketContractAddress = "0x4b468b0d30d0ff3fcf70d87ef55efc9568dbecc0";
@@ -73,18 +73,18 @@ export const fluoridationIqConditionalTokensContract = getContract({
     address: fluoridationIqConditionalTokensContractAddress,
   });
 
-// Vaccines Autism Market Contract Instances
+// Vaccines Autism / Childhood Vaccines Market Contract Instances
 export const vaccinesAutismMarketContract = getContract({
-    client,
-    chain: baseSepolia,
-    address: vaccinesAutismMarketContractAddress,
-  });
+  client,
+  chain: baseSepolia,
+  address: vaccinesAutismMarketContractAddress,
+});
 
 export const vaccinesAutismConditionalTokensContract = getContract({
-    client,
-    chain: baseSepolia,
-    address: vaccinesAutismConditionalTokensContractAddress,
-  });
+  client,
+  chain: baseSepolia,
+  address: vaccinesAutismConditionalTokensContractAddress,
+});
 
 // Trump-Epstein Market Contract Instances
 export const trumpEpsteinMarketContract = getContract({
@@ -193,15 +193,15 @@ export function getContractsForMarket(marketId: string) {
       return {
         marketContract: citizenMarketContract,
         conditionalTokensContract: citizenConditionalTokensContract,
-        outcome1PositionId: "16326463588456548794948675197748979834858391442065313448595939841384195798947", // Yes
-        outcome2PositionId: "37009161893588049852213392339562664054984176696844293083857276301498461775743", // No
+        outcome1PositionId: "113455186744106652314554907177811965385161301057040133519238858076072918462511", // Yes
+        outcome2PositionId: "55969771879171203019419383788318237610651838481807480369492917672885836669646", // No
       };
     case 'autism':
       return {
-        marketContract: placeholderMarketContract,
-        conditionalTokensContract: placeholderConditionalTokensContract,
-        outcome1PositionId: "34321969156276252832540035184912602797922486034869202153177790862479039378421", // Yes
-        outcome2PositionId: "34687737297839139828055368304399121060443909232783750040345663744531312450236", // No
+        marketContract: vaccinesAutismMarketContract,
+        conditionalTokensContract: vaccinesAutismConditionalTokensContract,
+        outcome1PositionId: "71226290096252067581285629648336995324141243340652304533540652151956232685208", // Yes
+        outcome2PositionId: "113421302367171696969861912860096314580872080487022862883618672561264857104737", // No
       };
     case 'jfk':
       return {

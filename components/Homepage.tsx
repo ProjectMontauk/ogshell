@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useReadContract } from "thirdweb/react";
 import { getContract, readContract } from "thirdweb";
 import { client } from "../src/client";
 import { baseSepolia } from "thirdweb/chains";
@@ -23,9 +22,8 @@ const MarketCard = ({ market }: { market: Market }) => {
     address: market.contractAddress,
   });
 
-  // JFK uses FPMM: fetch odds via calcBuyAmount(1e18, outcomeIndex), then odds = investment/shares, normalized to probability
+  // All markets use FPMM: fetch odds via calcBuyAmount(1e18, outcomeIndex), then odds = investment/shares, normalized to probability
   const fetchFpmmOdds = useCallback(async () => {
-    if (market.id !== "jfk") return;
     try {
       const [sharesYes, sharesNo] = await Promise.all([
         readContract({
@@ -55,34 +53,12 @@ const MarketCard = ({ market }: { market: Market }) => {
   }, [market.id, marketContractInstance]);
 
   useEffect(() => {
-    if (market.id === "jfk") fetchFpmmOdds();
+    fetchFpmmOdds();
   }, [market.id, fetchFpmmOdds]);
 
-  // Fetch current marginal odds for Yes (0) and No (1) using calcMarginalPrice (non-FPMM markets)
-  const { data: oddsYes } = useReadContract({
-    contract: marketContractInstance,
-    method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
-    params: [0],
-  });
-  const { data: oddsNo } = useReadContract({
-    contract: marketContractInstance,
-    method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
-    params: [1],
-  });
-
-  // Convert odds to probabilities: JFK uses FPMM-derived probs; others use calcMarginalPrice / 2^64
-  const yesProbability =
-    market.id === "jfk" && fpmmProbs
-      ? fpmmProbs.yes
-      : oddsYes !== undefined
-        ? Number(oddsYes) / Math.pow(2, 64)
-        : 0;
-  const noProbability =
-    market.id === "jfk" && fpmmProbs
-      ? fpmmProbs.no
-      : oddsNo !== undefined
-        ? Number(oddsNo) / Math.pow(2, 64)
-        : 0;
+  // Convert odds to probabilities from FPMM-derived probs
+  const yesProbability = fpmmProbs ? fpmmProbs.yes : 0;
+  const noProbability = fpmmProbs ? fpmmProbs.no : 0;
 
   return (
     <div
