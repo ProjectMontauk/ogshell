@@ -263,7 +263,7 @@ const Navbar = () => {
               style={{ minWidth: 0 }}
               onClick={() => router.push("/markets")}
             >
-              All Markets
+              Markets
             </button>
 
             <button
