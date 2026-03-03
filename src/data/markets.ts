@@ -44,6 +44,42 @@ export const markets: Market[] = [
     contractAddress: "0x80863c2f689b293049564a68e781fd4d4ae01858",
     outcomes: ["Yes, childhood vaccines linked to autism:", "No, childhood vaccines not linked to autism:"],
     rules: "The market will resolve \"Yes\" if the WSJ scientific review board finds that there is a clear and convincing evidence establishing the link between children following the CDC-recommended childhood vaccine schedule and a higher likelihood of developing Autism Spectrum Disorder over their lifetime compared to unvaccinated children.\n\nOtherwise, the market will resolve \"No.\" This means the WSJ scientific review board did not find a clear and convincing evidence supporting the link between childhood vaccines and a higher likelihood of developing Autism Spectrum Disorder.\n\nThis market will close February 20th, 2026 at 11:59 AM EDT and within three days of market close, the review board will resolve the market and author the case summary.\n\nFind out more about the WSJ scientific review board <a href=\"/docs?tab=review-boards\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: #2563eb; text-decoration: underline;\">here</a>."
+  },
+  {
+    id: 'covid19',
+    title: "Was COVID-19 Genetically Engineered?",
+    description: "Was SARS-CoV-2 (COVID-19) genetically engineered in a lab rather than arising purely from natural zoonotic spillover?",
+    image: "/CovidVaccine.png",
+    contractAddress: "0x157a7bc878c625b9f85136BC75Bdb7503a0C5171",
+    outcomes: [
+      "Yes, COVID-19 was genetically engineered",
+      "No, COVID-19 was not genetically engineered"
+    ],
+    rules: "The market will resolve \"Yes\" if the WSJ scientific review board finds clear and convincing evidence that SARS-CoV-2 (COVID-19) was genetically engineered in a laboratory, including but not limited to intentional modification of viral genetic material that materially departs from known natural evolution.\n\nOtherwise, the market will resolve \"No.\" This means the WSJ scientific review board did not find clear and convincing evidence that COVID-19 was genetically engineered, and natural or non-engineered origins remain more consistent with the available evidence.\n\nThis market will close February 20th, 2026 at 11:59 AM EDT and within three days of market close, the review board will resolve the market and author the case summary.\n\nFind out more about the WSJ scientific review board <a href=\"/docs?tab=review-boards\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: #2563eb; text-decoration: underline;\">here</a>."
+  },
+  {
+    id: 'mrna',
+    title: "Do mRNA Vaccines Cause Turbo Cancer?",
+    description: "Are mRNA COVID-19 vaccines causally linked to a new or markedly elevated risk of so-called 'turbo cancer' compared to not receiving them?",
+    image: "/MRNATurboCancer.png",
+    contractAddress: "0x2E26448da0740F3877cf9dDE6c179E396076B552",
+    outcomes: [
+      "Yes, mRNA vaccines cause turbo cancer",
+      "No, mRNA vaccines do not cause turbo cancer"
+    ],
+    rules: "The market will resolve \"Yes\" if the WSJ scientific review board finds clear and convincing evidence that receiving mRNA COVID-19 vaccines is causally associated with a substantially increased incidence of aggressive, rapidly developing cancers (\"turbo cancer\") relative to comparable unvaccinated or non‑mRNA‑vaccinated populations, after adjusting for reasonable confounders.\n\nOtherwise, the market will resolve \"No.\" This means the WSJ scientific review board did not find clear and convincing evidence that mRNA COVID-19 vaccines cause an elevated rate of such cancers beyond what would be expected from background incidence and other factors.\n\nThis market will close February 20th, 2026 at 11:59 AM EDT and within three days of market close, the review board will resolve the market and author the case summary.\n\nFind out more about the WSJ scientific review board <a href=\"/docs?tab=review-boards\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: #2563eb; text-decoration: underline;\">here</a>."
+  },
+  {
+    id: '2020',
+    title: "Was There Widespread Fraud in the 2020 Election?",
+    description: "Did widespread, outcome-changing fraud occur in the 2020 U.S. presidential election?",
+    image: "/TrumpEpstein.png",
+    contractAddress: "0xbD486697125C4a2Be7B3BDb1A4428167C575dd7d",
+    outcomes: [
+      "Yes, there was widespread fraud in 2020",
+      "No, there was not widespread fraud in 2020"
+    ],
+    rules: "The market will resolve \"Yes\" if the WSJ history review board finds clear and convincing evidence that widespread, outcome-changing fraud occurred in the 2020 U.S. presidential election—meaning fraudulent or invalid votes, or unlawful interference, were sufficient in scope to plausibly change the Electoral College outcome.\n\nOtherwise, the market will resolve \"No.\" This means the WSJ history review board did not find clear and convincing evidence of such widespread, outcome-changing fraud; isolated irregularities, local misconduct, or unproven allegations are not sufficient for a \"Yes\" resolution.\n\nThis market will close February 20th, 2026 at 11:59 AM EDT and within three days of market close, the review board will resolve the market and author the case summary.\n\nFind out more about the WSJ history review board <a href=\"/docs?tab=review-boards\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: #2563eb; text-decoration: underline;\">here</a>."
   }
 ];
 

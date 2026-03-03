@@ -106,8 +106,8 @@ const MarketsContent = () => {
   
   // Filter markets based on category
   const getFilteredMarkets = () => {
-    const historyMarkets = ['jfk', 'apollo-11-moon-landing-fake'];
-    const scienceMarkets = ['autism', 'fluoride'];
+    const historyMarkets = ['jfk', 'apollo-11-moon-landing-fake', '2020'];
+    const scienceMarkets = ['autism', 'covid19', 'mrna', 'fluoride'];
     
     switch (category) {
       case 'history':
