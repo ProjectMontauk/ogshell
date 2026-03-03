@@ -424,35 +424,35 @@ const Homepage = () => {
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex flex-col items-center w-full pt-6 pb-10">
       <div className="w-full max-w-6xl px-4 md:px-6 lg:px-8">
-        {/* Top row: featured banner + trending */}
+        {/* Main row: featured + all markets on the left, sidebar on the right */}
         {featured && (
           <div className="mt-6 flex flex-col lg:flex-row gap-6">
-            <div className="flex-1">
+            {/* Left column: featured banner and All markets stacked */}
+            <div className="flex-1 flex flex-col gap-6">
               <FeaturedMarket market={featured} />
+              {secondaryMarkets.length > 0 && (
+                <section>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-base md:text-lg font-semibold text-gray-900">
+                      All markets
+                    </h2>
+                    <span className="text-xs text-gray-500">
+                      Tap a market to view details and trade.
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                    {secondaryMarkets.map((m) => (
+                      <MarketCard key={m.id} market={m} />
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
+            {/* Right column: Trending Evidence + New Market panels */}
             <div className="w-full lg:w-80">
               <TrendingList markets={markets} />
             </div>
           </div>
-        )}
-
-        {/* Lower section: simple binary market cards */}
-        {secondaryMarkets.length > 0 && (
-          <section className="mt-8">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base md:text-lg font-semibold text-gray-900">
-                All markets
-              </h2>
-              <span className="text-xs text-gray-500">
-                Tap a market to view details and trade.
-              </span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-              {secondaryMarkets.map((m) => (
-                <MarketCard key={m.id} market={m} />
-              ))}
-            </div>
-          </section>
         )}
       </div>
     </div>
