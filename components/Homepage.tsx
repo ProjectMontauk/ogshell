@@ -487,36 +487,34 @@ const Homepage = () => {
   const secondaryMarkets = rest;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center w-full pt-2 pb-10">
-      <div className="w-full max-w-6xl px-4 md:px-6 lg:px-8">
-        {/* Main row: featured + all markets on the left, sidebar on the right */}
-        {featured && (
-          <div className="mt-2 flex flex-col lg:flex-row gap-6">
-            {/* Left column: featured banner and All markets stacked */}
-            <div className="flex-1 flex flex-col gap-6">
-              <FeaturedMarket market={featured} />
-              {secondaryMarkets.length > 0 && (
-                <section>
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-base md:text-lg font-semibold text-gray-900">
-                      All markets
-                    </h2>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                    {secondaryMarkets.map((m) => (
-                      <MarketCard key={m.id} market={m} />
-                    ))}
-                  </div>
-                </section>
-              )}
-            </div>
-            {/* Right column: Trending Evidence + New Market panels */}
-            <div className="w-full lg:w-80">
-              <TrendingList markets={markets} />
-            </div>
+    <div className="w-full max-w-6xl px-4 md:px-6 lg:px-8 mx-auto pt-2 pb-8">
+      {/* Main row: featured + all markets on the left, sidebar on the right */}
+      {featured && (
+        <div className="mt-2 flex flex-col lg:flex-row gap-6">
+          {/* Left column: featured banner and All markets stacked */}
+          <div className="flex-1 flex flex-col gap-6">
+            <FeaturedMarket market={featured} />
+            {secondaryMarkets.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-base md:text-lg font-semibold text-gray-900">
+                    All markets
+                  </h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                  {secondaryMarkets.map((m) => (
+                    <MarketCard key={m.id} market={m} />
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
-        )}
-      </div>
+          {/* Right column: Trending Evidence + New Market panels */}
+          <div className="w-full lg:w-80">
+            <TrendingList markets={markets} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

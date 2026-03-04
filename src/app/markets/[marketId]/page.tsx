@@ -1994,27 +1994,27 @@ useEffect(() => {
           </div>
         </div>
       )}
-      <div className="min-h-screen bg-white w-full">
-        <div className="max-w-[1600px] mx-auto w-full">
+      <div className="bg-white w-full">
+        <div className="w-full max-w-6xl px-4 md:px-6 lg:px-8 mx-auto">
           <div className="w-full flex flex-col lg:flex-row gap-0.5 pt-2.5">
             {/* Combined Market Odds + Evidence Card */}
-            <div className="bg-white p-2.5 sm:pl-8 sm:pr-2.5 w-full lg:w-[calc(100%-350px)] mb-8 lg:mb-0 flex flex-col">
+            <div className="bg-white pt-2.5 pr-2.5 pb-2.5 pl-0 w-full lg:w-[calc(100%-350px)] mb-8 lg:mb-0 flex flex-col">
               {/* Odds History Chart Card */}
               <h2 className="text-lg font-bold mb-6 text-[#171A22]">{market.title}</h2>
               <div className="mb-2">
-                <span className="text-lg font-semibold text-[#171A22]">Market Odds</span>
+                <span className="text-sm font-semibold text-[#171A22]">Market Odds</span>
               </div>
               {/* Live Yes/No Probabilities Display - now in its own container */}
               <div className="mb-0 pl-[0px] pr-1 text-sm font-bold text-[#171A22]">
                 {typeof oddsYes === 'bigint' && typeof oddsNo === 'bigint' ? (
                   <>
                     <span className="text-green-600">Yes: {Math.round(Number(oddsYes) / Math.pow(2, 64) * 100)}%</span>
-                    <span className="mx-2 text-red-600">No: {Math.round(Number(oddsNo) / Math.pow(2, 64) * 100)}%</span>
+                    <span className="mx-2 text-blue-600">No: {Math.round(Number(oddsNo) / Math.pow(2, 64) * 100)}%</span>
                   </>
                 ) : (
                   <>
                     <span className="text-green-600">Yes: --%</span>
-                    <span className="mx-2 text-red-600">No: --%</span>
+                    <span className="mx-2 text-blue-600">No: --%</span>
                   </>
                 )}
               </div>
@@ -2052,7 +2052,7 @@ useEffect(() => {
                       <ReferenceLine y={0.75} stroke="#bdbdbd" strokeDasharray="4 4" />
                       <ReferenceLine y={1} stroke="#bdbdbd" strokeDasharray="4 4" />
                       <Line type="linear" dataKey="Yes" stroke="#22c55e" dot={false} name="Yes Probability" />
-                      <Line type="linear" dataKey="No" stroke="#ef4444" dot={false} name="No Probability" />
+                      <Line type="linear" dataKey="No" stroke="#2563eb" dot={false} name="No Probability" />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -2079,9 +2079,9 @@ useEffect(() => {
                 <div className="bg-white p-0 w-full max-w-[600px]">
                   {/* Buy/Sell Toggle */}
                   <div className="flex items-center justify-between mb-2">
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 text-sm">
                       <button
-                        className={`py-1 px-3 text-base rounded-full border ${mode === 'buy' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
+                        className={`py-1 px-3 rounded-full border ${mode === 'buy' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
                         onClick={() => {
                           setMode('buy');
                           setAmount("");
@@ -2092,8 +2092,8 @@ useEffect(() => {
                       >
                         Buy
                       </button>
-                      <button
-                        className={`py-1 px-3 text-base rounded-full border ${mode === 'sell' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
+                    <button
+                      className={`py-1 px-3 rounded-full border ${mode === 'sell' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
                         onClick={() => {
                           setMode('sell');
                           setAmount("");
@@ -2121,13 +2121,13 @@ useEffect(() => {
                       ) : (
                         <div className="text-sm font-semibold text-green-600 flex flex-col items-end">
                           <span className="text-green-600">Yes Shares: {isBalanceLoading ? '...' : (outcome1Balance !== '--' && outcome1Balance !== 'Error' ? parseFloat(outcome1Balance).toFixed(2) : outcome1Balance)}</span>
-                          <span className="text-red-600">No Shares: {isBalanceLoading ? '...' : (outcome2Balance !== '--' && outcome2Balance !== 'Error' ? parseFloat(outcome2Balance).toFixed(2) : outcome2Balance)}</span>
+                          <span className="text-blue-600">No Shares: {isBalanceLoading ? '...' : (outcome2Balance !== '--' && outcome2Balance !== 'Error' ? parseFloat(outcome2Balance).toFixed(2) : outcome2Balance)}</span>
                         </div>
                       )}
                     </div>
                   </div>
                   {/* Buy: shares to buy. Sell: shares to sell. */}
-                  <div className="text-lg font-bold mb-2">{mode === 'buy' ? 'Amount to invest' : 'Desired return (collateral)'}</div>
+                  <div className="text-sm font-bold mb-2">{mode === 'buy' ? 'Bet Amount ($)' : 'Sell Shares'}</div>
                   {/* Amount input */}
                   <div className="relative">
                     <input
@@ -2143,10 +2143,10 @@ useEffect(() => {
                     />
                   </div>
                   {/* Yes/No Cent Price buttons */}
-                  <div className="flex flex-row w-full mb-4 gap-2">
+                  <div className="flex flex-row w-full mb-4 gap-1 text-xs">
                     <button
                       type="button"
-                      className={`font-semibold px-6 py-2 rounded-lg shadow transition disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white w-1/2 ${selectedOutcome === 'yes' ? 'ring-2 ring-black' : ''}`}
+                      className={`font-semibold px-0 py-2 rounded-lg border transition disabled:opacity-50 bg-white text-green-700 border-green-300 hover:bg-green-50 w-1/2 whitespace-nowrap ${selectedOutcome === 'yes' ? 'ring-2 ring-black' : ''}`}
                       onClick={() => {
                       setSelectedOutcome('yes');
                       // If Sell All is active, update input to show Yes shares
@@ -2165,7 +2165,7 @@ useEffect(() => {
                     </button>
                     <button
                       type="button"
-                      className={`font-semibold px-6 py-2 rounded-lg shadow transition disabled:opacity-50 bg-red-600 hover:bg-red-700 text-white w-1/2 ${selectedOutcome === 'no' ? 'ring-2 ring-black' : ''}`}
+                      className={`font-semibold px-0 py-2 rounded-lg border transition disabled:opacity-50 bg-white text-blue-700 border-blue-300 hover:bg-blue-50 w-1/2 whitespace-nowrap ${selectedOutcome === 'no' ? 'ring-2 ring-black' : ''}`}
                       onClick={() => {
                       setSelectedOutcome('no');
                       // If Sell All is active, update input to show No shares
@@ -2280,14 +2280,14 @@ useEffect(() => {
                   )}
                   {/* Your Balance Section */}
                   <div className="border-t border-gray-200 pt-4 mt-4 hidden lg:block">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">Purchased Shares</h3>
+                    <h3 className="text-base font-bold text-gray-900 mb-4">Purchased Shares</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="text-center">
                         <div className="text-sm font-semibold text-green-600 mb-1">Yes Shares</div>
                         <div className="text-lg font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome1Balance !== '--' && outcome1Balance !== 'Error' ? parseFloat(outcome1Balance).toFixed(2) : outcome1Balance)}</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-sm font-semibold text-red-600 mb-1">No Shares</div>
+                        <div className="text-sm font-semibold text-blue-600 mb-1">No Shares</div>
                         <div className="text-lg font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome2Balance !== '--' && outcome2Balance !== 'Error' ? parseFloat(outcome2Balance).toFixed(2) : outcome2Balance)}</div>
                       </div>
                     </div>
@@ -2653,12 +2653,12 @@ useEffect(() => {
               </div>
             </div>
             {/* Betting Card (desktop) */}
-            <div className="hidden lg:block bg-white shadow p-4 sm:max-w-4xl sm:mx-auto sm:p-8 lg:w-[315px] lg:self-start">
+            <div className="hidden lg:block bg-white shadow p-4 sm:max-w-4xl sm:mx-auto sm:p-8 lg:w-[270px] lg:self-start">
               {/* Buy/Sell Toggle */}
               <div className="flex items-center mb-2">
-                <div className="flex gap-2">
+                <div className="flex gap-2 text-sm">
                   <button
-                    className={`py-1 px-3 text-base rounded-full border ${mode === 'buy' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
+                    className={`py-1 px-3 rounded-full border ${mode === 'buy' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
                     onClick={() => {
                       setMode('buy');
                       setAmount("");
@@ -2670,7 +2670,7 @@ useEffect(() => {
                     Buy
                   </button>
                   <button
-                    className={`py-1 px-3 text-base rounded-full border ${mode === 'sell' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
+                    className={`py-1 px-3 rounded-full border ${mode === 'sell' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
                     onClick={() => {
                       setMode('sell');
                       setAmount("");
@@ -2684,7 +2684,7 @@ useEffect(() => {
                 </div>
               </div>
               {/* Buy: shares to buy. Sell: shares to sell. */}
-              <div className="text-lg font-bold mb-2">{mode === 'buy' ? 'Amount to invest' : 'Desired return (collateral)'}</div>
+              <div className="text-sm font-bold mb-2">{mode === 'buy' ? 'Bet Amount ($)' : 'Sell Shares'}</div>
               {/* Amount input */}
               <div className="relative">
                 <input
@@ -2699,11 +2699,11 @@ useEffect(() => {
                   className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-base mb-4"
                 />
               </div>
-              {/* Yes/No Cent Price buttons */}
-              <div className="flex flex-row w-full mb-4 gap-2">
+              {/* Yes/No Cent Price buttons (desktop) */}
+              <div className="flex flex-row w-full mb-4 gap-1 text-xs">
                 <button
                   type="button"
-                  className={`font-semibold px-6 py-2 rounded-lg shadow transition disabled:opacity-50 bg-green-600 hover:bg-green-700 text-white w-1/2 ${selectedOutcome === 'yes' ? 'ring-2 ring-black' : ''}`}
+                  className={`font-semibold px-0 py-2 rounded-lg border transition disabled:opacity-50 bg-white text-green-700 border-green-300 hover:bg-green-50 w-1/2 whitespace-nowrap ${selectedOutcome === 'yes' ? 'ring-2 ring-black' : ''}`}
                                         onClick={() => {
                         setSelectedOutcome('yes');
                         // If Sell All is active, update input to show Yes shares
@@ -2722,7 +2722,7 @@ useEffect(() => {
                 </button>
                 <button
                   type="button"
-                  className={`font-semibold px-6 py-2 rounded-lg shadow transition disabled:opacity-50 bg-red-600 hover:bg-red-700 text-white w-1/2 ${selectedOutcome === 'no' ? 'ring-2 ring-black' : ''}`}
+                  className={`font-semibold px-0 py-2 rounded-lg border transition disabled:opacity-50 bg-white text-blue-700 border-blue-300 hover:bg-blue-50 w-1/2 whitespace-nowrap ${selectedOutcome === 'no' ? 'ring-2 ring-black' : ''}`}
                                         onClick={() => {
                         setSelectedOutcome('no');
                         // If Sell All is active, update input to show No shares
@@ -2837,16 +2837,16 @@ useEffect(() => {
               )}
               {/* Your Balance Section */}
               <div className="border-t border-gray-200 pt-4 mt-4 hidden lg:block">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Purchased Shares</h3>
+              <h3 className="text-base font-bold text-gray-900 mb-4">Purchased Shares</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center">
                     <div className="text-sm font-semibold text-green-600 mb-1">Yes Shares</div>
                     <div className="text-lg font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome1Balance !== '--' && outcome1Balance !== 'Error' ? parseFloat(outcome1Balance).toFixed(2) : outcome1Balance)}</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-sm font-semibold text-red-600 mb-1">No Shares</div>
-                    <div className="text-lg font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome2Balance !== '--' && outcome2Balance !== 'Error' ? parseFloat(outcome2Balance).toFixed(2) : outcome2Balance)}</div>
-                  </div>
+                      <div className="text-center">
+                        <div className="text-sm font-semibold text-blue-600 mb-1">No Shares</div>
+                        <div className="text-lg font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome2Balance !== '--' && outcome2Balance !== 'Error' ? parseFloat(outcome2Balance).toFixed(2) : outcome2Balance)}</div>
+                      </div>
                 </div>
               </div>
               {/* Transaction feedback moved below Your Purchased Shares */}

@@ -28,11 +28,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden bg-white`}
       >
         <PortfolioProvider>
           <Providers>
-            <main className="min-h-screen bg-[#f8f9fa]">
+            <main className="bg-white">
               {children}
             </main>
             {/* Footer */}
