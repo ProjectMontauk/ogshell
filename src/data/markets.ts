@@ -20,7 +20,7 @@ export const markets: Market[] = [
   },
   {
     id: 'apollo-11-moon-landing-fake',
-    title: "Apollo 11 Moon Landing Fake",
+    title: "Apollo 11 Moon Landing Fake?",
     description: "Was the Apollo 11 moon landing faked or staged?",
     image: "/Moon.png",
     contractAddress: "0x5Af20651c5a8fAd0d1E38122183fEB8bC0838716",

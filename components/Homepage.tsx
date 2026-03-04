@@ -247,13 +247,10 @@ const MarketCard = ({ market }: { market: Market }) => {
       <div className="flex">
         <div className="flex-1 flex flex-col justify-between">
           {/* Header */}
-          <div className="mb-3">
-            <h3 className="text-sm font-semibold text-gray-900 mb-0.5 line-clamp-2">
+          <div className="mb-2">
+            <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">
               {market.title}
             </h3>
-            <p className="text-[11px] text-gray-500 line-clamp-2">
-              {market.description}
-            </p>
           </div>
 
           {/* Yes / No rows */}
@@ -289,11 +286,6 @@ const MarketCard = ({ market }: { market: Market }) => {
             </div>
           </div>
 
-          {/* Footer placeholder for volume/markets */}
-          <div className="mt-3 text-[11px] text-gray-500">
-            {/* Volume data not yet wired; placeholder for now */}
-            On-chain prediction market
-          </div>
         </div>
       </div>
     </div>
@@ -339,10 +331,10 @@ const TrendingList = ({ markets }: { markets: Market[] }) => {
         }
         entries.sort((a, b) => b.netVotes - a.netVotes);
 
-        // Always surface up to 5 rows; if fewer than 5 real items,
+        // Always surface up to 7 rows; if fewer than 7 real items,
         // pad with non-clickable placeholders so the card stays full.
-        const filled: TopEvidence[] = [...entries.slice(0, 5)];
-        while (filled.length < 5) {
+        const filled: TopEvidence[] = [...entries.slice(0, 7)];
+        while (filled.length < 7) {
           filled.push({
             marketId: "",
             title: "No evidence submitted yet.",
@@ -360,8 +352,8 @@ const TrendingList = ({ markets }: { markets: Market[] }) => {
   }, [markets]);
 
   return (
-    <div className="space-y-4">
-<aside className="bg-white rounded-2xl p-4 md:p-5 w-full lg:w-80">
+    <div className="space-y-3">
+      <aside className="bg-white rounded-2xl p-4 md:p-5 w-full lg:w-80">
           <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-gray-900">Trending Evidence</h3>
         </div>
@@ -371,6 +363,7 @@ const TrendingList = ({ markets }: { markets: Market[] }) => {
           ))}
         </div>
       </aside>
+      <div className="border-t border-gray-200 w-[80%] mx-auto" />
       <NewMarketPanel />
     </div>
   );
@@ -443,7 +436,7 @@ const NewMarketPanel = () => {
             netVotes: Number(d.netVotes ?? 0),
           }));
           cleaned.sort((a, b) => b.netVotes - a.netVotes);
-          setIdeas(cleaned.slice(0, 5));
+          setIdeas(cleaned.slice(0, 7));
         } else {
           setIdeas([]);
         }

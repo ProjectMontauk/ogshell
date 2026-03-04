@@ -231,7 +231,7 @@ export default function MarketIdeasPage() {
   return (
     <div>
       <Navbar />
-      <div className="min-h-screen bg-[#f8f9fa] flex flex-col items-center pt-8 w-full">
+      <div className="min-h-screen bg-white flex flex-col items-center pt-8 w-full">
         <div className="w-full max-w-4xl mx-auto px-4">
           <h2 className="text-lg font-semibold text-[#171A22] mb-2">Rules</h2>
           <div className="text-base text-gray-700 mb-6">
@@ -361,7 +361,7 @@ export default function MarketIdeasPage() {
           )}
         </div>
       </div>
-      <div className="w-full h-8 bg-[#f8f9fa]"></div>
+      <div className="w-full h-8 bg-white"></div>
     </div>
   );
 } 
