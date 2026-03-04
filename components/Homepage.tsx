@@ -361,8 +361,8 @@ const TrendingList = ({ markets }: { markets: Market[] }) => {
 
   return (
     <div className="space-y-4">
-      <aside className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 md:p-5 w-full lg:w-80">
-        <div className="flex items-center justify-between mb-3">
+<aside className="bg-white rounded-2xl p-4 md:p-5 w-full lg:w-80">
+          <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-gray-900">Trending Evidence</h3>
         </div>
         <div className="divide-y divide-gray-100">
@@ -459,8 +459,8 @@ const NewMarketPanel = () => {
   }, []);
 
   return (
-    <aside className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 md:p-5 w-full lg:w-80">
-      <div className="flex items-center justify-between mb-3">
+<aside className="bg-white rounded-2xl p-4 md:p-5 w-full lg:w-80">
+        <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900">Top Proposed Markets</h3>
       </div>
       {loading ? (
@@ -494,7 +494,7 @@ const Homepage = () => {
   const secondaryMarkets = rest;
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] flex flex-col items-center w-full pt-2 pb-10">
+    <div className="min-h-screen bg-white flex flex-col items-center w-full pt-2 pb-10">
       <div className="w-full max-w-6xl px-4 md:px-6 lg:px-8">
         {/* Main row: featured + all markets on the left, sidebar on the right */}
         {featured && (
@@ -508,9 +508,6 @@ const Homepage = () => {
                     <h2 className="text-base md:text-lg font-semibold text-gray-900">
                       All markets
                     </h2>
-                    <span className="text-xs text-gray-500">
-                      Tap a market to view details and trade.
-                    </span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
                     {secondaryMarkets.map((m) => (

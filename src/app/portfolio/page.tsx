@@ -346,7 +346,7 @@ export default function PortfolioPage() {
   return (
     <div>
       <Navbar />
-      <div className="min-h-screen bg-[#f8f9fa] flex flex-col items-center pt-8 w-full">
+      <div className="min-h-screen bg-white flex flex-col items-center pt-8 w-full">
         <div className="max-w-7xl w-full mx-auto px-4">
           {/* Portfolio Balance Card */}
           <div className="bg-white rounded-2xl shadow border border-gray-200 p-8 mb-8 flex items-start justify-start w-[700px] max-w-full" style={{ height: 176 }}>
@@ -574,7 +574,7 @@ export default function PortfolioPage() {
           </div>
         </div>
       </div>
-      <div className="w-full h-8 bg-[#f8f9fa]"></div>
+      <div className="w-full h-8 bg-white"></div>
     </div>
   );
 } 

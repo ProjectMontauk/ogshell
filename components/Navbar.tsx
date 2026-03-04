@@ -254,12 +254,12 @@ const Navbar = () => {
 
   return (
     <nav className="w-full border-b border-gray-200 bg-white">
-      <div className="max-w-[1600px] mx-auto w-full flex items-center justify-between px-4 md:px-8 py-1">
+      <div className="max-w-6xl mx-auto w-full flex items-center justify-between px-4 md:px-6 lg:px-8 py-1">
         <div className="ml-0 flex flex-col items-start">
-          <h1 className="text-3xl font-bold text-[#171A22] mt-4">The Citizen</h1>
+          <h1 className="text-2xl font-bold text-[#171A22] mt-2">The Citizen</h1>
           <div className="flex gap-0 md:gap-0 mt-1 -ml-2">
             <button
-              className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[10px] md:text-sm font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
+              className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[8px] md:text-xs font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
               style={{ minWidth: 0 }}
               onClick={() => router.push("/markets")}
             >
@@ -267,28 +267,28 @@ const Navbar = () => {
             </button>
 
             <button
-              className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[10px] md:text-sm font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
+              className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[8px] md:text-xs font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
               style={{ minWidth: 0 }}
               onClick={() => router.push("/market-ideas")}
             >
               New
             </button>
             <button
-              className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[10px] md:text-sm font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
+              className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[8px] md:text-xs font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
               style={{ minWidth: 0 }}
               onClick={() => router.push("/portfolio")}
             >
               Portfolio
             </button>
             <button
-              className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[10px] md:text-sm font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
+              className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[8px] md:text-xs font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
               style={{ minWidth: 0 }}
               onClick={() => router.push("/deposit")}
             >
               Deposit
             </button>
             <button
-              className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[10px] md:text-sm font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
+              className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[8px] md:text-xs font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
               style={{ minWidth: 0 }}
               onClick={() => router.push("/docs")}
             >
@@ -302,8 +302,8 @@ const Navbar = () => {
             style={{ boxShadow: "none", minWidth: 0 }}
             onClick={() => router.push("/portfolio")}
           >
-            <span className="text-[#171A22] font-medium text-sm">Portfolio</span>
-                            <span className="text-green-600 font-semibold text-sm">
+            <span className="text-[#171A22] font-medium text-xs">Portfolio</span>
+                            <span className="text-green-600 font-semibold text-xs">
                   {portfolioLoading || portfolioValue === "--" ? <><DenariusSymbol size={10} />--</> : <><DenariusSymbol size={10} />{Number(portfolioValue).toLocaleString(undefined, { maximumFractionDigits: 2 })}</>}
                 </span>
           </button>
@@ -312,8 +312,8 @@ const Navbar = () => {
             style={{ boxShadow: "none", minWidth: 0, margin: 0 }}
             onClick={() => router.push("/portfolio")}
           >
-                            <span className="text-[#171A22] font-medium text-sm">Cash</span>
-                            <span className="text-green-600 font-semibold text-sm">
+                            <span className="text-[#171A22] font-medium text-xs">Cash</span>
+                            <span className="text-green-600 font-semibold text-xs">
                   {(!account?.address || isPending) ? <><DenariusSymbol size={10} />--</> : <><DenariusSymbol size={10} />{formatBalance(balance)}</>}
                 </span>
           </button>
@@ -323,7 +323,7 @@ const Navbar = () => {
               wallets={wallets} 
               connectButton={{
                 label: "Sign In",
-                className: "bg-black text-white px-4 py-2 rounded transition-colors duration-200 focus:outline-none hover:bg-gray-800 text-xs font-semibold m-0"
+                className: "bg-black text-white px-4 py-2 rounded transition-colors duration-200 focus:outline-none hover:bg-gray-800 text-[10px] font-semibold m-0"
               }}
             />
           </div>
