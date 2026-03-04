@@ -7,6 +7,7 @@ import { getContract, readContract } from "thirdweb";
 import { client } from "../src/client";
 import { baseSepolia } from "thirdweb/chains";
 import { getAllMarkets, Market } from "../src/data/markets";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
 // Backend API base URL - use Next.js API routes for both dev and production
 const API_BASE_URL =
@@ -71,6 +72,49 @@ const FeaturedMarket = ({ market }: { market: Market }) => {
   const yes = probs?.yes ?? 0;
   const no = probs?.no ?? 0;
 
+  // Mini odds history chart data for featured market
+  const [featuredHistory, setFeaturedHistory] = useState<
+    { timestamp: string; Yes: number; No: number }[]
+  >([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/api/odds-history?marketId=${market.id}`
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!Array.isArray(data)) return;
+        const ODDS_DIVISOR = Number("18446744073709551616");
+        const sliced = data.slice(-40);
+        const chart = sliced.map((entry: any) => ({
+          timestamp: new Date(entry.timestamp).toISOString().slice(5, 10), // MM-DD
+          Yes:
+            typeof entry.yesProbability === "number"
+              ? entry.yesProbability / ODDS_DIVISOR
+              : 0,
+          No:
+            typeof entry.noProbability === "number"
+              ? entry.noProbability / ODDS_DIVISOR
+              : 0,
+        }));
+        if (!cancelled) setFeaturedHistory(chart);
+      } catch (e) {
+        console.error("Featured odds history error:", e);
+      }
+    };
+    fetchHistory();
+    return () => {
+      cancelled = true;
+    };
+  }, [market.id]);
+  const yesPct = yes > 0 ? Math.round(yes * 100) : null;
+  const noPct = no > 0 ? Math.round(no * 100) : null;
+  const yesOdds = yes > 0 ? (1 / yes).toFixed(2) : null;
+  const noOdds = no > 0 ? (1 / no).toFixed(2) : null;
+
   return (
     <div
       className="bg-white rounded-2xl shadow border border-gray-200 p-5 md:p-6 lg:p-7 cursor-pointer hover:shadow-xl transition"
@@ -95,51 +139,83 @@ const FeaturedMarket = ({ market }: { market: Market }) => {
         )}
         <div className="flex-1 flex flex-col justify-between">
           <div>
-            <div className="text-xs font-semibold tracking-wide text-green-700 mb-1">
-              Live market
-            </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
               {market.title}
             </h2>
-            <p className="text-sm md:text-base text-gray-600 mb-4 line-clamp-3">
+            <p className="text-xs md:text-sm text-gray-600 mb-4 line-clamp-3">
               {market.description}
             </p>
-          </div>
-          <div className="grid grid-cols-2 gap-3 md:gap-4 items-center">
-            <div className="flex flex-col space-y-2">
-              <button className="flex items-center justify-between px-3 py-2 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100">
-                <span className="text-sm font-semibold text-gray-900">
-                  {market.outcomes[0]}
-                </span>
-                <span className="text-lg font-bold text-green-600">
-                  {yes > 0 ? `${Math.round(yes * 100)}%` : "--"}
-                </span>
-              </button>
-              <button className="flex items-center justify-between px-3 py-2 rounded-lg border border-red-100 bg-red-50 hover:bg-red-100">
-                <span className="text-sm font-semibold text-gray-900">
-                  {market.outcomes[1]}
-                </span>
-                <span className="text-lg font-bold text-red-600">
-                  {no > 0 ? `${Math.round(no * 100)}%` : "--"}
-                </span>
-              </button>
-            </div>
-            <div className="hidden md:flex flex-col justify-between text-xs text-gray-500">
-              <div className="border border-dashed border-gray-200 rounded-lg px-3 py-2">
-                <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">
-                  Quick summary
+            {/* Yes / No rows: fixed gap from bars to odds (match market card spacing) */}
+            <div className="mt-3 space-y-2">
+              <div className="flex items-center text-xs gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-800 font-medium">Yes</span>
+                  <span className="h-[2px] w-20 bg-green-400 rounded-full" />
                 </div>
-                <div className="text-xs text-gray-700 line-clamp-3">
-                  Pick a side and see how your beliefs price against the crowd.
-                  Trade instantly with on-chain settlement.
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] text-gray-500">
+                    {yesOdds ? `${yesOdds}x` : "--"}
+                  </span>
+                  <span className="px-3 py-1 rounded-full border border-green-300 text-green-700 text-xs font-semibold min-w-[3rem] text-center">
+                    {yesPct !== null ? `${yesPct}%` : "--"}
+                  </span>
                 </div>
               </div>
-              <div className="mt-3 flex items-center text-[11px] text-gray-500">
-                <span className="w-2 h-2 rounded-full bg-green-500 mr-2" />
-                Markets settle based on WSJ review board decisions.
+              <div className="flex items-center text-xs gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-800 font-medium">No</span>
+                  <span className="h-[2px] w-20 bg-blue-500 rounded-full" />
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] text-gray-500">
+                    {noOdds ? `${noOdds}x` : "--"}
+                  </span>
+                  <span className="px-3 py-1 rounded-full border border-blue-300 text-blue-700 text-xs font-semibold min-w-[3rem] text-center">
+                    {noPct !== null ? `${noPct}%` : "--"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
+          {featuredHistory.length > 0 && (
+            <div className="mt-4 h-24 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={featuredHistory}
+                  margin={{ top: 4, right: 4, left: -12, bottom: 0 }}
+                >
+                  <XAxis dataKey="timestamp" hide />
+                  <YAxis domain={[0, 1]} hide />
+                  <Tooltip
+                    formatter={(v) =>
+                      typeof v === "number" ? `${Math.round(v * 100)}%` : v
+                    }
+                  />
+                  <ReferenceLine y={0.2} stroke="#e5e7eb" strokeDasharray="4 4" />
+                  <ReferenceLine y={0.4} stroke="#e5e7eb" strokeDasharray="4 4" />
+                  <ReferenceLine y={0.6} stroke="#e5e7eb" strokeDasharray="4 4" />
+                  <ReferenceLine y={0.8} stroke="#e5e7eb" strokeDasharray="4 4" />
+                  <ReferenceLine y={1} stroke="#e5e7eb" strokeDasharray="4 4" />
+                  <Line
+                    type="monotone"
+                    dataKey="Yes"
+                    stroke="#22c55e"
+                    strokeWidth={2}
+                    dot={false}
+                    name="Yes"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="No"
+                    stroke="#2563eb"
+                    strokeWidth={2}
+                    dot={false}
+                    name="No"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -153,6 +229,11 @@ const MarketCard = ({ market }: { market: Market }) => {
   const yes = probs?.yes ?? 0;
   const no = probs?.no ?? 0;
 
+  const yesPct = yes > 0 ? Math.round(yes * 100) : null;
+  const noPct = no > 0 ? Math.round(no * 100) : null;
+  const yesOdds = yes > 0 ? (1 / yes).toFixed(2) : null;
+  const noOdds = no > 0 ? (1 / no).toFixed(2) : null;
+
   return (
     <div
       className="bg-white rounded-xl shadow border border-gray-200 p-4 cursor-pointer hover:shadow-md transition"
@@ -163,44 +244,55 @@ const MarketCard = ({ market }: { market: Market }) => {
         if (e.key === "Enter") router.push(`/markets/${market.id}`);
       }}
     >
-      <div className="flex gap-3">
-        {market.id !== "jfk" && (
-          <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-            <Image
-              src={market.image}
-              alt={market.title}
-              width={160}
-              height={160}
-              className="w-full h-full object-cover object-top"
-            />
-          </div>
-        )}
+      <div className="flex">
         <div className="flex-1 flex flex-col justify-between">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">
+          {/* Header */}
+          <div className="mb-3">
+            <h3 className="text-sm font-semibold text-gray-900 mb-0.5 line-clamp-2">
               {market.title}
             </h3>
-            <p className="text-xs text-gray-500 mb-2 line-clamp-2">
+            <p className="text-[11px] text-gray-500 line-clamp-2">
               {market.description}
             </p>
           </div>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex-1">
-              <div className="text-[11px] text-gray-500 mb-0.5">
-                {market.outcomes[0]}
+
+          {/* Yes / No rows */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-800 font-medium">Yes</span>
+                <span className="h-[2px] w-16 bg-green-400 rounded-full" />
               </div>
-              <div className="inline-flex items-center px-2 py-1 rounded-md bg-green-50 text-green-700 text-xs font-semibold">
-                {yes > 0 ? `${Math.round(yes * 100)}%` : "--"}
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] text-gray-500">
+                  {yesOdds ? `${yesOdds}x` : "--"}
+                </span>
+                <span className="px-3 py-1 rounded-full border border-green-300 text-green-700 text-xs font-semibold min-w-[3rem] text-center">
+                  {yesPct !== null ? `${yesPct}%` : "--"}
+                </span>
               </div>
             </div>
-            <div className="flex-1">
-              <div className="text-[11px] text-gray-500 mb-0.5">
-                {market.outcomes[1]}
+
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-800 font-medium">No</span>
+                <span className="h-[2px] w-16 bg-blue-500 rounded-full" />
               </div>
-              <div className="inline-flex items-center px-2 py-1 rounded-md bg-red-50 text-red-700 text-xs font-semibold">
-                {no > 0 ? `${Math.round(no * 100)}%` : "--"}
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] text-gray-500">
+                  {noOdds ? `${noOdds}x` : "--"}
+                </span>
+                <span className="px-3 py-1 rounded-full border border-blue-300 text-blue-700 text-xs font-semibold min-w-[3rem] text-center">
+                  {noPct !== null ? `${noPct}%` : "--"}
+                </span>
               </div>
             </div>
+          </div>
+
+          {/* Footer placeholder for volume/markets */}
+          <div className="mt-3 text-[11px] text-gray-500">
+            {/* Volume data not yet wired; placeholder for now */}
+            On-chain prediction market
           </div>
         </div>
       </div>
@@ -209,26 +301,27 @@ const MarketCard = ({ market }: { market: Market }) => {
 };
 
 // Trending list on the right side
-type TopEvidence = { title: string; netVotes: number } | null;
+type TopEvidence = {
+  marketId: string;
+  title: string;
+  netVotes: number;
+  url?: string;
+};
 
 const TrendingList = ({ markets }: { markets: Market[] }) => {
-  const sorted = markets.slice(0, 5); // simple top-5 for now
-  const [topEvidenceByMarket, setTopEvidenceByMarket] = useState<
-    Record<string, TopEvidence | undefined>
-  >({});
+  const [topEvidence, setTopEvidence] = useState<TopEvidence[]>([]);
 
   useEffect(() => {
-    sorted.forEach((market) => {
-      if (topEvidenceByMarket[market.id] !== undefined) return;
-
-      fetch(`${API_BASE_URL}/api/evidence?marketId=${market.id}`)
-        .then((res) => (res.ok ? res.json() : Promise.reject(res.statusText)))
-        .then((data) => {
-          if (!Array.isArray(data) || data.length === 0) {
-            setTopEvidenceByMarket((prev) => ({ ...prev, [market.id]: null }));
-            return;
-          }
-          // Pick evidence with highest netVotes
+    const fetchAll = async () => {
+      try {
+        const entries: TopEvidence[] = [];
+        for (const market of markets) {
+          const res = await fetch(
+            `${API_BASE_URL}/api/evidence?marketId=${market.id}`
+          );
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (!Array.isArray(data) || data.length === 0) continue;
           const top = data.reduce(
             (best: any, current: any) =>
               best == null || (current?.netVotes ?? 0) > (best?.netVotes ?? 0)
@@ -236,42 +329,45 @@ const TrendingList = ({ markets }: { markets: Market[] }) => {
                 : best,
             null
           );
-          if (!top) {
-            setTopEvidenceByMarket((prev) => ({ ...prev, [market.id]: null }));
-            return;
-          }
-          setTopEvidenceByMarket((prev) => ({
-            ...prev,
-            [market.id]: {
-              title: String(top.title ?? "").trim() || "Untitled evidence",
-              netVotes: Number(top.netVotes ?? 0),
-            },
-          }));
-        })
-        .catch((err) => {
-          console.error("Trending evidence fetch error:", err);
-          setTopEvidenceByMarket((prev) => ({ ...prev, [market.id]: null }));
-        });
-    });
-  }, [sorted, topEvidenceByMarket]);
+          if (!top) continue;
+          entries.push({
+            marketId: market.id,
+            title: String(top.title ?? "").trim() || "Untitled evidence",
+            netVotes: Number(top.netVotes ?? 0),
+            url: typeof top.url === "string" ? top.url : undefined,
+          });
+        }
+        entries.sort((a, b) => b.netVotes - a.netVotes);
+
+        // Always surface up to 5 rows; if fewer than 5 real items,
+        // pad with non-clickable placeholders so the card stays full.
+        const filled: TopEvidence[] = [...entries.slice(0, 5)];
+        while (filled.length < 5) {
+          filled.push({
+            marketId: "",
+            title: "No evidence submitted yet.",
+            netVotes: 0,
+            url: undefined,
+          });
+        }
+        setTopEvidence(filled);
+      } catch (err) {
+        console.error("Trending evidence fetch error:", err);
+        setTopEvidence([]);
+      }
+    };
+    fetchAll();
+  }, [markets]);
 
   return (
     <div className="space-y-4">
       <aside className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 md:p-5 w-full lg:w-80">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-gray-900">Trending Evidence</h3>
-          <span className="text-[11px] text-gray-500">
-            Most upvoted claims by market
-          </span>
         </div>
         <div className="divide-y divide-gray-100">
-          {sorted.map((m, idx) => (
-            <TrendingRow
-              key={m.id}
-              market={m}
-              index={idx + 1}
-              evidence={topEvidenceByMarket[m.id]}
-            />
+          {topEvidence.map((entry, idx) => (
+            <TrendingRow key={`${entry.marketId || "placeholder"}-${idx}`} index={idx + 1} entry={entry} />
           ))}
         </div>
       </aside>
@@ -281,53 +377,42 @@ const TrendingList = ({ markets }: { markets: Market[] }) => {
 };
 
 const TrendingRow = ({
-  market,
   index,
-  evidence,
+  entry,
 }: {
-  market: Market;
   index: number;
-  evidence: TopEvidence | undefined;
+  entry: TopEvidence;
 }) => {
   const router = useRouter();
 
-  const subtitle =
-    evidence && evidence.title
-      ? evidence.title
-      : "No evidence submitted yet.";
-  const votes =
-    evidence && typeof evidence.netVotes === "number"
-      ? evidence.netVotes
-      : null;
+  const handleClick = () => {
+    // Placeholder rows (no marketId) are not clickable
+    if (!entry.marketId) return;
+
+    if (entry.url) {
+      // Open evidence URL (PDF or web page) in a new tab
+      if (typeof window !== "undefined") {
+        window.open(entry.url, "_blank", "noopener,noreferrer");
+      }
+    } else {
+      // Fallback: go to the market page
+      router.push(`/markets/${entry.marketId}`);
+    }
+  };
 
   return (
     <button
       className="w-full flex items-start justify-between py-2.5 text-left hover:bg-gray-50 rounded-lg px-1"
-      onClick={() => router.push(`/markets/${market.id}`)}
+      onClick={handleClick}
     >
       <div className="flex items-start gap-3">
         <span className="w-5 text-xs font-semibold text-gray-500 mt-0.5">
           {index}
         </span>
-        <div className="flex flex-col">
-          <span className="text-xs font-semibold text-gray-900 line-clamp-1">
-            {market.title}
-          </span>
-          <span className="text-[11px] text-gray-600 line-clamp-2 mt-0.5">
-            {subtitle}
-          </span>
-        </div>
+        <span className="text-xs font-semibold text-gray-900 line-clamp-2">
+          {entry.title}
+        </span>
       </div>
-      {votes !== null && (
-        <div className="ml-2 flex flex-col items-end">
-          <span className="text-[10px] uppercase tracking-wide text-gray-400">
-            Net votes
-          </span>
-          <span className="text-xs font-semibold text-gray-800">
-            {votes > 0 ? `+${votes}` : votes}
-          </span>
-        </div>
-      )}
     </button>
   );
 };
@@ -376,10 +461,7 @@ const NewMarketPanel = () => {
   return (
     <aside className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 md:p-5 w-full lg:w-80">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-900">New Market</h3>
-        <span className="text-[11px] text-gray-500">
-          Top proposed markets
-        </span>
+        <h3 className="text-sm font-semibold text-gray-900">Top Proposed Markets</h3>
       </div>
       {loading ? (
         <div className="text-[11px] text-gray-500">Loading ideas...</div>
@@ -390,23 +472,13 @@ const NewMarketPanel = () => {
       ) : (
         <div className="divide-y divide-gray-100">
           {ideas.map((idea, idx) => (
-            <div key={idea.id} className="py-2.5 flex items-start justify-between">
-              <div className="flex items-start gap-3">
-                <span className="w-5 text-xs font-semibold text-gray-500 mt-0.5">
-                  {idx + 1}
-                </span>
-                <span className="text-xs font-semibold text-gray-900 line-clamp-2">
-                  {idea.title}
-                </span>
-              </div>
-              <div className="ml-2 flex flex-col items-end">
-                <span className="text-[10px] uppercase tracking-wide text-gray-400">
-                  Net votes
-                </span>
-                <span className="text-xs font-semibold text-gray-800">
-                  {idea.netVotes > 0 ? `+${idea.netVotes}` : idea.netVotes}
-                </span>
-              </div>
+            <div key={idea.id} className="py-2.5 flex items-start gap-3">
+              <span className="w-5 text-xs font-semibold text-gray-500 mt-0.5">
+                {idx + 1}
+              </span>
+              <span className="text-xs font-semibold text-gray-900 line-clamp-2">
+                {idea.title}
+              </span>
             </div>
           ))}
         </div>
@@ -422,11 +494,11 @@ const Homepage = () => {
   const secondaryMarkets = rest;
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] flex flex-col items-center w-full pt-6 pb-10">
+    <div className="min-h-screen bg-[#f8f9fa] flex flex-col items-center w-full pt-2 pb-10">
       <div className="w-full max-w-6xl px-4 md:px-6 lg:px-8">
         {/* Main row: featured + all markets on the left, sidebar on the right */}
         {featured && (
-          <div className="mt-6 flex flex-col lg:flex-row gap-6">
+          <div className="mt-2 flex flex-col lg:flex-row gap-6">
             {/* Left column: featured banner and All markets stacked */}
             <div className="flex-1 flex flex-col gap-6">
               <FeaturedMarket market={featured} />
