@@ -89,7 +89,14 @@ const FeaturedMarket = ({ market }: { market: Market }) => {
         if (!Array.isArray(data)) return;
         const ODDS_DIVISOR = Number("18446744073709551616");
         const sliced = data.slice(-40);
-        const chart = sliced.map((entry: any) => ({
+        const chart = sliced.map(
+          (
+            entry: {
+              timestamp: string | number | Date;
+              yesProbability?: number;
+              noProbability?: number;
+            }
+          ) => ({
           timestamp: new Date(entry.timestamp).toISOString().slice(5, 10), // MM-DD
           Yes:
             typeof entry.yesProbability === "number"
@@ -99,7 +106,8 @@ const FeaturedMarket = ({ market }: { market: Market }) => {
             typeof entry.noProbability === "number"
               ? entry.noProbability / ODDS_DIVISOR
               : 0,
-        }));
+          })
+        );
         if (!cancelled) setFeaturedHistory(chart);
       } catch (e) {
         console.error("Featured odds history error:", e);
@@ -300,6 +308,12 @@ type TopEvidence = {
   url?: string;
 };
 
+type EvidenceApiItem = {
+  netVotes?: number;
+  title?: unknown;
+  url?: unknown;
+};
+
 const TrendingList = ({ markets }: { markets: Market[] }) => {
   const [topEvidence, setTopEvidence] = useState<TopEvidence[]>([]);
 
@@ -314,12 +328,13 @@ const TrendingList = ({ markets }: { markets: Market[] }) => {
           if (!res.ok) continue;
           const data = await res.json();
           if (!Array.isArray(data) || data.length === 0) continue;
-          const top = data.reduce(
-            (best: any, current: any) =>
+          const typedData = data as EvidenceApiItem[];
+          const top = typedData.reduce(
+            (best: EvidenceApiItem | null, current: EvidenceApiItem) =>
               best == null || (current?.netVotes ?? 0) > (best?.netVotes ?? 0)
                 ? current
                 : best,
-            null
+            null as EvidenceApiItem | null
           );
           if (!top) continue;
           entries.push({
@@ -429,11 +444,13 @@ const NewMarketPanel = () => {
         }
         const data = await res.json();
         if (Array.isArray(data)) {
-          const cleaned: MarketIdeaSummary[] = data.map((d: any) => ({
-            id: Number(d.id),
-            title: String(d.title ?? "").trim() || "Untitled market idea",
-            netVotes: Number(d.netVotes ?? 0),
-          }));
+          const cleaned: MarketIdeaSummary[] = data.map(
+            (d: { id: number | string; title?: unknown; netVotes?: number | string }) => ({
+              id: Number(d.id),
+              title: String(d.title ?? "").trim() || "Untitled market idea",
+              netVotes: Number(d.netVotes ?? 0),
+            })
+          );
           cleaned.sort((a, b) => b.netVotes - a.netVotes);
           setIdeas(cleaned.slice(0, 7));
         } else {

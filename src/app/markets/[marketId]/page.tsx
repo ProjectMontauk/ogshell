@@ -1917,8 +1917,6 @@ useEffect(() => {
     try {
       // Wait a bit for the transaction to be processed
       await new Promise(resolve => setTimeout(resolve, 2000));
-      let yesProbability: number;
-      let noProbability: number;
       const [sharesYes, sharesNo] = await Promise.all([
         readContract({
           contract: marketContract,
@@ -1939,8 +1937,8 @@ useEffect(() => {
       const sum = oddsYesRaw + oddsNoRaw;
       const pY = sum > 0 ? oddsYesRaw / sum : 0;
       const pN = sum > 0 ? oddsNoRaw / sum : 0;
-      yesProbability = pY * 2 ** 64;
-      noProbability = pN * 2 ** 64;
+      const yesProbability = pY * 2 ** 64;
+      const noProbability = pN * 2 ** 64;
       console.log("FPMM odds (after delay):", { sharesYes: sharesYes.toString(), sharesNo: sharesNo.toString(), probYes: pY, probNo: pN });
       // Record to database (after trade, odds should have changed)
       const oddsResponse = await fetch(`${API_BASE_URL}/api/record-odds`, {
