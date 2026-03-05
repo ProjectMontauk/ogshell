@@ -395,17 +395,16 @@ const TrendingRow = ({
 
   return (
     <button
-      className="w-full flex items-start justify-between py-2.5 text-left hover:bg-gray-50 rounded-lg px-1"
+      type="button"
+      className="w-full py-2.5 flex items-start gap-3 text-left hover:bg-gray-50 rounded-lg"
       onClick={handleClick}
     >
-      <div className="flex items-start gap-3">
-        <span className="w-5 text-xs font-semibold text-gray-500 mt-0.5">
-          {index}
-        </span>
-        <span className="text-xs font-semibold text-gray-900 line-clamp-2">
-          {entry.title}
-        </span>
-      </div>
+      <span className="w-5 shrink-0 text-xs font-semibold text-gray-500 mt-0.5">
+        {index}
+      </span>
+      <span className="text-xs font-semibold text-gray-900 line-clamp-2 min-w-0">
+        {entry.title}
+      </span>
     </button>
   );
 };
@@ -498,7 +497,7 @@ const Homepage = () => {
               <section>
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-base md:text-lg font-semibold text-gray-900">
-                    All markets
+                    Markets
                   </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
