@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
-import { getAllowedOrigin } from '../../../lib/cors';
+import { getAllowedOrigin } from '../../../../lib/cors';
 
 function corsHeaders(origin: string | undefined) {
   const allowed = getAllowedOrigin(origin);

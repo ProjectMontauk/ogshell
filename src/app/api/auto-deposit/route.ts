@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { getAllowedOrigin } from '../../../lib/cors';
+import { getAllowedOrigin } from '../../../../lib/cors';
 
 const prisma = new PrismaClient();
 
