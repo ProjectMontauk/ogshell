@@ -1,5 +1,5 @@
-// API utility functions with authentication
-const API_BASE_URL = process.env.NODE_ENV === 'production' ? 'https://mvpshell.vercel.app' : '';
+// API utility functions with authentication (same-origin Next.js API routes)
+const API_BASE_URL = '';
 
 // Get API key from environment (this should be set in your build process)
 const getApiKey = (): string => {

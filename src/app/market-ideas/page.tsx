@@ -4,8 +4,8 @@ import Navbar from "../../../components/Navbar";
 import React, { useState, useEffect, useCallback } from "react";
 import { useActiveAccount } from "thirdweb/react";
 
-// Backend API base URL - use Next.js API routes for both dev and production
-const API_BASE_URL = process.env.NODE_ENV === 'production' ? 'https://mvpshell.vercel.app' : '';
+// Backend API base URL - same-origin Next.js API routes
+const API_BASE_URL = '';
 
 // Define MarketIdea type
 interface MarketIdea {

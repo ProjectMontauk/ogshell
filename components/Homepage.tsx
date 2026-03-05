@@ -9,11 +9,8 @@ import { baseSepolia } from "thirdweb/chains";
 import { getAllMarkets, Market } from "../src/data/markets";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
-// Backend API base URL - use Next.js API routes for both dev and production
-const API_BASE_URL =
-  process.env.NODE_ENV === "production"
-    ? "https://mvpshell.vercel.app"
-    : "";
+// Backend API base URL - same-origin Next.js API routes
+const API_BASE_URL = "";
 
 const INVESTMENT_AMOUNT = BigInt("1000000000000000000"); // 1e18 for FPMM calcBuyAmount
 
