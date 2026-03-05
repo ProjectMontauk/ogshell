@@ -1,25 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
+import { getAllowedOrigin } from '../../../lib/cors';
+
+function corsHeaders(origin: string | undefined) {
+  const allowed = getAllowedOrigin(origin);
+  return {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
+    ...(allowed ? { 'Access-Control-Allow-Origin': allowed } : {}),
+  };
+}
 
 // Handle preflight requests
-export async function OPTIONS() {
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin') ?? undefined;
   return new NextResponse(null, {
     status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': 'https://www.thecitizen.io',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
-    },
+    headers: corsHeaders(origin),
   });
 }
 
 export async function POST(request: NextRequest) {
-  // Set CORS headers
-  const headers = {
-    'Access-Control-Allow-Origin': 'https://www.thecitizen.io',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
-  };
+  const origin = request.headers.get('origin') ?? undefined;
+  const headers = corsHeaders(origin);
 
   try {
     const formData = await request.formData();

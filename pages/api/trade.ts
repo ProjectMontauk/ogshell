@@ -1,11 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '@prisma/client';
+import { getAllowedOrigin } from '../../lib/cors';
 
 const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', 'https://www.thecitizen.io');
+  const origin = getAllowedOrigin(req.headers.origin as string | undefined);
+  if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 

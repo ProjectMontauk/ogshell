@@ -1,30 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { getAllowedOrigin } from '../../../lib/cors';
 
 const prisma = new PrismaClient();
 
-// CORS headers
-const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://www.thecitizen.io',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
+function corsHeaders(origin: string | undefined) {
+  const allowed = getAllowedOrigin(origin);
+  return {
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    ...(allowed ? { 'Access-Control-Allow-Origin': allowed } : {}),
+  };
+}
 
 // Handle preflight requests
-export async function OPTIONS() {
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin') ?? undefined;
   return new NextResponse(null, {
     status: 200,
-    headers: corsHeaders,
+    headers: corsHeaders(origin),
   });
 }
 
 export async function GET(request: NextRequest) {
+  const origin = request.headers.get('origin') ?? undefined;
+  const headers = corsHeaders(origin);
   try {
     const { searchParams } = new URL(request.url);
     const walletAddress = searchParams.get('walletAddress');
 
     if (!walletAddress) {
-      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400, headers });
     }
 
     // Check if this wallet has already received an auto-deposit
@@ -37,27 +43,29 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       hasReceivedAutoDeposit: !!existingAutoDeposit,
       autoDeposit: existingAutoDeposit,
-    });
+    }, { headers });
   } catch (error: unknown) {
     console.error('Error checking auto-deposit status:', error);
     return NextResponse.json(
       { error: 'Failed to check auto-deposit status' },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 }
 
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get('origin') ?? undefined;
+  const headers = corsHeaders(origin);
   try {
     const body = await request.json();
     const { walletAddress, amount, transactionHash } = body;
 
     if (!walletAddress) {
-      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400, headers });
     }
 
     if (!amount) {
-      return NextResponse.json({ error: 'Amount is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Amount is required' }, { status: 400, headers });
     }
 
     // Check if this wallet has already received an auto-deposit
@@ -70,7 +78,7 @@ export async function POST(request: NextRequest) {
     if (existingAutoDeposit) {
       return NextResponse.json(
         { error: 'Auto-deposit already exists for this wallet' },
-        { status: 400 }
+        { status: 400, headers }
       );
     }
 
@@ -87,12 +95,12 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Auto-deposit recorded successfully',
       autoDeposit,
-    });
+    }, { headers });
   } catch (error: unknown) {
     console.error('Error recording auto-deposit:', error);
     return NextResponse.json(
       { error: 'Failed to record auto-deposit' },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 }

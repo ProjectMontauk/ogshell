@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '@prisma/client';
 import { readContract } from "thirdweb";
 import { getContractsForMarket } from "../../constants/contracts";
+import { getAllowedOrigin } from '../../lib/cors';
 
 const prisma = new PrismaClient();
 
@@ -40,8 +41,8 @@ async function getCurrentPrice(outcome: string, marketId: string): Promise<numbe
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', 'https://www.thecitizen.io');
+  const origin = getAllowedOrigin(req.headers.origin as string | undefined);
+  if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
