@@ -1998,7 +1998,7 @@ useEffect(() => {
         <div className="w-full max-w-6xl px-4 md:px-6 lg:px-8 mx-auto">
           <div className="w-full flex flex-col lg:flex-row gap-0.5 pt-2.5">
             {/* Combined Market Odds + Evidence Card */}
-            <div className="bg-white pt-2.5 pr-2.5 pb-2.5 pl-0 w-full lg:w-[calc(100%-350px)] mb-8 lg:mb-0 flex flex-col">
+            <div className="bg-white pt-2.5 pr-2.5 pb-2.5 pl-0 w-full lg:w-[calc(100%-300px)] mb-8 lg:mb-0 flex flex-col">
               {/* Odds History Chart Card */}
               <h2 className="text-lg font-bold mb-6 text-[#171A22]">{market.title}</h2>
               <div className="mb-2">
@@ -2045,6 +2045,7 @@ useEffect(() => {
                         orientation="right"
                         axisLine={false}
                         tickLine={false}
+                        tick={{ fontSize: 12 }}
                       />
                       <Tooltip formatter={v => (typeof v === 'number' ? `${Math.round(v * 100)}%` : v)} />
                       <ReferenceLine y={0.25} stroke="#bdbdbd" strokeDasharray="4 4" />
@@ -2059,12 +2060,12 @@ useEffect(() => {
               )}
               {/* Collapsible Rules section (moved inside chart card) */}
               <div className="mt-8">
-                <h2 className="text-lg font-bold mb-2">Rules</h2>
+                <h2 className="text-[16px] font-bold mb-2">Rules</h2>
                 {splitRules(showRules ? rulesFull : firstLine).map((para, i) => (
-                  <p key={i} className="text-gray-600 text-base mb-2" dangerouslySetInnerHTML={{ __html: para }} />
+                  <p key={i} className="text-gray-600 text-[14px] mb-2" dangerouslySetInnerHTML={{ __html: para }} />
                 ))}
                 <button
-                  className="text-blue-600 text-sm font-medium flex items-center gap-1 focus:outline-none mb-2"
+                  className="text-blue-600 text-[14px] font-medium flex items-center gap-1 focus:outline-none mb-2"
                   onClick={() => setShowRules((prev) => !prev)}
                 >
                   {showRules ? "Read Less" : "Read More"}
@@ -2079,7 +2080,7 @@ useEffect(() => {
                 <div className="bg-white p-0 w-full max-w-[600px]">
                   {/* Buy/Sell Toggle */}
                   <div className="flex items-center justify-between mb-2">
-                    <div className="flex gap-2 text-sm">
+                    <div className="flex gap-2 text-[12px]">
                       <button
                         className={`py-1 px-3 rounded-full border ${mode === 'buy' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
                         onClick={() => {
@@ -2119,7 +2120,7 @@ useEffect(() => {
                           })()}
                         </div>
                       ) : (
-                        <div className="text-sm font-semibold text-green-600 flex flex-col items-end">
+                        <div className="text-xs font-semibold text-green-600 flex flex-col items-end">
                           <span className="text-green-600">Yes Shares: {isBalanceLoading ? '...' : (outcome1Balance !== '--' && outcome1Balance !== 'Error' ? parseFloat(outcome1Balance).toFixed(2) : outcome1Balance)}</span>
                           <span className="text-blue-600">No Shares: {isBalanceLoading ? '...' : (outcome2Balance !== '--' && outcome2Balance !== 'Error' ? parseFloat(outcome2Balance).toFixed(2) : outcome2Balance)}</span>
                         </div>
@@ -2127,19 +2128,19 @@ useEffect(() => {
                     </div>
                   </div>
                   {/* Buy: shares to buy. Sell: shares to sell. */}
-                  <div className="text-sm font-bold mb-2">{mode === 'buy' ? 'Bet Amount ($)' : 'Sell Shares'}</div>
+                  <div className="text-sm font-bold mb-2">{mode === 'buy' ? 'Bet Amount' : 'Sell Shares'}</div>
                   {/* Amount input */}
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder={mode === 'buy' ? 'Number of outcome shares' : 'Enter Sell Amount'}
-                      value={amount || ''}
+                      placeholder={mode === 'buy' ? '$' : 'Enter Shares'}
+                      value={mode === 'buy' && amount ? `$${amount}` : (amount || '')}
                       onChange={e => {
-                        const value = e.target.value.replace(/[^0-9.]/g, '');
-                        setAmount(value);
+                        const raw = e.target.value.replace(/^\$/, '').replace(/[^0-9.]/g, '');
+                        setAmount(raw);
                         setSellAllClicked(false);
                       }}
-                      className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-base mb-4"
+                      className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-[16px] mb-4"
                     />
                   </div>
                   {/* Yes/No Cent Price buttons */}
@@ -2190,7 +2191,7 @@ useEffect(() => {
                   ) && (
                     <div className="flex justify-start mb-4">
                       <button
-                        className={`py-1 px-3 text-base rounded-full border transition-colors ${sellAllClicked ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal hover:bg-gray-50'}`}
+                        className={`py-1 px-3 text-[12px] rounded-full border transition-colors ${sellAllClicked ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal hover:bg-gray-50'}`}
                         onClick={() => {      
                           if (sellAllClicked) {
                             // Second click: return to normal state and clear input
@@ -2242,16 +2243,16 @@ useEffect(() => {
                     <>
                       {/* Max. Win (buy) or Receive (sell) */}
                       {mode === 'buy' && (
-                        <div className="text-[1.15rem] font-medium text-black">Max. Win: <span className="text-green-600 font-bold"><span className="font-normal"><DenariusSymbol size={13} /></span> {buyEstSharesLoading ? '...' : (buyEstSharesDisplay ?? '--')}</span></div>
+                        <div className="text-[16px] font-medium text-black">Max. Win: <span className="text-green-600 font-bold">$ {buyEstSharesLoading ? '...' : (buyEstSharesDisplay ?? '--')}</span></div>
                       )}
                       {mode === 'sell' && (
-                        <div className="text-[1.15rem] font-medium text-black">Receive: <span className="text-green-600 font-bold"><span className="font-normal"><DenariusSymbol size={13} /></span> {payoutDisplay}</span></div>
+                        <div className="text-[16px] font-medium text-black">Receive: <span className="text-green-600 font-bold">$ {payoutDisplay}</span></div>
                       )}
                       {/* Avg. Price display */}
-                      <div className="text-left text-sm text-gray-600 mb-4">
+                      <div className="text-left text-[12px] text-gray-600 mb-4">
                         Avg. Price
                         {avgPriceDisplay !== '--' && (
-                          <span className="ml-2 text-sm text-gray-600">{avgPriceDisplay}</span>
+                          <span className="ml-2 text-[12px] text-gray-600">{avgPriceDisplay}</span>
                         )}
                       </div>
                       {/* Trade button */}
@@ -2280,15 +2281,15 @@ useEffect(() => {
                   )}
                   {/* Your Balance Section */}
                   <div className="border-t border-gray-200 pt-4 mt-4 hidden lg:block">
-                    <h3 className="text-base font-bold text-gray-900 mb-4">Purchased Shares</h3>
+                    <h3 className="text-sm font-bold text-gray-900 mb-4">Purchased Shares</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="text-center">
-                        <div className="text-sm font-semibold text-green-600 mb-1">Yes Shares</div>
-                        <div className="text-lg font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome1Balance !== '--' && outcome1Balance !== 'Error' ? parseFloat(outcome1Balance).toFixed(2) : outcome1Balance)}</div>
+                        <div className="text-xs font-semibold text-green-600 mb-1">Yes Shares</div>
+                        <div className="text-xs font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome1Balance !== '--' && outcome1Balance !== 'Error' ? parseFloat(outcome1Balance).toFixed(2) : outcome1Balance)}</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-sm font-semibold text-blue-600 mb-1">No Shares</div>
-                        <div className="text-lg font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome2Balance !== '--' && outcome2Balance !== 'Error' ? parseFloat(outcome2Balance).toFixed(2) : outcome2Balance)}</div>
+                        <div className="text-xs font-semibold text-blue-600 mb-1">No Shares</div>
+                        <div className="text-xs font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome2Balance !== '--' && outcome2Balance !== 'Error' ? parseFloat(outcome2Balance).toFixed(2) : outcome2Balance)}</div>
                       </div>
                     </div>
                   </div>
@@ -2328,33 +2329,33 @@ useEffect(() => {
               {/* Evidence Section (always at the bottom of the combined card) */}
               <div className="w-full mt-8 mb-8">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-[18px] font-bold text-[#171A22]">Evidence</h2>
+                  <h2 className="text-[16px] font-bold text-[#171A22]">Evidence</h2>
                   {/* Voting Power Display */}
-                  <div className="flex items-center space-x-2 text-xs font-medium text-sm">
+                  <div className="flex items-center space-x-2 text-[14px] font-medium">
                     <span className="text-green-600 font-semibold">Yes Power: {yesVotingPower}x</span>
                     <span className="text-gray-400">|</span>
-                    <span className="text-red-600 font-semibold">No Power: {noVotingPower}x</span>
+                    <span className="text-blue-600 font-semibold">No Power: {noVotingPower}x</span>
                   </div>
                 </div>
                 <Tab.Group>
                   <Tab.List className="flex w-full mb-6 bg-gray-50 rounded-lg">
                     <Tab
                       className={({ selected }: { selected: boolean }) =>
-                        `flex-1 px-6 py-2 rounded-lg font-medium text-sm transition focus:outline-none ${selected ? "bg-white text-[#171A22] shadow" : "bg-gray-50 text-gray-500"}`
+                        `flex-1 px-6 py-2 rounded-lg font-medium text-[14px] transition focus:outline-none ${selected ? "bg-white text-[#171A22] shadow" : "bg-gray-50 text-gray-500"}`
                       }
                     >
                       {market.outcomes[0]}
                     </Tab>
                     <Tab
                       className={({ selected }: { selected: boolean }) =>
-                        `flex-1 px-6 py-2 rounded-lg font-medium text-sm transition focus:outline-none ${selected ? "bg-white text-[#171A22] shadow" : "bg-gray-50 text-gray-500"}`
+                        `flex-1 px-6 py-2 rounded-lg font-medium text-[14px] transition focus:outline-none ${selected ? "bg-white text-[#171A22] shadow" : "bg-gray-50 text-gray-500"}`
                       }
                     >
                       {market.outcomes[1]}
                     </Tab>
                     <Tab
                       className={({ selected }: { selected: boolean }) =>
-                        `flex-1 px-6 py-2 rounded-lg font-medium text-sm transition focus:outline-none ${selected ? "bg-white text-[#171A22] shadow" : "bg-gray-50 text-gray-500"}`
+                        `flex-1 px-6 py-2 rounded-lg font-medium text-[14px] transition focus:outline-none ${selected ? "bg-white text-[#171A22] shadow" : "bg-gray-50 text-gray-500"}`
                       }
                     >
                       Submit Document
@@ -2653,10 +2654,10 @@ useEffect(() => {
               </div>
             </div>
             {/* Betting Card (desktop) */}
-            <div className="hidden lg:block bg-white shadow p-4 sm:max-w-4xl sm:mx-auto sm:p-8 lg:w-[270px] lg:self-start">
+            <div className="hidden lg:block bg-white shadow p-4 sm:max-w-4xl sm:mx-auto lg:pl-4 lg:pr-4 lg:py-6 lg:w-[270px] lg:self-start lg:ml-auto">
               {/* Buy/Sell Toggle */}
               <div className="flex items-center mb-2">
-                <div className="flex gap-2 text-sm">
+                <div className="flex gap-2 text-[12px]">
                   <button
                     className={`py-1 px-3 rounded-full border ${mode === 'buy' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
                     onClick={() => {
@@ -2684,19 +2685,19 @@ useEffect(() => {
                 </div>
               </div>
               {/* Buy: shares to buy. Sell: shares to sell. */}
-              <div className="text-sm font-bold mb-2">{mode === 'buy' ? 'Bet Amount ($)' : 'Sell Shares'}</div>
+              <div className="text-sm font-bold mb-2">{mode === 'buy' ? 'Bet Amount' : 'Sell Shares'}</div>
               {/* Amount input */}
               <div className="relative">
                 <input
                   type="text"
-                  placeholder={mode === 'buy' ? 'Number of outcome shares' : 'Enter Sell Amount'}
-                  value={amount || ''}
+                  placeholder={mode === 'buy' ? '$' : 'Enter Shares'}
+                  value={mode === 'buy' && amount ? `$${amount}` : (amount || '')}
                   onChange={e => {
-                    const value = e.target.value.replace(/[^0-9.]/g, '');
-                    setAmount(value);
+                    const raw = e.target.value.replace(/^\$/, '').replace(/[^0-9.]/g, '');
+                    setAmount(raw);
                     setSellAllClicked(false);
                   }}
-                  className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-base mb-4"
+                  className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-[16px] mb-4"
                 />
               </div>
               {/* Yes/No Cent Price buttons (desktop) */}
@@ -2747,7 +2748,7 @@ useEffect(() => {
               ) && (
                 <div className="flex justify-start mb-4">
                   <button
-                                            className={`py-1 px-3 text-base rounded-full border transition-colors ${sellAllClicked ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal hover:bg-gray-50'}`}
+                                            className={`py-1 px-3 text-[12px] rounded-full border transition-colors ${sellAllClicked ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal hover:bg-gray-50'}`}
                                             onClick={() => {      
                           if (sellAllClicked) {
                             // Second click: return to normal state and clear input
@@ -2799,16 +2800,16 @@ useEffect(() => {
                 <>
                   {/* Max. Win (buy) or Receive (sell) */}
                   {mode === 'buy' && (
-                    <div className="text-[1.15rem] font-medium text-black">Max. Win: <span className="text-green-600 font-bold"><span className="font-normal"><DenariusSymbol size={13} /></span> {buyEstSharesLoading ? '...' : (buyEstSharesDisplay ?? '--')}</span></div>
+                    <div className="text-[16px] font-medium text-black">Max. Win: <span className="text-green-600 font-bold">$ {buyEstSharesLoading ? '...' : (buyEstSharesDisplay ?? '--')}</span></div>
                   )}
                   {mode === 'sell' && (
-                    <div className="text-[1.15rem] font-medium text-black">Receive: <span className="text-green-600 font-bold"><span className="font-normal"><DenariusSymbol size={13} /></span> {payoutDisplay}</span></div>
+                    <div className="text-[16px] font-medium text-black">Receive: <span className="text-green-600 font-bold">$ {payoutDisplay}</span></div>
                   )}
                   {/* Avg. Price display */}
-                  <div className="text-left text-sm text-gray-600 mb-4">
+                  <div className="text-left text-[12px] text-gray-600 mb-4">
                     Avg. Price
                     {avgPriceDisplay !== '--' && (
-                      <span className="ml-2 text-sm text-gray-600">{avgPriceDisplay}</span>
+                      <span className="ml-2 text-[12px] text-gray-600">{avgPriceDisplay}</span>
                     )}
                   </div>
                   {/* Trade button */}
@@ -2837,15 +2838,15 @@ useEffect(() => {
               )}
               {/* Your Balance Section */}
               <div className="border-t border-gray-200 pt-4 mt-4 hidden lg:block">
-              <h3 className="text-base font-bold text-gray-900 mb-4">Purchased Shares</h3>
+              <h3 className="text-sm font-bold text-gray-900 mb-4">Purchased Shares</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center">
-                    <div className="text-sm font-semibold text-green-600 mb-1">Yes Shares</div>
-                    <div className="text-lg font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome1Balance !== '--' && outcome1Balance !== 'Error' ? parseFloat(outcome1Balance).toFixed(2) : outcome1Balance)}</div>
+                    <div className="text-xs font-semibold text-green-600 mb-1">Yes Shares</div>
+                    <div className="text-xs font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome1Balance !== '--' && outcome1Balance !== 'Error' ? parseFloat(outcome1Balance).toFixed(2) : outcome1Balance)}</div>
                   </div>
                       <div className="text-center">
-                        <div className="text-sm font-semibold text-blue-600 mb-1">No Shares</div>
-                        <div className="text-lg font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome2Balance !== '--' && outcome2Balance !== 'Error' ? parseFloat(outcome2Balance).toFixed(2) : outcome2Balance)}</div>
+                        <div className="text-xs font-semibold text-blue-600 mb-1">No Shares</div>
+                        <div className="text-xs font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome2Balance !== '--' && outcome2Balance !== 'Error' ? parseFloat(outcome2Balance).toFixed(2) : outcome2Balance)}</div>
                       </div>
                 </div>
               </div>
