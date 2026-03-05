@@ -97,20 +97,10 @@ const Navbar = () => {
         createWallet("io.zerion.wallet"),
       ];
 
-  // Polling mechanism for cash balance updates
+  // Fetch cash balance once when wallet connects (no polling — refresh page to update)
   useEffect(() => {
     if (!account?.address) return;
-
-    // Initial fetch
     refetch();
-
-    // Set up polling interval (check every 3 seconds)
-    const interval = setInterval(() => {
-      refetch();
-    }, 3000);
-
-    // Cleanup interval on unmount or account change
-    return () => clearInterval(interval);
   }, [account?.address, refetch]);
 
   // Fetch current positions across all markets (same method as portfolio page)

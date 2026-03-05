@@ -1082,59 +1082,16 @@ useEffect(() => {
     }
   }, [account?.address, outcome1PositionId, outcome2PositionId, conditionalTokensContract]);
 
-  // Track last call time to prevent excessive API calls
-  const lastCallTime = React.useRef<number>(0);
-
-  // Fetch user balances without showing loading state (for polling)
-  const fetchUserBalancesWithoutLoading = useCallback(async () => {
-    if (!account?.address) return;
-
-    const currentTime = Date.now();
-    if (lastCallTime.current && currentTime - lastCallTime.current < 5000) return;
-    lastCallTime.current = currentTime;
-
-    try {
-      const balance1 = await readContract({
-        contract: conditionalTokensContract,
-        method: "function balanceOf(address account, uint256 id) view returns (uint256)",
-        params: [account.address as `0x${string}`, BigInt(outcome1PositionId)],
-      });
-      const balance2 = await readContract({
-        contract: conditionalTokensContract,
-        method: "function balanceOf(address account, uint256 id) view returns (uint256)",
-        params: [account.address as `0x${string}`, BigInt(outcome2PositionId)],
-      });
-      const yesShares = (Number(balance1.toString()) / 1e18).toString();
-      const noShares = (Number(balance2.toString()) / 1e18).toString();
-      setOutcome1Balance(prev => (prev !== yesShares ? yesShares : prev));
-      setOutcome2Balance(prev => (prev !== noShares ? noShares : prev));
-    } catch (err) {
-      if (account?.address) console.error("Error fetching user balances:", err);
-    }
-  }, [account?.address, outcome1PositionId, outcome2PositionId, conditionalTokensContract]);
-
-  // Polling mechanism for user balances
+  // Fetch user balances once when page loads or wallet connects (no polling — refresh page to update)
   useEffect(() => {
     if (!account?.address) {
-      // Reset balances when no wallet is connected
       setOutcome1Balance("--");
       setOutcome2Balance("--");
       setIsBalanceLoading(false);
       return;
     }
-
-    // Initial fetch with loading state
     fetchUserBalances();
-
-    // Set up polling interval (check every 30 seconds) without loading state
-    const interval = setInterval(() => {
-      // Don't set loading state during polling to prevent blinking
-      fetchUserBalancesWithoutLoading();
-    }, 30000);
-
-    // Cleanup interval on unmount or account change
-    return () => clearInterval(interval);
-  }, [account?.address, fetchUserBalances, fetchUserBalancesWithoutLoading]);
+  }, [account?.address, fetchUserBalances]);
 
   // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1502,7 +1459,7 @@ useEffect(() => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Update balances immediately after confirmation
-      await fetchUserBalancesWithoutLoading();
+      await fetchUserBalances();
       
       // Refetch user's token balance to update cash display
       await refetchUserTokenBalance();
@@ -1561,13 +1518,13 @@ useEffect(() => {
       
       while (retries < maxRetries) {
         await new Promise(resolve => setTimeout(resolve, 1000));
-        await fetchUserBalancesWithoutLoading();
+        await fetchUserBalances();
         retries++;
       }
     } catch (error) {
       console.error("Error waiting for transaction confirmation:", error);
       // Fallback to immediate balance update
-      await fetchUserBalancesWithoutLoading();
+      await fetchUserBalances();
       // Still show success message even if there's an error; clear after 10 seconds
       setBuyFeedback(null);
       setSuccessMessage(successMessage);
