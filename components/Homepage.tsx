@@ -478,11 +478,14 @@ const NewMarketPanel = () => {
       ) : (
         <div className="divide-y divide-gray-100">
           {ideas.map((idea, idx) => (
-            <div key={idea.id} className="py-2.5 flex items-start gap-3">
-              <span className="w-5 text-xs font-semibold text-gray-500 mt-0.5">
+            <div
+              key={idea.id}
+              className="w-full py-2.5 flex items-start gap-3"
+            >
+              <span className="w-5 shrink-0 text-xs font-semibold text-gray-500 mt-0.5">
                 {idx + 1}
               </span>
-              <span className="text-xs font-semibold text-gray-900 line-clamp-2">
+              <span className="text-xs font-semibold text-gray-900 line-clamp-2 min-w-0">
                 {idea.title}
               </span>
             </div>
