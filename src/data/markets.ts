@@ -34,7 +34,7 @@ export const markets: Market[] = [
     image: "/Fluoride.png",
     contractAddress: "0xC845FAdec3f3A1B6c513d0D9928faEa02eBeFcdb",
     outcomes: ["Yes, fluoridation decreases IQ:", "No, fluoridation does not decrease IQ"],
-    rules: "Update with market resolution rules."
+    rules: "The market \"Does Water Fluoridation Decrease IQ?\" will resolve \"Yes\" if the WSJ scientific review board finds clear and convincing evidence that community water fluoridation, at typical concentrations used in municipal water systems, causes a meaningful decrease in average IQ or cognitive function in exposed human populations relative to comparable non-fluoridated populations, after accounting for reasonable confounders.\n\nOtherwise, the market will resolve \"No.\" This means the WSJ scientific review board did not find clear and convincing evidence that water fluoridation decreases IQ under typical exposure conditions.\n\nThis market will close February 20th, 2026 at 11:59 AM EDT and within three days of market close, the review board will resolve the market and author the case summary.\n\nFind out more about the WSJ scientific review board <a href=\"/docs?tab=review-boards\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: #2563eb; text-decoration: underline;\">here</a>."
   },
   {
     id: 'autism',
