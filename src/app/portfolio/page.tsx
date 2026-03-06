@@ -8,7 +8,6 @@ import { useState, useEffect, useCallback } from "react";
 import { readContract } from "thirdweb";
 import { usePortfolio } from "../../contexts/PortfolioContext";
 import React from "react";
-import DenariusSymbol from "../../components/DenariusSymbol";
 import { prepareContractCall } from "thirdweb";
 import { parseAmountToWei } from "../../utils/parseAmountToWei";
 
@@ -346,8 +345,8 @@ export default function PortfolioPage() {
   return (
     <div>
       <Navbar />
-      <div className="min-h-screen bg-white flex flex-col items-center pt-8 w-full">
-        <div className="max-w-7xl w-full mx-auto px-4">
+      <div className="min-h-screen bg-white flex flex-col pt-8 w-full">
+        <div className="max-w-6xl w-full mx-auto px-4 md:px-6 lg:px-8">
           {/* Portfolio Balance Card */}
           <div className="bg-white rounded-2xl shadow border border-gray-200 p-8 mb-8 flex items-start justify-start w-[700px] max-w-full" style={{ height: 176 }}>
             <div>
@@ -355,27 +354,17 @@ export default function PortfolioPage() {
                 <span className="uppercase tracking-widest text-gray-500 font-semibold text-xs md:text-sm">Portfolio</span>
               </div>
               <div className="text-2xl md:text-4xl font-bold text-gray-900 mb-2">
-                <span className="hidden md:inline"><DenariusSymbol size={25} /></span>
-                <span className="md:hidden"><DenariusSymbol size={17} /></span>
-                &thinsp;{totalPortfolio.toFixed(2)}
+                ${totalPortfolio.toFixed(2)}
               </div>
             </div>
             <div className="flex flex-col items-start ml-20">
                               <span className="text-gray-500 font-semibold text-xs md:text-sm uppercase tracking-widest mb-1">Cash</span>
                               <span className="text-gray-900 font-bold text-xs md:text-[14px] mb-4">
-                                <span className="text-[13.5px] font-normal">
-                                  <span className="hidden md:inline"><DenariusSymbol size={10} /></span>
-                                  <span className="md:hidden"><DenariusSymbol size={9} /></span>
-                                </span>
-                                &thinsp;{cash.toFixed(2)}
+                                ${cash.toFixed(2)}
                               </span>
               <span className="text-gray-500 font-semibold text-xs md:text-sm uppercase tracking-widest mb-1 block" style={{ paddingTop: 12 }}>Bet Value</span>
                               <span className="text-gray-900 font-bold text-xs md:text-[14px] mb-4">
-                                <span className="text-[13.5px] font-normal">
-                                  <span className="hidden md:inline"><DenariusSymbol size={10} /></span>
-                                  <span className="md:hidden"><DenariusSymbol size={9} /></span>
-                                </span>
-                                &thinsp;{totalPositionsValue.toFixed(2)}
+                                ${totalPositionsValue.toFixed(2)}
                               </span>
             </div>
             </div>
@@ -449,24 +438,15 @@ export default function PortfolioPage() {
                               </td>
                               {/* Bet */}
                               <td className="px-2 md:px-6 py-3 md:py-4 text-center text-gray-900 text-xs md:text-base min-w-[100px]">
-                                <span className="text-[15.5px] font-normal">
-                                  <span className="hidden md:inline"><DenariusSymbol size={11} /></span>
-                                  <span className="md:hidden"><DenariusSymbol size={9} /></span>
-                                </span>&thinsp;{trade.betAmount.toFixed(2)}
+                                ${trade.betAmount.toFixed(2)}
                               </td>
                               {/* To Win */}
                               <td className="px-2 md:px-6 py-3 md:py-4 text-center text-gray-900 text-xs md:text-base min-w-[100px]">
-                                <span className="text-[15.5px] font-normal">
-                                  <span className="hidden md:inline"><DenariusSymbol size={11} /></span>
-                                  <span className="md:hidden"><DenariusSymbol size={9} /></span>
-                                </span>&thinsp;{trade.toWin.toFixed(2)}
+                                ${trade.toWin.toFixed(2)}
                               </td>
                               {/* Value */}
                               <td className="px-2 md:px-6 py-3 md:py-4 text-center text-xs md:text-base font-bold min-w-[100px]" style={{color: (trade.shares * getCurrentPriceNumber(trade)) > trade.betAmount ? '#16a34a' : '#dc2626'}}>
-                                <span className="text-[15.5px] font-normal">
-                                  <span className="hidden md:inline"><DenariusSymbol size={11} /></span>
-                                  <span className="md:hidden"><DenariusSymbol size={9} /></span>
-                                </span>&thinsp;{ (trade.shares * getCurrentPriceNumber(trade)).toFixed(2) }
+                                ${ (trade.shares * getCurrentPriceNumber(trade)).toFixed(2) }
                               </td>
                               {/* P/L */}
                               <td className="px-2 md:px-6 py-3 md:py-4 text-center text-xs md:text-base font-bold min-w-[100px]" style={{
@@ -478,10 +458,7 @@ export default function PortfolioPage() {
                                   return (
                                     <>
                                       {pl > 0 ? '+' : pl < 0 ? '-' : ''}
-                                        <span className="text-[15.5px] font-normal">
-                                          <span className="hidden md:inline"><DenariusSymbol size={11} /></span>
-                                          <span className="md:hidden"><DenariusSymbol size={9} /></span>
-                                        </span>&thinsp;{Math.abs(pl).toFixed(2)}
+                                        ${Math.abs(pl).toFixed(2)}
                                     </>
                                   );
                                 })()}
@@ -542,17 +519,11 @@ export default function PortfolioPage() {
                                   </td>
                                   {/* Value */}
                                   <td className="px-2 md:px-6 py-3 md:py-4 text-center text-xs md:text-base font-bold min-w-[100px]" style={{color: position.positionValue > 0 ? '#16a34a' : '#dc2626'}}>
-                                    <span className="text-[15.5px] font-normal">
-                                      <span className="hidden md:inline"><DenariusSymbol size={11} /></span>
-                                      <span className="md:hidden"><DenariusSymbol size={9} /></span>
-                                    </span>&thinsp;{position.positionValue.toFixed(2)}
+                                    ${position.positionValue.toFixed(2)}
                                   </td>
                                   {/* Potential (if outcome resolves to Yes, they win $1 per share) */}
                                   <td className="px-2 md:px-6 py-3 md:py-4 text-center text-xs md:text-base font-bold text-green-600 min-w-[100px]">
-                                    <span className="text-[15.5px] font-normal">
-                                      <span className="hidden md:inline"><DenariusSymbol size={11} /></span>
-                                      <span className="md:hidden"><DenariusSymbol size={9} /></span>
-                                    </span>&thinsp;{position.shares.toFixed(2)}
+                                    ${position.shares.toFixed(2)}
                                   </td>
                                 </tr>
                               ))}
