@@ -131,7 +131,7 @@ const FeaturedMarket = ({ market }: { market: Market }) => {
       }}
     >
       <div className="flex flex-col lg:flex-row gap-5">
-        {market.id !== "jfk" && (
+        {market.id !== "jfk" && market.id !== "covid19" && (
           <div className="lg:w-2/5">
             <Image
               src={market.image}
@@ -326,20 +326,16 @@ const TrendingList = ({ markets }: { markets: Market[] }) => {
           const data = await res.json();
           if (!Array.isArray(data) || data.length === 0) continue;
           const typedData = data as EvidenceApiItem[];
-          const top = typedData.reduce(
-            (best: EvidenceApiItem | null, current: EvidenceApiItem) =>
-              best == null || (current?.netVotes ?? 0) > (best?.netVotes ?? 0)
-                ? current
-                : best,
-            null as EvidenceApiItem | null
-          );
-          if (!top) continue;
-          entries.push({
-            marketId: market.id,
-            title: String(top.title ?? "").trim() || "Untitled evidence",
-            netVotes: Number(top.netVotes ?? 0),
-            url: typeof top.url === "string" ? top.url : undefined,
-          });
+          // Push ALL evidence items for this market so we can rank
+          // the globally most-upvoted evidence across all visible markets.
+          for (const ev of typedData) {
+            entries.push({
+              marketId: market.id,
+              title: String(ev.title ?? "").trim() || "Untitled evidence",
+              netVotes: Number(ev.netVotes ?? 0),
+              url: typeof ev.url === "string" ? ev.url : undefined,
+            });
+          }
         }
         entries.sort((a, b) => b.netVotes - a.netVotes);
 

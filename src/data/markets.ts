@@ -20,12 +20,15 @@ export const markets: Market[] = [
   },
   {
     id: 'apollo-11-moon-landing-fake',
-    title: "Apollo 11 Moon Landing Fake?",
-    description: "Was the Apollo 11 moon landing faked or staged?",
+    title: "How Long Do mRNA Spike Proteins Persist?",
+    description: "Do vaccine-derived mRNA spike proteins remain in the body for longer than one year after vaccination?",
     image: "/Moon.png",
     contractAddress: "0x5Af20651c5a8fAd0d1E38122183fEB8bC0838716",
-    outcomes: ["Yes, Apollo 11 moon landing was faked", "No, Apollo 11 moon landing was real"],
-    rules: "The market \"Apollo 11 Moon Landing Fake?\" will resolve \"Yes\" if the WSJ history review board finds clear and convincing evidence that the Apollo 11 moon landing was faked, staged, or otherwise did not occur as publicly represented by NASA and the U.S. government (for example, if the televised landing footage or core claims about humans landing on the Moon in July 1969 are shown to be intentionally fabricated).\n\nOtherwise, the market will resolve \"No.\" This means the WSJ history review board did not find clear and convincing evidence that the Apollo 11 moon landing was faked or staged, and the historical record supporting an authentic moon landing remains more consistent with the available evidence.\n\nThis market will close February 20th, 2026 at 11:59 AM EDT and within three days of market close, the review board will resolve the market and author the case summary.\n\nFind out more about the WSJ history review board <a href=\"/docs?tab=review-boards\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: #2563eb; text-decoration: underline;\">here</a>."
+    outcomes: [
+      "Yes, spike proteins persist longer than one year",
+      "No, spike proteins do not persist longer than one year"
+    ],
+    rules: "The market \"How Long Do mRNA Spike Proteins Persist?\" will resolve \"Yes\" if the WSJ scientific review board finds clear and convincing evidence that vaccine-derived mRNA spike proteins (or their translated spike protein products) remain detectably present in human tissues, blood, or other relevant biological compartments for longer than one year after vaccination, under typical dosing and exposure conditions.\n\nOtherwise, the market will resolve \"No.\" This means the WSJ scientific review board did not find clear and convincing evidence that vaccine-derived mRNA spike proteins persist in the body for longer than one year after vaccination under typical conditions.\n\nThis market will close February 20th, 2026 at 11:59 AM EDT and within three days of market close, the review board will resolve the market and author the case summary.\n\nFind out more about the WSJ scientific review board <a href=\"/docs?tab=review-boards\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: #2563eb; text-decoration: underline;\">here</a>."
   },
   {
     id: 'fluoride',
@@ -88,5 +91,16 @@ export function getMarketById(id: string): Market | undefined {
 }
 
 export function getAllMarkets(): Market[] {
-  return markets;
+  // Build market list for UI:
+  // - Hide specific markets (e.g., 2020 election, JFK CIA market)
+  // - Force "Was COVID-19 Genetically Engineered?" to be the featured market
+  const visible = markets.filter(
+    (market) => market.id !== '2020' && market.id !== 'jfk'
+  );
+
+  const covid = visible.find((m) => m.id === 'covid19');
+  if (!covid) return visible;
+
+  const others = visible.filter((m) => m.id !== 'covid19');
+  return [covid, ...others];
 } 
