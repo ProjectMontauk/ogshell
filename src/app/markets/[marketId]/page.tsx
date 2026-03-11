@@ -2064,14 +2064,21 @@ useEffect(() => {
                     <div className="text-right mr-2">
                       {mode === 'buy' ? (
                         <div className="text-sm font-semibold text-green-600">
-                          Cash: {(!account?.address) ? <><DenariusSymbol size={10} />--</> : (() => {
-                            if (!userTokenBalance) return <><DenariusSymbol size={10} />0</>;
-                            const amount = Number(userTokenBalance) / 1e18;
-                            return <><DenariusSymbol size={10} />{amount % 1 === 0 
-                              ? amount.toLocaleString(undefined, { maximumFractionDigits: 0 })
-                              : amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                            }</>;
-                          })()}
+                          Cash:{' '}
+                          {!account?.address
+                            ? '$--'
+                            : (() => {
+                                if (!userTokenBalance) return '$0';
+                                const amount = Number(userTokenBalance) / 1e18;
+                                const formatted =
+                                  amount % 1 === 0
+                                    ? amount.toLocaleString(undefined, { maximumFractionDigits: 0 })
+                                    : amount.toLocaleString(undefined, {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                      });
+                                return `$${formatted}`;
+                              })()}
                         </div>
                       ) : (
                         <div className="text-xs font-semibold text-green-600 flex flex-col items-end">
