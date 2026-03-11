@@ -1954,7 +1954,7 @@ useEffect(() => {
             {/* Combined Market Odds + Evidence Card */}
             <div className="bg-white pt-2.5 pr-2.5 pb-2.5 pl-0 w-full lg:w-[calc(100%-300px)] mb-8 lg:mb-0 flex flex-col">
               {/* Odds History Chart Card */}
-              <h2 className="text-lg font-bold mb-6 text-[#171A22]">{market.title}</h2>
+              <h2 className="text-lg font-bold mb-2 text-[#171A22]">{market.title}</h2>
               <div className="mb-2">
                 <span className="text-sm font-semibold text-[#171A22]">Market Odds</span>
               </div>
