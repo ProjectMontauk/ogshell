@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "../components/Providers";
+import RpcLogger from "../components/RpcLogger";
 import { PortfolioProvider } from "../contexts/PortfolioContext";
 import Footer from "../../components/Footer";
 
@@ -32,9 +33,8 @@ export default function RootLayout({
       >
         <PortfolioProvider>
           <Providers>
-            <main className="bg-white">
-              {children}
-            </main>
+            <RpcLogger />
+            <main className="bg-white">{children}</main>
             {/* Footer */}
             <Footer />
           </Providers>

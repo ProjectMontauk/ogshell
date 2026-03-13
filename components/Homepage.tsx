@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { getContract, readContract } from "thirdweb";
@@ -14,58 +14,46 @@ const API_BASE_URL = "";
 
 const INVESTMENT_AMOUNT = BigInt("1000000000000000000"); // 1e18 for FPMM calcBuyAmount
 
-// Small hook to fetch FPMM yes/no probabilities for a single market
-const useFpmmProbabilities = (market: Market) => {
-  const [probs, setProbs] = useState<{ yes: number; no: number } | null>(null);
-
-  const marketContractInstance = getContract({
-    client,
-    chain: baseSepolia,
-    address: market.contractAddress,
-  });
-
-  const fetchFpmmOdds = useCallback(async () => {
-    try {
-      const [sharesYes, sharesNo] = await Promise.all([
-        readContract({
-          contract: marketContractInstance,
-          method:
-            "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
-          params: [INVESTMENT_AMOUNT, 0n],
-        }),
-        readContract({
-          contract: marketContractInstance,
-          method:
-            "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
-          params: [INVESTMENT_AMOUNT, 1n],
-        }),
-      ]);
-      const inv = Number(INVESTMENT_AMOUNT);
-      const sY = Number(sharesYes);
-      const sN = Number(sharesNo);
-      if (sY <= 0 || sN <= 0) return;
-      const oddsYesRaw = inv / sY;
-      const oddsNoRaw = inv / sN;
-      const probYes = oddsYesRaw / (oddsYesRaw + oddsNoRaw);
-      const probNo = oddsNoRaw / (oddsYesRaw + oddsNoRaw);
-      setProbs({ yes: probYes, no: probNo });
-    } catch (e) {
-      console.error("Homepage FPMM odds error:", e);
-      setProbs(null);
-    }
-  }, [marketContractInstance]);
-
-  useEffect(() => {
-    fetchFpmmOdds();
-  }, [fetchFpmmOdds, market.id]);
-
-  return probs;
-};
+/** Fetch FPMM yes/no probabilities for one market (same logic as markets/[id] page). */
+async function fetchFpmmProbsForMarket(market: Market): Promise<{ yes: number; no: number } | null> {
+  try {
+    const contract = getContract({
+      client,
+      chain: baseSepolia,
+      address: market.contractAddress,
+    });
+    const [sharesYes, sharesNo] = await Promise.all([
+      readContract({
+        contract,
+        method:
+          "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
+        params: [INVESTMENT_AMOUNT, 0n],
+      }),
+      readContract({
+        contract,
+        method:
+          "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
+        params: [INVESTMENT_AMOUNT, 1n],
+      }),
+    ]);
+    const inv = Number(INVESTMENT_AMOUNT);
+    const sY = Number(sharesYes);
+    const sN = Number(sharesNo);
+    if (sY <= 0 || sN <= 0) return null;
+    const oddsYesRaw = inv / sY;
+    const oddsNoRaw = inv / sN;
+    const probYes = oddsYesRaw / (oddsYesRaw + oddsNoRaw);
+    const probNo = oddsNoRaw / (oddsYesRaw + oddsNoRaw);
+    return { yes: probYes, no: probNo };
+  } catch (e) {
+    console.error("Homepage FPMM odds error for", market.id, e);
+    return null;
+  }
+}
 
 // Large featured banner market at top of homepage
-const FeaturedMarket = ({ market }: { market: Market }) => {
+const FeaturedMarket = ({ market, probs }: { market: Market; probs: { yes: number; no: number } | null }) => {
   const router = useRouter();
-  const probs = useFpmmProbabilities(market);
   const yes = probs?.yes ?? 0;
   const no = probs?.no ?? 0;
 
@@ -228,9 +216,8 @@ const FeaturedMarket = ({ market }: { market: Market }) => {
 };
 
 // Compact binary market card used in the lower grid
-const MarketCard = ({ market }: { market: Market }) => {
+const MarketCard = ({ market, probs }: { market: Market; probs: { yes: number; no: number } | null }) => {
   const router = useRouter();
-  const probs = useFpmmProbabilities(market);
   const yes = probs?.yes ?? 0;
   const no = probs?.no ?? 0;
 
@@ -496,19 +483,37 @@ const NewMarketPanel = () => {
 };
 
 const Homepage = () => {
-  // Get all markets
   const markets = getAllMarkets();
   const [featured, ...rest] = markets;
   const secondaryMarkets = rest;
 
+  // Single fetch of odds for all markets once on mount (same idea as markets/[id] page).
+  const [marketOdds, setMarketOdds] = useState<Record<string, { yes: number; no: number }>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const all = await Promise.all(
+        markets.map(async (m) => ({ id: m.id, probs: await fetchFpmmProbsForMarket(m) }))
+      );
+      if (cancelled) return;
+      const next: Record<string, { yes: number; no: number }> = {};
+      for (const { id, probs } of all) {
+        if (probs) next[id] = probs;
+      }
+      setMarketOdds(next);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fetch once on mount; markets from getAllMarkets() is static
+
   return (
     <div className="w-full max-w-6xl px-4 md:px-6 lg:px-8 mx-auto pt-2 pb-8">
-      {/* Main row: featured + all markets on the left, sidebar on the right */}
       {featured && (
         <div className="mt-2 flex flex-col lg:flex-row gap-6">
-          {/* Left column: featured banner and All markets stacked */}
           <div className="flex-1 flex flex-col gap-6">
-            <FeaturedMarket market={featured} />
+            <FeaturedMarket market={featured} probs={marketOdds[featured.id] ?? null} />
             {secondaryMarkets.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-3">
@@ -518,7 +523,7 @@ const Homepage = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
                   {secondaryMarkets.map((m) => (
-                    <MarketCard key={m.id} market={m} />
+                    <MarketCard key={m.id} market={m} probs={marketOdds[m.id] ?? null} />
                   ))}
                 </div>
               </section>
