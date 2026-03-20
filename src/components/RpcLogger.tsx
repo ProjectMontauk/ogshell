@@ -26,9 +26,14 @@ const KNOWN_SELECTORS: Record<string, string> = {
 function decodeEthCallPayload(params: unknown): { selector: string; name: string; to?: string } | null {
   if (!Array.isArray(params) || params.length === 0) return null;
   const tx = params[0];
-  if (!tx || typeof tx !== "object" || typeof (tx as any).data !== "string") return null;
-  const data = (tx as any).data as string;
-  const to = (tx as any).to;
+  if (!tx || typeof tx !== "object") return null;
+
+  const txObj = tx as Record<string, unknown>;
+  const dataVal = txObj["data"];
+  if (typeof dataVal !== "string") return null;
+
+  const data = dataVal;
+  const to = typeof txObj["to"] === "string" ? (txObj["to"] as string) : undefined;
   const selector = data.length >= 10 ? data.slice(0, 10).toLowerCase() : data;
   const name = KNOWN_SELECTORS[selector] ?? `selector ${selector}`;
   return { selector, name, to };
@@ -43,13 +48,18 @@ export default function RpcLogger() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const anyWindow = window as any;
-    if (anyWindow.__thirdwebRpcPatched) return;
-    anyWindow.__thirdwebRpcPatched = true;
+    type RpcDebugWindow = Window & {
+      __thirdwebRpcPatched?: boolean;
+      __thirdwebRpcCount?: number;
+    };
 
-    anyWindow.__thirdwebRpcCount = anyWindow.__thirdwebRpcCount ?? 0;
+    const debugWindow = window as RpcDebugWindow;
+    if (debugWindow.__thirdwebRpcPatched) return;
+    debugWindow.__thirdwebRpcPatched = true;
 
-    const originalFetch = window.fetch.bind(window);
+    debugWindow.__thirdwebRpcCount = debugWindow.__thirdwebRpcCount ?? 0;
+
+    const originalFetch = window.fetch.bind(window) as typeof window.fetch;
 
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       try {
@@ -63,9 +73,9 @@ export default function RpcLogger() {
             : "";
 
         if (url.includes("84532.rpc.thirdweb.com")) {
-          anyWindow.__thirdwebRpcCount += 1;
+          debugWindow.__thirdwebRpcCount = (debugWindow.__thirdwebRpcCount ?? 0) + 1;
           let methodName = "unknown";
-          let body: any = init?.body;
+          let body: unknown = init?.body;
           const ethCallDetails: { selector: string; name: string; to?: string }[] = [];
 
           if (!body && input instanceof Request) {
@@ -93,7 +103,7 @@ export default function RpcLogger() {
           const payload: Record<string, unknown> = {
             url,
             method: methodName,
-            sessionCount: anyWindow.__thirdwebRpcCount,
+            sessionCount: debugWindow.__thirdwebRpcCount,
           };
           if (ethCallDetails.length > 0) {
             payload.eth_call = ethCallDetails.length === 1
@@ -101,13 +111,17 @@ export default function RpcLogger() {
               : ethCallDetails;
           }
 
-          // eslint-disable-next-line no-console
-          console.log("[RPC DEBUG] Thirdweb fetch ->", payload);
+          const stackTop =
+            typeof Error === "function" && typeof (new Error()).stack === "string"
+              ? (new Error().stack as string).split("\n").slice(0, 6).join("\n")
+              : undefined;
+
+          console.log("[RPC DEBUG] Thirdweb fetch ->", payload, "\nStackTop:\n", stackTop);
         }
 
-        return await originalFetch(input as any, init as any);
-      } catch (err) {
-        return originalFetch(input as any, init as any);
+        return await originalFetch(input, init);
+      } catch {
+        return originalFetch(input, init);
       }
     };
 
