@@ -1,25 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { getAllowedOrigin } from '../../../../lib/cors';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil',
 });
 
+function corsHeaders(origin: string | undefined) {
+  const allowed = getAllowedOrigin(origin);
+  return {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    ...(allowed ? { 'Access-Control-Allow-Origin': allowed } : {}),
+  };
+}
+
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin') ?? undefined;
+  return new NextResponse(null, { status: 200, headers: corsHeaders(origin) });
+}
+
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get('origin') ?? undefined;
+  const h = corsHeaders(origin);
+
   try {
     const { amount, nashAmount, customerWallet } = await request.json();
 
     if (!amount || amount <= 0) {
       return NextResponse.json(
         { error: 'Invalid amount' },
-        { status: 400 }
+        { status: 400, headers: h }
       );
     }
 
     if (!customerWallet) {
       return NextResponse.json(
         { error: 'Customer wallet address is required' },
-        { status: 400 }
+        { status: 400, headers: h }
       );
     }
 
@@ -44,7 +62,7 @@ export async function POST(request: NextRequest) {
     if (!priceMap[amount]) {
       return NextResponse.json(
         { error: `No price configured for amount $${amount}` },
-        { status: 400 }
+        { status: 400, headers: h }
       );
     }
 
@@ -88,7 +106,7 @@ export async function POST(request: NextRequest) {
     // Return the session URL for redirect
     return NextResponse.json({
       url: session.url,
-    });
+    }, { headers: h });
   } catch (error: unknown) {
     console.error('Error creating checkout session:', error);
     
@@ -98,7 +116,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { error: errorMessage },
-      { status: statusCode }
+      { status: statusCode, headers: h }
     );
   }
 } 

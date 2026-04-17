@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { PrismaClient } from '@prisma/client';
+import { getAllowedOrigin } from '../../../../lib/cors';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil',
@@ -8,14 +9,31 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 const prisma = new PrismaClient();
 
+function corsHeaders(origin: string | undefined) {
+  const allowed = getAllowedOrigin(origin);
+  return {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    ...(allowed ? { 'Access-Control-Allow-Origin': allowed } : {}),
+  };
+}
+
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin') ?? undefined;
+  return new NextResponse(null, { status: 200, headers: corsHeaders(origin) });
+}
+
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get('origin') ?? undefined;
+  const h = corsHeaders(origin);
+
   try {
     const { sessionId } = await request.json();
     
     if (!sessionId) {
       return NextResponse.json(
         { error: 'Session ID is required' },
-        { status: 400 }
+        { status: 400, headers: h }
       );
     }
 
@@ -48,7 +66,7 @@ export async function POST(request: NextRequest) {
         },
         processedAt: existingSession.mintedAt,
         status: existingSession.status
-      });
+      }, { headers: h });
     }
 
     // Check if the session is completed and has metadata
@@ -66,7 +84,7 @@ export async function POST(request: NextRequest) {
           payment_status: session.payment_status,
           metadata: session.metadata
         }
-      });
+      }, { headers: h });
     } else {
       console.log('❌ Session not ready for processing');
       return NextResponse.json({
@@ -78,7 +96,7 @@ export async function POST(request: NextRequest) {
           payment_status: session.payment_status,
           metadata: session.metadata
         }
-      });
+      }, { headers: h });
     }
 
   } catch (error: unknown) {
@@ -90,7 +108,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { error: errorMessage },
-      { status: statusCode }
+      { status: statusCode, headers: h }
     );
   } finally {
     await prisma.$disconnect();

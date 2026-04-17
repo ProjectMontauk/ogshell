@@ -1,16 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { getAllowedOrigin } from '../../../../lib/cors';
 
 const prisma = new PrismaClient();
 
+function corsHeaders(origin: string | undefined) {
+  const allowed = getAllowedOrigin(origin);
+  return {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    ...(allowed ? { 'Access-Control-Allow-Origin': allowed } : {}),
+  };
+}
+
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin') ?? undefined;
+  return new NextResponse(null, { status: 200, headers: corsHeaders(origin) });
+}
+
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get('origin') ?? undefined;
+  const h = corsHeaders(origin);
+
   try {
     const { sessionId, nashAmount, customerWallet, purchaseAmount, status = 'completed' } = await request.json();
     
     if (!sessionId || !nashAmount || !customerWallet || !purchaseAmount) {
       return NextResponse.json(
         { error: 'Missing required fields: sessionId, nashAmount, customerWallet, purchaseAmount' },
-        { status: 400 }
+        { status: 400, headers: h }
       );
     }
 
@@ -45,7 +63,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       processedSession: processedSession
-    });
+    }, { headers: h });
 
   } catch (error: unknown) {
     console.error('Error marking session as processed:', error);
@@ -56,7 +74,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { error: errorMessage },
-      { status: statusCode }
+      { status: statusCode, headers: h }
     );
   } finally {
     await prisma.$disconnect();
