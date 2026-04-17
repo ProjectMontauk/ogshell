@@ -1,8 +1,8 @@
 "use client";
 
 import Navbar from "../../../../components/Navbar";
-import React, { useState, useEffect, useCallback, use } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, useCallback, use, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useActiveAccount, useReadContract, useSendTransaction } from "thirdweb/react";
 import { prepareContractCall, readContract } from "thirdweb";
 import { getContractsForMarket, tokenContract } from "../../../../constants/contracts";
@@ -60,8 +60,10 @@ interface OddsHistoryEntry {
 
 
 
-export default function MarketPage({ params }: { params: Promise<{ marketId: string }> }) {
+function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }) {
   const resolvedParams = use(params);
+  const searchParams = useSearchParams();
+  const isEmbed = searchParams?.get("embed") === "1";
   const market = getMarketById(resolvedParams.marketId);
   
   // If market doesn't exist, show 404
@@ -1930,7 +1932,7 @@ useEffect(() => {
 
   return (
     <div>
-      <Navbar />
+      <Navbar variant={isEmbed ? "embed" : "full"} />
       {/* Wallet Connection Error Popup */}
       {showWalletError && (
         <div className="fixed z-50" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
@@ -2892,5 +2894,19 @@ useEffect(() => {
         </div>
       )}
     </div>
+  );
+}
+
+export default function MarketPage(props: { params: Promise<{ marketId: string }> }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[240px] flex items-center justify-center text-gray-500 text-sm">
+          Loading market…
+        </div>
+      }
+    >
+      <MarketPageContent {...props} />
+    </Suspense>
   );
 }

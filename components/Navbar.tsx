@@ -39,8 +39,16 @@ function formatBalance(balance: bigint | undefined): string {
     : amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-const Navbar = () => {
+export type NavbarVariant = "full" | "embed";
+
+type NavbarProps = {
+  /** `embed`: compact bar for partner iframes (?embed=1) — keeps Sign In + cash */
+  variant?: NavbarVariant;
+};
+
+const Navbar = ({ variant = "full" }: NavbarProps) => {
   const router = useRouter();
+  const isEmbed = variant === "embed";
   const account = useActiveAccount();
   const { portfolioValue, setPortfolioValue } = usePortfolio();
   const [portfolioLoading, setPortfolioLoading] = useState(false);
@@ -109,6 +117,72 @@ const Navbar = () => {
     setPortfolioValue(cash.toFixed(2));
   }, [account?.address, balance, setPortfolioValue]);
 
+  const rightControls = (
+    <div className="flex items-center gap-0">
+      {!isEmbed && (
+        <button
+          className="hidden md:flex flex-col items-center justify-center bg-white px-2 py-1 rounded transition-colors duration-200 cursor-pointer focus:outline-none hover:bg-gray-200"
+          style={{ boxShadow: "none", minWidth: 0 }}
+          onClick={() => router.push("/portfolio")}
+          type="button"
+        >
+          <span className="text-[#171A22] font-medium text-xs">Portfolio</span>
+          <span className="text-green-600 font-semibold text-xs">
+            {portfolioLoading || portfolioValue === "--" ? (
+              <>$--</>
+            ) : (
+              <>${Number(portfolioValue).toLocaleString(undefined, { maximumFractionDigits: 2 })}</>
+            )}
+          </span>
+        </button>
+      )}
+      <button
+        className={
+          isEmbed
+            ? "flex flex-col items-center justify-center bg-white px-2 py-1 pr-2 md:pr-4 rounded transition-colors duration-200 cursor-pointer focus:outline-none hover:bg-gray-200 text-center"
+            : "hidden md:flex flex-col items-center justify-center bg-white px-2 py-1 pr-4 m-0 p-0 rounded transition-colors duration-200 cursor-pointer focus:outline-none hover:bg-gray-200 text-center"
+        }
+        style={{ boxShadow: "none", minWidth: 0, margin: 0 }}
+        onClick={() => router.push(isEmbed ? "/deposit" : "/portfolio")}
+        type="button"
+      >
+        <span className="text-[#171A22] font-medium text-xs">Cash</span>
+        <span className="text-green-600 font-semibold text-xs">
+          {!account?.address || isPending ? <>$--</> : <>${formatBalance(balance)}</>}
+        </span>
+      </button>
+      <div className={`flex ${isEmbed ? "scale-90 origin-right" : "scale-75 origin-left"}`}>
+        <ConnectButton
+          client={client}
+          wallets={wallets}
+          connectButton={{
+            label: "Sign In",
+            className:
+              "bg-black text-white px-4 py-2 rounded transition-colors duration-200 focus:outline-none hover:bg-gray-800 text-[10px] font-semibold m-0",
+          }}
+        />
+      </div>
+    </div>
+  );
+
+  if (isEmbed) {
+    return (
+      <nav className="w-full border-b border-gray-200 bg-white shrink-0">
+        <div className="max-w-6xl mx-auto w-full flex items-center justify-between px-4 md:px-6 lg:px-8 py-2 gap-3">
+          <a
+            href="https://www.thecitizen.io"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-bold text-[#171A22] shrink-0 hover:underline"
+          >
+            The Citizen
+          </a>
+          {rightControls}
+        </div>
+      </nav>
+    );
+  }
+
   return (
     <nav className="w-full border-b border-gray-200 bg-white">
       <div className="max-w-6xl mx-auto w-full flex items-center justify-between px-4 md:px-6 lg:px-8 py-1">
@@ -119,6 +193,7 @@ const Navbar = () => {
               className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[8px] md:text-xs font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
               style={{ minWidth: 0 }}
               onClick={() => router.push("/markets")}
+              type="button"
             >
               Markets
             </button>
@@ -127,6 +202,7 @@ const Navbar = () => {
               className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[8px] md:text-xs font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
               style={{ minWidth: 0 }}
               onClick={() => router.push("/market-ideas")}
+              type="button"
             >
               New
             </button>
@@ -134,6 +210,7 @@ const Navbar = () => {
               className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[8px] md:text-xs font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
               style={{ minWidth: 0 }}
               onClick={() => router.push("/portfolio")}
+              type="button"
             >
               Portfolio
             </button>
@@ -141,6 +218,7 @@ const Navbar = () => {
               className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[8px] md:text-xs font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
               style={{ minWidth: 0 }}
               onClick={() => router.push("/deposit")}
+              type="button"
             >
               Deposit
             </button>
@@ -148,44 +226,13 @@ const Navbar = () => {
               className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[8px] md:text-xs font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
               style={{ minWidth: 0 }}
               onClick={() => router.push("/docs")}
+              type="button"
             >
               Docs
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-0">
-          <button
-            className="hidden md:flex flex-col items-center justify-center bg-white px-2 py-1 rounded transition-colors duration-200 cursor-pointer focus:outline-none hover:bg-gray-200"
-            style={{ boxShadow: "none", minWidth: 0 }}
-            onClick={() => router.push("/portfolio")}
-          >
-            <span className="text-[#171A22] font-medium text-xs">Portfolio</span>
-                            <span className="text-green-600 font-semibold text-xs">
-                  {portfolioLoading || portfolioValue === "--" ? <>$--</> : <>${Number(portfolioValue).toLocaleString(undefined, { maximumFractionDigits: 2 })}</>}
-                </span>
-          </button>
-          <button
-            className="hidden md:flex flex-col items-center justify-center bg-white px-2 py-1 pr-4 m-0 p-0 rounded transition-colors duration-200 cursor-pointer focus:outline-none hover:bg-gray-200 text-center"
-            style={{ boxShadow: "none", minWidth: 0, margin: 0 }}
-            onClick={() => router.push("/portfolio")}
-          >
-                            <span className="text-[#171A22] font-medium text-xs">Cash</span>
-                            <span className="text-green-600 font-semibold text-xs">
-                  {(!account?.address || isPending) ? <>$--</> : <>${formatBalance(balance)}</>}
-                </span>
-          </button>
-          <div className="flex scale-75 origin-left">
-            <ConnectButton 
-              client={client} 
-              wallets={wallets} 
-              connectButton={{
-                label: "Sign In",
-                className: "bg-black text-white px-4 py-2 rounded transition-colors duration-200 focus:outline-none hover:bg-gray-800 text-[10px] font-semibold m-0"
-              }}
-            />
-          </div>
-          {/* Example: <InAppWalletButton /> */}
-        </div>
+        {rightControls}
       </div>
     </nav>
   );

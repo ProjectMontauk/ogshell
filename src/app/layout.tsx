@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "../components/Providers";
 import RpcLogger from "../components/RpcLogger";
 import { PortfolioProvider } from "../contexts/PortfolioContext";
-import Footer from "../../components/Footer";
+import ConditionalFooter from "../../components/ConditionalFooter";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,8 +36,9 @@ export default function RootLayout({
           <Providers>
             <RpcLogger />
             <main className="bg-white">{children}</main>
-            {/* Footer */}
-            <Footer />
+            <Suspense fallback={null}>
+              <ConditionalFooter />
+            </Suspense>
           </Providers>
         </PortfolioProvider>
       </body>
