@@ -149,7 +149,7 @@ function DocsContent() {
                 The markets will be resolved by a panel of three neutral jurors known as the &quot;board&quot; who have domain expertise. The Citizen will draft three jurors who meet the following criteria:
               </p>
               <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
-                <li>Male born in the United States</li>
+                <li>Born in the United States</li>
                 <li>PhD or PhD candidate in a relevant field</li>
                 <li>Self-proclaimed neutral and undecided on the particular question at hand</li>
               </ul>
@@ -227,7 +227,7 @@ function DocsContent() {
                 The markets will be resolved by a panel of three neutral judges that have domain expertise. The Citizen that will draft three judges that meet the following criteria:
               </p>
               <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
-                <li>Male born in the United States</li>
+                <li>Born in the United States</li>
                 <li>Phd. or Phd. candidate in relevant field</li>
                 <li>Self-proclaimed neutral and undecided on the particular question at hand</li>
               </ul>
