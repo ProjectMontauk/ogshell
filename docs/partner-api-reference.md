@@ -24,6 +24,8 @@ Partners can load the **full market experience** inside an `<iframe>` without re
 https://www.thecitizen.io/markets/<marketId>?embed=1
 ```
 
+Optional: `&theme=dark` or `&theme=light` so the iframe matches the partner’s UI on first load (see inline `THEME_INIT_SCRIPT` in `src/app/layout.tsx`). `widget.js` can pass this via `data-theme="dark"` on the mount node.
+
 With `embed=1`:
 
 - **Navbar** is compact: link to The Citizen, **Cash**, **Sign In** (wallet still works).
@@ -70,6 +72,7 @@ Production URL (use your canonical host, e.g. `https://www.thecitizen.io/widget.
 | `data-market-id` | **yes** | Market slug (same as `/markets/:id`) |
 | `data-base-url` | no | Override iframe origin (default = origin of `widget.js`) |
 | `data-ref` | no | Appended as `ref=` on embed URL |
+| `data-theme` | no | `light` or `dark` — appended as `theme=` (initial iframe appearance) |
 | `data-min-height` | no | iframe `min-height` (default `720px`) |
 | `data-height` | no | iframe `height` |
 | `data-title` | no | iframe `title` (a11y) |

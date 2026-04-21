@@ -118,15 +118,15 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
   }, [account?.address, balance, setPortfolioValue]);
 
   const rightControls = (
-    <div className="flex items-center gap-0">
+    <div className="flex items-center gap-1">
       {!isEmbed && (
         <button
-          className="hidden md:flex flex-col items-center justify-center bg-white px-2 py-1 rounded transition-colors duration-200 cursor-pointer focus:outline-none hover:bg-gray-200"
+          className="hidden md:flex flex-col items-center justify-center bg-card px-2 py-1 rounded transition-colors duration-200 cursor-pointer focus:outline-none hover:bg-gray-100 dark:hover:bg-white/10"
           style={{ boxShadow: "none", minWidth: 0 }}
           onClick={() => router.push("/portfolio")}
           type="button"
         >
-          <span className="text-[#171A22] font-medium text-xs">Portfolio</span>
+          <span className="text-citizen-ink font-medium text-xs">Portfolio</span>
           <span className="text-green-600 font-semibold text-xs">
             {portfolioLoading || portfolioValue === "--" ? (
               <>$--</>
@@ -139,14 +139,14 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
       <button
         className={
           isEmbed
-            ? "flex flex-col items-center justify-center bg-white px-2 py-1 pr-2 md:pr-4 rounded transition-colors duration-200 cursor-pointer focus:outline-none hover:bg-gray-200 text-center"
-            : "hidden md:flex flex-col items-center justify-center bg-white px-2 py-1 pr-4 m-0 p-0 rounded transition-colors duration-200 cursor-pointer focus:outline-none hover:bg-gray-200 text-center"
+            ? "flex flex-col items-center justify-center bg-card px-2 py-1 pr-2 md:pr-4 rounded transition-colors duration-200 cursor-pointer focus:outline-none hover:bg-gray-100 dark:hover:bg-white/10 text-center"
+            : "hidden md:flex flex-col items-center justify-center bg-card px-2 py-1 pr-4 m-0 p-0 rounded transition-colors duration-200 cursor-pointer focus:outline-none hover:bg-gray-100 dark:hover:bg-white/10 text-center"
         }
         style={{ boxShadow: "none", minWidth: 0, margin: 0 }}
         onClick={() => router.push(isEmbed ? "/deposit" : "/portfolio")}
         type="button"
       >
-        <span className="text-[#171A22] font-medium text-xs">Cash</span>
+        <span className="text-citizen-ink font-medium text-xs">Cash</span>
         <span className="text-green-600 font-semibold text-xs">
           {!account?.address || isPending ? <>$--</> : <>${formatBalance(balance)}</>}
         </span>
@@ -158,7 +158,7 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
           connectButton={{
             label: "Sign In",
             className:
-              "bg-black text-white px-4 py-2 rounded transition-colors duration-200 focus:outline-none hover:bg-gray-800 text-[10px] font-semibold m-0",
+              "bg-black text-white px-4 py-2 rounded transition-colors duration-200 focus:outline-none hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 text-[10px] font-semibold m-0",
           }}
         />
       </div>
@@ -167,13 +167,13 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
 
   if (isEmbed) {
     return (
-      <nav className="w-full border-b border-gray-200 bg-white shrink-0">
+      <nav className="w-full border-b border-border bg-background shrink-0">
         <div className="max-w-6xl mx-auto w-full flex items-center justify-between px-4 md:px-6 lg:px-8 py-2 gap-3">
           <a
             href="https://www.thecitizen.io"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-bold text-[#171A22] shrink-0 hover:underline"
+            className="text-sm font-bold text-citizen-ink shrink-0 hover:underline"
           >
             The Citizen
           </a>
@@ -184,13 +184,13 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
   }
 
   return (
-    <nav className="w-full border-b border-gray-200 bg-white">
+    <nav className="w-full border-b border-border bg-background">
       <div className="max-w-6xl mx-auto w-full flex items-center justify-between px-4 md:px-6 lg:px-8 py-1">
         <div className="ml-0 flex flex-col items-start">
-          <h1 className="text-2xl font-bold text-[#171A22] mt-2">The Citizen</h1>
+          <h1 className="text-2xl font-bold text-citizen-ink mt-2">The Citizen</h1>
           <div className="flex gap-0 md:gap-0 mt-1 -ml-2">
             <button
-              className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[8px] md:text-xs font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
+              className="py-1 px-1 md:px-2 bg-transparent text-citizen-ink rounded-md text-[8px] md:text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10 transition border-none shadow-none text-left whitespace-nowrap"
               style={{ minWidth: 0 }}
               onClick={() => router.push("/markets")}
               type="button"
@@ -199,7 +199,7 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
             </button>
 
             <button
-              className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[8px] md:text-xs font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
+              className="py-1 px-1 md:px-2 bg-transparent text-citizen-ink rounded-md text-[8px] md:text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10 transition border-none shadow-none text-left whitespace-nowrap"
               style={{ minWidth: 0 }}
               onClick={() => router.push("/market-ideas")}
               type="button"
@@ -207,7 +207,7 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
               New
             </button>
             <button
-              className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[8px] md:text-xs font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
+              className="py-1 px-1 md:px-2 bg-transparent text-citizen-ink rounded-md text-[8px] md:text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10 transition border-none shadow-none text-left whitespace-nowrap"
               style={{ minWidth: 0 }}
               onClick={() => router.push("/portfolio")}
               type="button"
@@ -215,7 +215,7 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
               Portfolio
             </button>
             <button
-              className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[8px] md:text-xs font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
+              className="py-1 px-1 md:px-2 bg-transparent text-citizen-ink rounded-md text-[8px] md:text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10 transition border-none shadow-none text-left whitespace-nowrap"
               style={{ minWidth: 0 }}
               onClick={() => router.push("/deposit")}
               type="button"
@@ -223,7 +223,7 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
               Deposit
             </button>
             <button
-              className="py-1 px-1 md:px-2 bg-white text-[#171A22] rounded-md text-[8px] md:text-xs font-semibold hover:bg-gray-100 transition border-none shadow-none text-left whitespace-nowrap"
+              className="py-1 px-1 md:px-2 bg-transparent text-citizen-ink rounded-md text-[8px] md:text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10 transition border-none shadow-none text-left whitespace-nowrap"
               style={{ minWidth: 0 }}
               onClick={() => router.push("/docs")}
               type="button"

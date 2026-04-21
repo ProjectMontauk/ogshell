@@ -1,14 +1,40 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols:wght@400;700&display=swap');
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Light (default) */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #171a22;
+  --card: #ffffff;
+  --muted: #64748b;
+  --border: #e5e7eb;
+  /* Prediction market accents — Kalshi-adjacent in dark; keep readable greens in light */
+  --accent-yes: #16a34a;
+  --accent-no: #2563eb;
+}
+
+/* Dark — palette inspired by Kalshi (charcoal base, mint yes, blue no) */
+.dark {
+  color-scheme: dark;
+  --background: #0b0e11;
+  --foreground: #ffffff;
+  --card: #16191e;
+  --muted: #94a3b8;
+  --border: #2a2f38;
+  --accent-yes: #00e889;
+  --accent-no: #3b82f6;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent-yes: var(--accent-yes);
+  --color-accent-no: var(--accent-no);
 }
 
 body {
@@ -17,6 +43,165 @@ body {
   padding: 0;
   background: var(--background);
   color: var(--foreground);
+}
+
+/* --- Dark: map legacy utility classes (incrementally replace with semantic tokens in components) --- */
+.dark .bg-white {
+  background-color: var(--card) !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: #1c2128 !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: #252b35 !important;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: #2a3140 !important;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: #323945 !important;
+}
+
+.dark .hover\:bg-gray-200:hover {
+  background-color: #3d4450 !important;
+}
+
+.dark .hover\:bg-green-50:hover {
+  background-color: rgba(0, 232, 137, 0.12) !important;
+}
+
+.dark .hover\:bg-blue-50:hover {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+}
+
+.dark .hover\:bg-blue-100:hover {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+.dark .text-gray-900 {
+  color: var(--foreground) !important;
+}
+
+.dark .text-gray-800 {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-gray-700 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-gray-600 {
+  color: var(--muted) !important;
+}
+
+.dark .text-gray-500 {
+  color: var(--muted) !important;
+}
+
+.dark .text-gray-400 {
+  color: #64748b !important;
+}
+
+.dark .text-black {
+  color: var(--foreground) !important;
+}
+
+.dark .border-gray-200 {
+  border-color: var(--border) !important;
+}
+
+.dark .border-gray-300 {
+  border-color: #3d4450 !important;
+}
+
+.dark .border-t.border-gray-200 {
+  border-top-color: var(--border) !important;
+}
+
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.45) !important;
+}
+
+.dark .shadow {
+  box-shadow:
+    0 1px 3px 0 rgb(0 0 0 / 0.5),
+    0 1px 2px -1px rgb(0 0 0 / 0.45) !important;
+}
+
+.dark .ring-black,
+.dark .focus\:ring-black:focus {
+  --tw-ring-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+.dark .text-green-600 {
+  color: var(--accent-yes) !important;
+}
+
+.dark .text-green-700 {
+  color: var(--accent-yes) !important;
+}
+
+.dark .text-blue-700 {
+  color: #93c5fd !important;
+}
+
+.dark .border-green-300 {
+  border-color: rgba(0, 232, 137, 0.45) !important;
+}
+
+.dark .border-blue-300 {
+  border-color: rgba(59, 130, 246, 0.55) !important;
+}
+
+.dark .text-blue-600 {
+  color: var(--accent-no) !important;
+}
+
+.dark .hover\:text-blue-800:hover {
+  color: #93c5fd !important;
+}
+
+/* Shared heading/body ink — use with `text-citizen-ink` in components */
+.text-citizen-ink {
+  color: #171a22;
+}
+
+.dark .text-citizen-ink {
+  color: var(--foreground) !important;
+}
+
+.dark input,
+.dark textarea {
+  background-color: #1c2128 !important;
+  color: var(--foreground) !important;
+  border-color: #3d4450 !important;
+}
+
+.dark .file\:bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+.dark .file\:text-blue-700 {
+  color: #93c5fd !important;
+}
+
+.dark .hover\:file\:bg-blue-100:hover {
+  background-color: rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Primary CTA (Citizen ink) → mint on dark */
+.dark .bg-\[\#171A22\] {
+  background-color: var(--accent-yes) !important;
+  color: #0b0e11 !important;
+}
+
+.dark .hover\:bg-\[\#232635\]:hover {
+  background-color: #00c978 !important;
+  color: #0b0e11 !important;
 }
 
 /* Nash Symbol Font Support */
@@ -39,8 +224,6 @@ span:contains("𐆖"),
     font-family: 'Noto Sans Symbols', 'Apple Symbols', 'Segoe UI Symbol', 'Symbola', sans-serif;
   }
 }
-
-/* font-family: Arial, Helvetica, sans-serif; */
 
 /* Hide spin buttons in Chrome, Safari, Edge, Opera */
 input[type="number"]::-webkit-outer-spin-button,

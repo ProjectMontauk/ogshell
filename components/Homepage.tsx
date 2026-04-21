@@ -7,6 +7,7 @@ import { getContract, readContract } from "thirdweb";
 import { client } from "../src/client";
 import { baseSepolia } from "thirdweb/chains";
 import { getAllMarkets, Market } from "../src/data/markets";
+import { useTheme } from "../src/contexts/ThemeContext";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
 // Backend API base URL - same-origin Next.js API routes
@@ -54,8 +55,12 @@ async function fetchFpmmProbsForMarket(market: Market): Promise<{ yes: number; n
 // Large featured banner market at top of homepage
 const FeaturedMarket = ({ market, probs }: { market: Market; probs: { yes: number; no: number } | null }) => {
   const router = useRouter();
+  const { resolved: themeResolved } = useTheme();
   const yes = probs?.yes ?? 0;
   const no = probs?.no ?? 0;
+  const chartGridStroke = themeResolved === "dark" ? "#52525b" : "#e5e7eb";
+  const chartLineYes = themeResolved === "dark" ? "#00e889" : "#22c55e";
+  const chartLineNo = themeResolved === "dark" ? "#3b82f6" : "#2563eb";
 
   // Mini odds history chart data for featured market
   const [featuredHistory, setFeaturedHistory] = useState<
@@ -183,16 +188,26 @@ const FeaturedMarket = ({ market, probs }: { market: Market; probs: { yes: numbe
                     formatter={(v) =>
                       typeof v === "number" ? `${Math.round(v * 100)}%` : v
                     }
+                    contentStyle={
+                      themeResolved === "dark"
+                        ? {
+                            backgroundColor: "#16191e",
+                            border: "1px solid #2a2f38",
+                            borderRadius: "8px",
+                            color: "#f8fafc",
+                          }
+                        : undefined
+                    }
                   />
-                  <ReferenceLine y={0.2} stroke="#e5e7eb" strokeDasharray="4 4" />
-                  <ReferenceLine y={0.4} stroke="#e5e7eb" strokeDasharray="4 4" />
-                  <ReferenceLine y={0.6} stroke="#e5e7eb" strokeDasharray="4 4" />
-                  <ReferenceLine y={0.8} stroke="#e5e7eb" strokeDasharray="4 4" />
-                  <ReferenceLine y={1} stroke="#e5e7eb" strokeDasharray="4 4" />
+                  <ReferenceLine y={0.2} stroke={chartGridStroke} strokeDasharray="4 4" />
+                  <ReferenceLine y={0.4} stroke={chartGridStroke} strokeDasharray="4 4" />
+                  <ReferenceLine y={0.6} stroke={chartGridStroke} strokeDasharray="4 4" />
+                  <ReferenceLine y={0.8} stroke={chartGridStroke} strokeDasharray="4 4" />
+                  <ReferenceLine y={1} stroke={chartGridStroke} strokeDasharray="4 4" />
                   <Line
                     type="monotone"
                     dataKey="Yes"
-                    stroke="#22c55e"
+                    stroke={chartLineYes}
                     strokeWidth={2}
                     dot={false}
                     name="Yes"
@@ -200,7 +215,7 @@ const FeaturedMarket = ({ market, probs }: { market: Market; probs: { yes: numbe
                   <Line
                     type="monotone"
                     dataKey="No"
-                    stroke="#2563eb"
+                    stroke={chartLineNo}
                     strokeWidth={2}
                     dot={false}
                     name="No"
@@ -352,9 +367,17 @@ const TrendingList = ({ markets }: { markets: Market[] }) => {
           <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-gray-900">Trending Evidence</h3>
         </div>
-        <div className="divide-y divide-gray-100">
+        <div className="flex flex-col">
           {topEvidence.map((entry, idx) => (
-            <TrendingRow key={`${entry.marketId || "placeholder"}-${idx}`} index={idx + 1} entry={entry} />
+            <div key={`${entry.marketId || "placeholder"}-${idx}`}>
+              {idx > 0 ? (
+                <div
+                  className="h-px w-full bg-gray-200 dark:bg-border shrink-0"
+                  aria-hidden
+                />
+              ) : null}
+              <TrendingRow index={idx + 1} entry={entry} />
+            </div>
           ))}
         </div>
       </aside>
@@ -391,7 +414,7 @@ const TrendingRow = ({
   return (
     <button
       type="button"
-      className="w-full py-2.5 flex items-start gap-3 text-left hover:bg-gray-50 rounded-lg"
+      className="w-full py-2.5 flex items-start gap-3 text-left hover:bg-gray-50 dark:hover:bg-white/5 rounded-none"
       onClick={handleClick}
     >
       <span className="w-5 shrink-0 text-xs font-semibold text-gray-500 mt-0.5">
@@ -460,21 +483,28 @@ const NewMarketPanel = () => {
           No proposed markets yet. Visit the Market Ideas page to suggest one.
         </div>
       ) : (
-        <div className="divide-y divide-gray-100">
+        <div className="flex flex-col">
           {ideas.map((idea, idx) => (
-            <button
-              type="button"
-              key={idea.id}
-              onClick={() => router.push("/market-ideas")}
-              className="w-full py-2.5 flex items-start gap-3 text-left hover:bg-gray-50 rounded-lg"
-            >
-              <span className="w-5 shrink-0 text-xs font-semibold text-gray-500 mt-0.5">
-                {idx + 1}
-              </span>
-              <span className="text-xs font-semibold text-gray-900 line-clamp-2 min-w-0">
-                {idea.title}
-              </span>
-            </button>
+            <div key={idea.id}>
+              {idx > 0 ? (
+                <div
+                  className="h-px w-full bg-gray-200 dark:bg-border shrink-0"
+                  aria-hidden
+                />
+              ) : null}
+              <button
+                type="button"
+                onClick={() => router.push("/market-ideas")}
+                className="w-full py-2.5 flex items-start gap-3 text-left hover:bg-gray-50 dark:hover:bg-white/5 rounded-none"
+              >
+                <span className="w-5 shrink-0 text-xs font-semibold text-gray-500 mt-0.5">
+                  {idx + 1}
+                </span>
+                <span className="text-xs font-semibold text-gray-900 line-clamp-2 min-w-0">
+                  {idea.title}
+                </span>
+              </button>
+            </div>
           ))}
         </div>
       )}

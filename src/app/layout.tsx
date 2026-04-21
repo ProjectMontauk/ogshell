@@ -5,7 +5,9 @@ import "./globals.css";
 import Providers from "../components/Providers";
 import RpcLogger from "../components/RpcLogger";
 import { PortfolioProvider } from "../contexts/PortfolioContext";
+import { ThemeProvider } from "../contexts/ThemeContext";
 import ConditionalFooter from "../../components/ConditionalFooter";
+import { THEME_INIT_SCRIPT } from "../lib/theme";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,18 +30,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden bg-white`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden bg-background text-foreground`}
       >
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <PortfolioProvider>
-          <Providers>
-            <RpcLogger />
-            <main className="bg-white">{children}</main>
-            <Suspense fallback={null}>
-              <ConditionalFooter />
-            </Suspense>
-          </Providers>
+          <ThemeProvider>
+            <Providers>
+              <RpcLogger />
+              <main className="min-h-screen bg-background text-foreground">
+                {children}
+              </main>
+              <Suspense fallback={null}>
+                <ConditionalFooter />
+              </Suspense>
+            </Providers>
+          </ThemeProvider>
         </PortfolioProvider>
       </body>
     </html>

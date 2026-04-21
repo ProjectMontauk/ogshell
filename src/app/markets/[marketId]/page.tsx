@@ -15,6 +15,7 @@ import { calculateSharesFromBetAmount } from "../../../utils/calculateSharesFrom
 import { getMarketById } from "../../../data/markets";
 import { notFound } from "next/navigation";
 import DenariusSymbol from "../../../components/DenariusSymbol";
+import { useTheme } from "../../../contexts/ThemeContext";
 
 // Backend API base URL - same-origin Next.js API routes
 const API_BASE_URL = '';
@@ -63,6 +64,7 @@ interface OddsHistoryEntry {
 function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }) {
   const resolvedParams = use(params);
   const searchParams = useSearchParams();
+  const { resolved: themeResolved } = useTheme();
   const isEmbed = searchParams?.get("embed") === "1";
   const market = getMarketById(resolvedParams.marketId);
   
@@ -1930,6 +1932,11 @@ useEffect(() => {
     }
   }, [marketContract, market.id, fetchOddsHistory, refetchOddsFromContract]);
 
+  const chartGridStroke = themeResolved === "dark" ? "#52525b" : "#bdbdbd";
+  const chartTickFill = themeResolved === "dark" ? "#94a3b8" : "#525252";
+  const chartLineYes = themeResolved === "dark" ? "#00e889" : "#22c55e";
+  const chartLineNo = themeResolved === "dark" ? "#3b82f6" : "#2563eb";
+
   return (
     <div>
       <Navbar variant={isEmbed ? "embed" : "full"} />
@@ -1956,12 +1963,12 @@ useEffect(() => {
             {/* Combined Market Odds + Evidence Card */}
             <div className="bg-white pt-2.5 pr-2.5 pb-2.5 pl-0 w-full lg:w-[calc(100%-300px)] mb-8 lg:mb-0 flex flex-col">
               {/* Odds History Chart Card */}
-              <h2 className="text-lg font-bold mb-2 text-[#171A22]">{market.title}</h2>
+              <h2 className="text-lg font-bold mb-2 text-citizen-ink">{market.title}</h2>
               <div className="mb-2">
-                <span className="text-sm font-semibold text-[#171A22]">Market Odds</span>
+                <span className="text-sm font-semibold text-citizen-ink">Market Odds</span>
               </div>
               {/* Live Yes/No Probabilities Display - now in its own container */}
-              <div className="mb-0 pl-[0px] pr-1 text-sm font-bold text-[#171A22]">
+              <div className="mb-0 pl-[0px] pr-1 text-sm font-bold text-citizen-ink">
                 {typeof oddsYes === 'bigint' && typeof oddsNo === 'bigint' ? (
                   <>
                     <span className="text-green-600">Yes: {Math.round(Number(oddsYes) / Math.pow(2, 64) * 100)}%</span>
@@ -1982,7 +1989,7 @@ useEffect(() => {
                     <LineChart data={chartData} margin={{ top: 20, right: 0, left: 5, bottom: 0 }}>
                       <XAxis
                         dataKey="timestamp"
-                        tick={{ fontSize: 12, dy: 8 }}
+                        tick={{ fontSize: 12, dy: 8, fill: chartTickFill }}
                         height={40}
                         tickFormatter={(_, index) => {
                           if (index === 0) {
@@ -2001,15 +2008,27 @@ useEffect(() => {
                         orientation="right"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fontSize: 12 }}
+                        tick={{ fontSize: 12, fill: chartTickFill }}
                       />
-                      <Tooltip formatter={v => (typeof v === 'number' ? `${Math.round(v * 100)}%` : v)} />
-                      <ReferenceLine y={0.25} stroke="#bdbdbd" strokeDasharray="4 4" />
-                      <ReferenceLine y={0.5} stroke="#bdbdbd" strokeDasharray="4 4" />
-                      <ReferenceLine y={0.75} stroke="#bdbdbd" strokeDasharray="4 4" />
-                      <ReferenceLine y={1} stroke="#bdbdbd" strokeDasharray="4 4" />
-                      <Line type="linear" dataKey="Yes" stroke="#22c55e" dot={false} name="Yes Probability" />
-                      <Line type="linear" dataKey="No" stroke="#2563eb" dot={false} name="No Probability" />
+                      <Tooltip
+                        formatter={v => (typeof v === 'number' ? `${Math.round(v * 100)}%` : v)}
+                        contentStyle={
+                          themeResolved === "dark"
+                            ? {
+                                backgroundColor: "#16191e",
+                                border: "1px solid #2a2f38",
+                                borderRadius: "8px",
+                                color: "#f8fafc",
+                              }
+                            : undefined
+                        }
+                      />
+                      <ReferenceLine y={0.25} stroke={chartGridStroke} strokeDasharray="4 4" />
+                      <ReferenceLine y={0.5} stroke={chartGridStroke} strokeDasharray="4 4" />
+                      <ReferenceLine y={0.75} stroke={chartGridStroke} strokeDasharray="4 4" />
+                      <ReferenceLine y={1} stroke={chartGridStroke} strokeDasharray="4 4" />
+                      <Line type="linear" dataKey="Yes" stroke={chartLineYes} dot={false} name="Yes Probability" />
+                      <Line type="linear" dataKey="No" stroke={chartLineNo} dot={false} name="No Probability" />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -2292,7 +2311,7 @@ useEffect(() => {
               {/* Evidence Section (always at the bottom of the combined card) */}
               <div className="w-full mt-8 mb-8">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-[16px] font-bold text-[#171A22]">Evidence</h2>
+                  <h2 className="text-[16px] font-bold text-citizen-ink">Evidence</h2>
                   {/* Voting Power Display */}
                   <div className="flex items-center space-x-2 text-[14px] font-medium">
                     <span className="text-green-600 font-semibold">Yes Power: {yesVotingPower}x</span>
@@ -2304,21 +2323,21 @@ useEffect(() => {
                   <Tab.List className="flex w-full mb-6 bg-gray-50 rounded-lg">
                     <Tab
                       className={({ selected }: { selected: boolean }) =>
-                        `flex-1 px-6 py-2 rounded-lg font-medium text-[14px] transition focus:outline-none ${selected ? "bg-white text-[#171A22] shadow" : "bg-gray-50 text-gray-500"}`
+                        `flex-1 px-6 py-2 rounded-lg font-medium text-[14px] transition focus:outline-none ${selected ? "bg-white text-citizen-ink shadow" : "bg-gray-50 text-gray-500"}`
                       }
                     >
                       {market.outcomes[0]}
                     </Tab>
                     <Tab
                       className={({ selected }: { selected: boolean }) =>
-                        `flex-1 px-6 py-2 rounded-lg font-medium text-[14px] transition focus:outline-none ${selected ? "bg-white text-[#171A22] shadow" : "bg-gray-50 text-gray-500"}`
+                        `flex-1 px-6 py-2 rounded-lg font-medium text-[14px] transition focus:outline-none ${selected ? "bg-white text-citizen-ink shadow" : "bg-gray-50 text-gray-500"}`
                       }
                     >
                       {market.outcomes[1]}
                     </Tab>
                     <Tab
                       className={({ selected }: { selected: boolean }) =>
-                        `flex-1 px-6 py-2 rounded-lg font-medium text-[14px] transition focus:outline-none ${selected ? "bg-white text-[#171A22] shadow" : "bg-gray-50 text-gray-500"}`
+                        `flex-1 px-6 py-2 rounded-lg font-medium text-[14px] transition focus:outline-none ${selected ? "bg-white text-citizen-ink shadow" : "bg-gray-50 text-gray-500"}`
                       }
                     >
                       Submit Document
@@ -2372,13 +2391,13 @@ useEffect(() => {
                                         href={evidence.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="font-bold text-[#171A22] hover:underline text-[95%]"
+                                        className="font-bold text-citizen-ink hover:underline text-[95%]"
                                         onClick={e => e.stopPropagation()} // Prevent expand/collapse when clicking link
                                       >
                                         {evidence.title} ({isPdfUrl(evidence.url) ? 'pdf' : getDomain(evidence.url)})
                                       </a>
                                     ) : (
-                                      <span className="font-bold text-[#171A22] text-[95%]">{evidence.title}</span>
+                                      <span className="font-bold text-citizen-ink text-[95%]">{evidence.title}</span>
                                     )}
                                     <button
                                       className="text-xs text-gray-600 mt-2 hover:underline hover:text-blue-800 focus:outline-none block"
@@ -2455,13 +2474,13 @@ useEffect(() => {
                                         href={evidence.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="font-bold text-[#171A22] hover:underline text-[95%]"
+                                        className="font-bold text-citizen-ink hover:underline text-[95%]"
                                         onClick={e => e.stopPropagation()} // Prevent expand/collapse when clicking link
                                       >
                                         {evidence.title} ({isPdfUrl(evidence.url) ? 'pdf' : getDomain(evidence.url)})
                                       </a>
                                     ) : (
-                                      <span className="font-bold text-[#171A22] text-[95%]">{evidence.title}</span>
+                                      <span className="font-bold text-citizen-ink text-[95%]">{evidence.title}</span>
                                     )}
                                     <button
                                       className="text-xs text-gray-600 mt-2 hover:underline hover:text-blue-800 focus:outline-none block"

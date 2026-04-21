@@ -233,7 +233,7 @@ export default function MarketIdeasPage() {
       <Navbar />
       <div className="min-h-screen bg-white flex flex-col items-center pt-8 w-full">
         <div className="w-full max-w-4xl mx-auto px-4">
-          <h2 className="text-lg font-semibold text-[#171A22] mb-2">Rules</h2>
+          <h2 className="text-lg font-semibold text-citizen-ink mb-2">Rules</h2>
           <div className="text-base text-gray-700 mb-6">
             Vote for your favorite markets. Each week, the most popular market will be created and propose new questions on the Submit New Idea tab. 
           </div>
@@ -258,7 +258,7 @@ export default function MarketIdeasPage() {
           {/* Tab Panels */}
           {activeTab === 'submit' && (
             <div className="bg-white rounded-xl shadow border border-gray-200 p-8 mb-8">
-              <h2 className="text-xl font-bold text-[#171A22] mb-4">Submit New Market Idea</h2>
+              <h2 className="text-xl font-bold text-citizen-ink mb-4">Submit New Market Idea</h2>
               <form onSubmit={handleSubmitIdea} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -294,7 +294,7 @@ export default function MarketIdeasPage() {
 
           {activeTab === 'proposed' && (
             <div className="bg-white rounded-xl shadow border border-gray-200 p-8">
-              <h2 className="text-xl font-bold text-[#171A22] mb-6">Proposed Markets</h2>
+              <h2 className="text-xl font-bold text-citizen-ink mb-6">Proposed Markets</h2>
               {loading ? (
                 <div className="text-gray-500 text-center py-8">Loading market ideas...</div>
               ) : sortedIdeas.length === 0 ? (
@@ -344,7 +344,7 @@ export default function MarketIdeasPage() {
                         <div className="flex-1">
                           <div className="flex items-center mb-2">
                             <span className="text-sm font-semibold mr-2">#{idx + 1}</span>
-                            <span className="text-sm font-bold text-[#171A22]">
+                            <span className="text-sm font-bold text-citizen-ink">
                               {idea.title}
                             </span>
                           </div>
