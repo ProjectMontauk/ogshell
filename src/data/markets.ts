@@ -87,20 +87,13 @@ export const markets: Market[] = [
 ];
 
 export function getMarketById(id: string): Market | undefined {
-  return markets.find(market => market.id === id);
+  // MVP: only expose the featured market for now.
+  if (id !== "covid19") return undefined;
+  return markets.find((market) => market.id === id);
 }
 
 export function getAllMarkets(): Market[] {
-  // Build market list for UI:
-  // - Hide specific markets (e.g., 2020 election, JFK CIA market)
-  // - Force "Was COVID-19 Genetically Engineered?" to be the featured market
-  const visible = markets.filter(
-    (market) => market.id !== '2020' && market.id !== 'jfk'
-  );
-
-  const covid = visible.find((m) => m.id === 'covid19');
-  if (!covid) return visible;
-
-  const others = visible.filter((m) => m.id !== 'covid19');
-  return [covid, ...others];
+  // MVP: only expose the featured market for now.
+  const covid = markets.find((m) => m.id === "covid19");
+  return covid ? [covid] : [];
 } 
