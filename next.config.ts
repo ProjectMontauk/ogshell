@@ -27,6 +27,15 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: "/embed/market-card/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: `frame-ancestors ${frameAncestors};`,
+          },
+        ],
+      },
     ];
   },
 };

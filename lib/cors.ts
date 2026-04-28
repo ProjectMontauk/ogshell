@@ -11,6 +11,7 @@ export function getAllowedOrigin(origin: string | undefined): string | null {
     return origin;
   }
   if (origin.startsWith('http://localhost:') || origin.startsWith('https://localhost:')) return origin;
+  if (origin.startsWith('http://127.0.0.1:') || origin.startsWith('https://127.0.0.1:')) return origin;
   if (origin.endsWith('.vercel.app')) return origin;
   return null;
 }

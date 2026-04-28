@@ -33,7 +33,7 @@ With `embed=1`:
 
 ### Framing (CSP)
 
-`next.config.ts` sets **`Content-Security-Policy: frame-ancestors ...`** on `/markets/*`. Only listed origins (e.g. Bitchute + your own site + local dev) may embed. Add new partner domains there when onboarding.
+`next.config.ts` sets **`Content-Security-Policy: frame-ancestors ...`** on `/markets/*` and **`/embed/market-card/*`**. Only listed origins (e.g. Bitchute + your own site + local dev) may embed. Add new partner domains there when onboarding.
 
 ### Minimal iframe
 
@@ -86,6 +86,39 @@ Production URL (use your canonical host, e.g. `https://www.thecitizen.io/widget.
 ```
 
 Framing rules (**`frame-ancestors`** in `next.config.ts`) still apply to the parent site.
+
+### Homepage preview card (`widget-card.js` / `widget-homepage.js`)
+
+For partner **homepages** (e.g. BitChute front page), use a compact preview that links out to a **separate partner-hosted page** containing the full embed (`widget.js` or a full `/markets/<id>?embed=1` iframe).
+
+Static files:
+
+- **`/widget-card.js`**
+- **`/widget-homepage.js`** (same behavior; alternate filename)
+
+```html
+<div
+  id="citizen-market-card"
+  data-market-id="covid19"
+  data-click-url="https://your-bitchute-domain.example/markets/covid19"
+  data-theme="dark"
+  data-min-height="260px"
+></div>
+<script src="https://www.thecitizen.io/widget-card.js" async></script>
+```
+
+| Attribute | Required | Purpose |
+|-----------|----------|---------|
+| `data-market-id` | **yes** | Market slug (same as `/markets/:id`) |
+| `data-click-url` | **yes** | Partner URL to open when the preview is clicked (full market page) |
+| `data-base-url` | no | Citizen origin for the iframe (default = origin of the loader script) |
+| `data-api-base-url` | no | Origin to read `/api/odds-history` from when the Citizen host has no DB rows (local dev); production BitChute usually omits this |
+| `data-theme` | no | `light` or `dark` — appended as `theme=` (initial iframe appearance) |
+| `data-min-height` | no | iframe `min-height` (default `240px`) |
+| `data-height` | no | iframe `height` |
+| `data-title` | no | iframe `title` (a11y) |
+
+**Multiple cards:** `data-citizen-market-card` + `data-market-id` + `data-click-url` on each container.
 
 ---
 
