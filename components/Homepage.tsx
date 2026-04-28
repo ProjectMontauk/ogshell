@@ -3,54 +3,16 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { getContract, readContract } from "thirdweb";
-import { client } from "../src/client";
-import { baseSepolia } from "thirdweb/chains";
 import { getAllMarkets, Market } from "../src/data/markets";
 import { useTheme } from "../src/contexts/ThemeContext";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import {
+  fetchFpmmProbsForMarket,
+  ODDS_HISTORY_FIXED_POINT,
+} from "../src/lib/fpmmMarketOdds";
 
 // Backend API base URL - same-origin Next.js API routes
 const API_BASE_URL = "";
-
-const INVESTMENT_AMOUNT = BigInt("1000000000000000000"); // 1e18 for FPMM calcBuyAmount
-
-/** Fetch FPMM yes/no probabilities for one market (same logic as markets/[id] page). */
-async function fetchFpmmProbsForMarket(market: Market): Promise<{ yes: number; no: number } | null> {
-  try {
-    const contract = getContract({
-      client,
-      chain: baseSepolia,
-      address: market.contractAddress,
-    });
-    const [sharesYes, sharesNo] = await Promise.all([
-      readContract({
-        contract,
-        method:
-          "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
-        params: [INVESTMENT_AMOUNT, 0n],
-      }),
-      readContract({
-        contract,
-        method:
-          "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
-        params: [INVESTMENT_AMOUNT, 1n],
-      }),
-    ]);
-    const inv = Number(INVESTMENT_AMOUNT);
-    const sY = Number(sharesYes);
-    const sN = Number(sharesNo);
-    if (sY <= 0 || sN <= 0) return null;
-    const oddsYesRaw = inv / sY;
-    const oddsNoRaw = inv / sN;
-    const probYes = oddsYesRaw / (oddsYesRaw + oddsNoRaw);
-    const probNo = oddsNoRaw / (oddsYesRaw + oddsNoRaw);
-    return { yes: probYes, no: probNo };
-  } catch (e) {
-    console.error("Homepage FPMM odds error for", market.id, e);
-    return null;
-  }
-}
 
 // Large featured banner market at top of homepage
 const FeaturedMarket = ({ market, probs }: { market: Market; probs: { yes: number; no: number } | null }) => {
@@ -77,7 +39,6 @@ const FeaturedMarket = ({ market, probs }: { market: Market; probs: { yes: numbe
         if (!res.ok) return;
         const data = await res.json();
         if (!Array.isArray(data)) return;
-        const ODDS_DIVISOR = Number("18446744073709551616");
         const sliced = data.slice(-40);
         const chart = sliced.map(
           (
@@ -90,11 +51,11 @@ const FeaturedMarket = ({ market, probs }: { market: Market; probs: { yes: numbe
           timestamp: new Date(entry.timestamp).toISOString().slice(5, 10), // MM-DD
           Yes:
             typeof entry.yesProbability === "number"
-              ? entry.yesProbability / ODDS_DIVISOR
+              ? entry.yesProbability / ODDS_HISTORY_FIXED_POINT
               : 0,
           No:
             typeof entry.noProbability === "number"
-              ? entry.noProbability / ODDS_DIVISOR
+              ? entry.noProbability / ODDS_HISTORY_FIXED_POINT
               : 0,
           })
         );

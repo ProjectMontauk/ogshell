@@ -23,7 +23,7 @@ export default async function MarketCardEmbedPage({
   if (!market) notFound();
 
   return (
-    <div className="min-h-[180px] w-full bg-transparent p-0">
+    <div className="min-h-[180px] w-full max-w-4xl mx-auto bg-transparent px-3 sm:px-4 py-0 box-border">
       <MarketCardEmbed marketId={market.id} apiBase={apiBase} />
     </div>
   );
