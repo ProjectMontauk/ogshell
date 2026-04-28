@@ -56,6 +56,17 @@ export default function MarketCardEmbed({
   >([]);
 
   useEffect(() => {
+    // This runs inside the iframe. Ensure the iframe doesn't show internal scrollbars.
+    try {
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+      document.body.style.margin = "0";
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
     if (!market) return;
     let cancelled = false;
     (async () => {

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Citizen widget-card demo</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #0b0d12;
+        color: #fff;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial,
+          "Apple Color Emoji", "Segoe UI Emoji";
+      }
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+      }
+      .hint {
+        font-size: 13px;
+        opacity: 0.8;
+        margin: 0 0 12px;
+        line-height: 1.4;
+      }
+      .card {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        margin-bottom: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <p class="hint">
+        This page loads <code>/widget-card.js</code>. The iframe should auto-resize
+        after the chart/odds load. Open DevTools → Console and run:
+        <code>window.addEventListener("message", console.log)</code> to see resize
+        events.
+      </p>
+
+      <div class="card">
+        <div
+          id="citizen-market-card"
+          data-market-id="covid19"
+          data-click-url="https://example.com/full-market"
+          data-theme="dark"
+          data-debug="1"
+          data-api-base-url="https://www.thecitizen.io"
+          data-height="260px"
+          style="width: 420px; max-width: 100%; height: 260px; margin: 0 auto"
+        ></div>
+      </div>
+
+      <script src="/widget-card.js" async></script>
+    </div>
+  </body>
+</html>
+

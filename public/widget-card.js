@@ -24,6 +24,14 @@
 (function () {
   "use strict";
 
+  function safeOrigin(url) {
+    try {
+      return new URL(url).origin;
+    } catch (e) {
+      return null;
+    }
+  }
+
   function getDefaultBaseUrl() {
     var cur = document.currentScript;
     if (cur && cur.src) {
@@ -60,6 +68,7 @@
       marketId: el.getAttribute("data-market-id"),
       baseUrl: el.getAttribute("data-base-url"),
       apiBaseUrl: el.getAttribute("data-api-base-url"),
+      debug: el.getAttribute("data-debug"),
       theme: el.getAttribute("data-theme"),
       minHeight: el.getAttribute("data-min-height"),
       height: el.getAttribute("data-height"),
@@ -88,8 +97,10 @@
     }
 
     var base = (opts.baseUrl || getDefaultBaseUrl()).replace(/\/$/, "");
+    var baseOrigin = safeOrigin(base);
     var apiBase = (opts.apiBaseUrl || "").trim().replace(/\/$/, "");
     apiBase = pickApiBaseUrl(base, apiBase);
+    var debug = opts.debug === "1" || opts.debug === "true";
 
     var url = base + "/embed/market-card/" + encodeURIComponent(marketId) + "?embed=1";
     if (opts.theme === "dark" || opts.theme === "light") {
@@ -111,10 +122,18 @@
     iframe.style.width = "100%";
     iframe.style.border = "0";
     iframe.style.display = "block";
-    iframe.style.minHeight = opts.minHeight || "240px";
+    // Do not impose sizing constraints by default. Partners control sizing via CSS
+    // on the container plus optional data-min-height / data-height overrides.
+    if (opts.minHeight) {
+      iframe.style.minHeight = opts.minHeight;
+    }
     if (opts.height) {
       iframe.style.height = opts.height;
     }
+    iframe.style.overflow = "hidden";
+    // Prevent internal scrollbars (auto-resize should handle height).
+    iframe.setAttribute("scrolling", "no");
+    iframe.scrolling = "no";
     iframe.loading = "lazy";
     iframe.referrerPolicy = "strict-origin-when-cross-origin";
 
@@ -129,6 +148,32 @@
     a.style.cursor = "pointer";
     a.style.background = "transparent";
     a.style.outline = "none";
+
+    // Auto-resize (ONLY in widget-card.js):
+    // The iframe posts { type: "citizen:resize", height } from inside the embed route.
+    // We scope to this iframe by checking event.source.
+    var onMessage = function (event) {
+      try {
+        if (!event || event.source !== iframe.contentWindow) return;
+        if (baseOrigin && event.origin && event.origin !== baseOrigin) return;
+        var data = event.data || {};
+        if (!data || data.type !== "citizen:resize") return;
+        var h = Number(data.height);
+        if (!isFinite(h) || h <= 0) return;
+        // Respect the content’s measured height; avoid hard min/max clamps so partners can size freely.
+        h = Math.round(h);
+        if (debug) {
+          console.log("[Citizen widget-card] resize", {
+            marketId: marketId,
+            height: h,
+          });
+        }
+        iframe.style.height = h + "px";
+      } catch (e) {
+        /* ignore */
+      }
+    };
+    window.addEventListener("message", onMessage);
 
     el.appendChild(iframe);
     el.appendChild(a);
