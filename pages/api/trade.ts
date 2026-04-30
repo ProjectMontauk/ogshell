@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, type Prisma } from '@prisma/client';
 import { getAllowedOrigin } from '../../lib/cors';
 
 const prisma = new PrismaClient();
@@ -70,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         status: status || 'OPEN',
       });
       
-      const data: any = {
+      const data: Prisma.TradeCreateInput = {
         walletAddress,
         marketTitle,
         marketId: marketId as string,
