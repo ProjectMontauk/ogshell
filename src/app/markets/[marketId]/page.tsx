@@ -959,40 +959,30 @@ useEffect(() => {
   return () => { cancelled = true; };
 }, [mode, selectedOutcome, amount, marketContract]);
 
-// Sell mode: Receive display — all markets use FPMM calcSellAmount(returnAmount, outcomeIndex) → outcomeTokenSellAmount
+// Sell mode: Receive display — simple estimate: Receive = sharesToSell * (current price shown as Avg Price).
 useEffect(() => {
-  if (mode !== 'sell' || !selectedOutcome || !amount) {
+  if (mode !== "sell" || !selectedOutcome || !amount) {
     setSellReceiveDisplay(null);
+    setSellReceiveLoading(false);
     return;
   }
-  const amountNum = parseFloat(amount);
-  if (Number.isNaN(amountNum) || amountNum <= 0) {
+  const sharesToSell = parseFloat(amount);
+  if (Number.isNaN(sharesToSell) || sharesToSell <= 0) {
     setSellReceiveDisplay(null);
+    setSellReceiveLoading(false);
     return;
   }
-  let cancelled = false;
-  setSellReceiveLoading(true);
-  setSellReceiveDisplay(null);
-  const outcomeIndex = selectedOutcome === 'yes' ? 0 : 1;
-
-  readContract({
-    contract: marketContract,
-    method: "function calcSellAmount(uint256 returnAmount, uint256 outcomeIndex) view returns (uint256)",
-    params: [BigInt(Math.floor(amountNum * 1e18)), BigInt(outcomeIndex)],
-  })
-    .then((outcomeTokenSellAmount) => {
-      if (cancelled) return;
-      const human = Number(outcomeTokenSellAmount) / 1e18;
-      setSellReceiveDisplay(human.toFixed(2));
-    })
-    .catch(() => {
-      if (!cancelled) setSellReceiveDisplay("--");
-    })
-    .finally(() => {
-      if (!cancelled) setSellReceiveLoading(false);
-    });
-  return () => { cancelled = true; };
-}, [market.id, mode, selectedOutcome, amount, marketContract]);
+  const odds = selectedOutcome === "yes" ? oddsYes : oddsNo;
+  if (odds === undefined || odds === null) {
+    setSellReceiveDisplay("--");
+    setSellReceiveLoading(false);
+    return;
+  }
+  const oddsNum = Number(odds) / ODDS_DIVISOR; // dollars per share
+  const receive = sharesToSell * oddsNum;
+  setSellReceiveDisplay(Number.isFinite(receive) ? receive.toFixed(2) : "--");
+  setSellReceiveLoading(false);
+}, [mode, selectedOutcome, amount, oddsYes, oddsNo]);
 
 
 
@@ -1441,22 +1431,21 @@ useEffect(() => {
         }
       }
     } else {
-      // Sell mode: FPMM = calcSellAmount(returnAmount, outcomeIndex)
-      // Amount field is desired returnAmount (collateral); Receive shows outcomeTokenSellAmount (shares sold)
-      const returnAmount = parseFloat(amount);
+      // Sell mode: Amount = shares to sell; Receive = estimated collateral received (quoted via calcSellAmount inversion)
+      const sharesToSell = parseFloat(amount);
       if (sellReceiveLoading) {
         payoutDisplay = '...';
-      } else if (sellReceiveDisplay && returnAmount > 0) {
+      } else if (sellReceiveDisplay && sharesToSell > 0) {
         payoutDisplay = sellReceiveDisplay;
-        const receiveNum = Number(sellReceiveDisplay);
-        if (Number.isFinite(receiveNum) && receiveNum > 0) {
-          const avgPriceInCents = (returnAmount / receiveNum) * 100;
+        const receiveDollars = Number(sellReceiveDisplay);
+        if (Number.isFinite(receiveDollars) && receiveDollars > 0) {
+          const avgPriceInCents = (receiveDollars / sharesToSell) * 100;
           avgPriceDisplay = `¢${avgPriceInCents.toFixed(0)}`;
         }
       } else if (priceResult !== undefined && !isPricePending && !priceError) {
         const refundReceived = Number(priceResult) / 1e18;
         payoutDisplay = refundReceived.toFixed(2);
-        const avgPriceInCents = (refundReceived / returnAmount) * 100;
+        const avgPriceInCents = (refundReceived / sharesToSell) * 100;
         avgPriceDisplay = `¢${avgPriceInCents.toFixed(0)}`;
       } else {
         const odds = selectedOutcome === 'yes' ? oddsYes : oddsNo;
@@ -2302,7 +2291,7 @@ useEffect(() => {
                           !selectedOutcome ||
                           !amount ||
                           (mode === 'buy' && tradeStatus === 'pending') ||
-                          (mode === 'sell' && !sellReceiveDisplay) ||
+                          (mode === 'sell' && sellReceiveDisplay === "--") ||
                           (selectedOutcome === 'yes' && mode === 'sell' && buyYesStatus === 'pending') ||
                           (selectedOutcome === 'no' && mode === 'sell' && buyNoStatus === 'pending')
                         }
@@ -2311,7 +2300,7 @@ useEffect(() => {
                           if (mode === 'buy') {
                             handleFpmmBuy(amount);
                           } else {
-                            handleFpmmSell(sellReceiveDisplay ?? amount);
+                            handleFpmmSell(amount);
                           }
                         }}
                       >
@@ -2859,7 +2848,7 @@ useEffect(() => {
                       !selectedOutcome ||
                       !amount ||
                       (mode === 'buy' && tradeStatus === 'pending') ||
-                      (mode === 'sell' && !sellReceiveDisplay) ||
+                      (mode === 'sell' && sellReceiveDisplay === "--") ||
                       (selectedOutcome === 'yes' && mode === 'sell' && buyYesStatus === 'pending') ||
                       (selectedOutcome === 'no' && mode === 'sell' && buyNoStatus === 'pending')
                     }
@@ -2868,7 +2857,7 @@ useEffect(() => {
                       if (mode === 'buy') {
                         handleFpmmBuy(amount);
                       } else {
-                        handleFpmmSell(sellReceiveDisplay ?? amount);
+                        handleFpmmSell(amount);
                       }
                     }}
                   >
