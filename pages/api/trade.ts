@@ -31,12 +31,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         avgPrice,
         betAmount,
         toWin,
-        status
+        status,
+        txHash,
+        tradeType,
       } = req.body;
       
-      if (!walletAddress || !marketTitle || !marketId || !outcome || !shares || !avgPrice || !betAmount || !toWin) {
-        console.error('Missing required fields:', { walletAddress, marketTitle, marketId, outcome, shares, avgPrice, betAmount, toWin });
+      // Validate required fields (don't treat numeric 0 as "missing")
+      if (!walletAddress || !marketTitle || !marketId || !outcome) {
+        console.error('Missing required string fields:', { walletAddress, marketTitle, marketId, outcome });
         return res.status(400).json({ error: 'Missing required fields' });
+      }
+      if (shares === null || shares === undefined || Number(shares) <= 0 || !Number.isFinite(Number(shares))) {
+        console.error('Invalid shares:', { shares });
+        return res.status(400).json({ error: 'Invalid shares' });
+      }
+      if (avgPrice === null || avgPrice === undefined || !Number.isFinite(Number(avgPrice))) {
+        console.error('Invalid avgPrice:', { avgPrice });
+        return res.status(400).json({ error: 'Invalid avgPrice' });
+      }
+      if (betAmount === null || betAmount === undefined || !Number.isFinite(Number(betAmount))) {
+        console.error('Invalid betAmount:', { betAmount });
+        return res.status(400).json({ error: 'Invalid betAmount' });
+      }
+      if (toWin === null || toWin === undefined || !Number.isFinite(Number(toWin))) {
+        console.error('Invalid toWin:', { toWin });
+        return res.status(400).json({ error: 'Invalid toWin' });
       }
       
       console.log('Creating trade with data:', {
@@ -51,19 +70,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         status: status || 'OPEN',
       });
       
-      const trade = await prisma.trade.create({
-        data: {
-          walletAddress,
-          marketTitle,
-          marketId: marketId as string,
-          outcome,
-          shares,
-          avgPrice,
-          betAmount,
-          toWin,
-          status: status || 'OPEN',
-        },
-      });
+      const data: any = {
+        walletAddress,
+        marketTitle,
+        marketId: marketId as string,
+        outcome,
+        shares: Number(shares),
+        avgPrice: Number(avgPrice),
+        betAmount: Number(betAmount),
+        toWin: Number(toWin),
+        status: status || 'OPEN',
+        txHash: typeof txHash === 'string' && txHash.trim() ? txHash.trim() : undefined,
+        tradeType:
+          typeof tradeType === 'string' && tradeType.trim()
+            ? tradeType.trim()
+            : undefined,
+      };
+
+      const trade = await prisma.trade.create({ data });
       
       console.log('Trade created successfully:', trade);
       return res.status(201).json(trade);

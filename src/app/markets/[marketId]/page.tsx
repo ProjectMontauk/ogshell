@@ -30,6 +30,20 @@ function getDomain(url: string) {
   }
 }
 
+function txHashFromResult(result: unknown): string | undefined {
+  if (!result || typeof result !== "object") return undefined;
+  const r = result as Record<string, unknown>;
+  const direct = r.transactionHash ?? r.hash;
+  if (typeof direct === "string" && direct.startsWith("0x")) return direct;
+  const tx = r.transaction;
+  if (tx && typeof tx === "object") {
+    const t = tx as Record<string, unknown>;
+    const inner = t.hash ?? t.transactionHash;
+    if (typeof inner === "string" && inner.startsWith("0x")) return inner;
+  }
+  return undefined;
+}
+
 // Helper to check if URL is a PDF
   function isPdfUrl(url: string): boolean {
     return url.toLowerCase().includes('/uploads/evidence/') || 
@@ -1711,6 +1725,28 @@ useEffect(() => {
         },
         onSuccess: async (result: unknown) => {
           setBuyFeedback("Trade Submitted");
+          // Record trade to DB (best-effort, don't block UX)
+          try {
+            if (account?.address) {
+              const sharesHuman = Number(expectedShares) / 1e18;
+              const avgPrice = sharesHuman > 0 ? investmentNum / sharesHuman : 0;
+              await submitTrade({
+                walletAddress: account.address,
+                marketTitle: market.title,
+                marketId: market.id,
+                outcome: selectedOutcome === "yes" ? "Yes" : "No",
+                shares: sharesHuman,
+                avgPrice,
+                betAmount: investmentNum,
+                toWin: sharesHuman - investmentNum,
+                status: "OPEN",
+                txHash: txHashFromResult(result),
+                tradeType: "BUY",
+              });
+            }
+          } catch (err) {
+            console.error("Failed to submit FPMM buy trade to DB:", err);
+          }
           await waitForTransactionConfirmation(result, "Trade Completed");
           recordNewOdds();
           setTradeFeedback(null);
@@ -1800,6 +1836,28 @@ useEffect(() => {
         },
         onSuccess: async (result: unknown) => {
           setBuyFeedback("Trade Submitted");
+          // Record trade to DB (best-effort, don't block UX)
+          try {
+            if (account?.address) {
+              const proceeds = Number(returnAmount) / 1e18;
+              const avgPrice = shareNum > 0 ? proceeds / shareNum : 0;
+              await submitTrade({
+                walletAddress: account.address,
+                marketTitle: market.title,
+                marketId: market.id,
+                outcome: selectedOutcome === "yes" ? "Yes" : "No",
+                shares: shareNum,
+                avgPrice,
+                betAmount: proceeds,
+                toWin: 0,
+                status: "OPEN",
+                txHash: txHashFromResult(result),
+                tradeType: "SELL",
+              });
+            }
+          } catch (err) {
+            console.error("Failed to submit FPMM sell trade to DB:", err);
+          }
           await waitForTransactionConfirmation(result, "Trade Completed");
           recordNewOdds();
           setTradeFeedback(null);

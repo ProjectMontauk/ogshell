@@ -8,6 +8,8 @@ export async function submitTrade(tradeData: {
   betAmount: number;
   toWin: number;
   status?: string;
+  txHash?: string;
+  tradeType?: string;
 }) {
   // Use server-side API route for secure trade submission
   const res = await fetch('/api/submit-trade', {
@@ -15,7 +17,12 @@ export async function submitTrade(tradeData: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(tradeData),
   });
-  if (!res.ok) throw new Error('Failed to submit trade');
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new Error(
+      `Failed to submit trade (${res.status}): ${detail || res.statusText}`.slice(0, 500)
+    );
+  }
   
   // Check if response has content before parsing JSON
   const text = await res.text();

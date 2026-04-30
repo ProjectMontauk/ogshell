@@ -140,11 +140,15 @@ model Trade {
   betAmount     Float   // Total USD amount spent
   toWin         Float   // Potential payout if outcome wins
   status        String  @default("OPEN") // 'OPEN', 'WON', 'LOST', etc.
+  // Optional metadata (shows in Studio; DB columns exist via migration)
+  txHash        String? // On-chain transaction hash
+  tradeType     String  @default("BUY") // BUY | SELL | ADVANCED
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   
   // Index for better query performance
   @@index([marketId])
+  @@index([txHash])
 }
 
 model UserPnLHistory {
@@ -200,38 +204,6 @@ model UserDeposits {
   id            Int      @id @default(autoincrement())
   walletAddress String
   amount        Float    // Amount deposited in USD
-  transactionHash String? // Optional: blockchain transaction hash
-  createdAt     DateTime @default(now())
-  
-  // Indexes for better query performance
-  @@index([walletAddress])
-  @@index([createdAt])
-}
-
-// Model to track processed Stripe checkout sessions for minting
-model ProcessedSession {
-  id            Int      @id @default(autoincrement())
-  sessionId     String   @unique // Stripe checkout session ID
-  nashAmount    String   // Amount of Nash tokens to mint
-  customerWallet String  // Customer's wallet address
-  purchaseAmount String   // Purchase amount in USD
-  status        String   @default("pending") // 'pending', 'completed', 'failed'
-  mintedAt      DateTime? // When tokens were actually minted
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  // Indexes for better query performance
-  @@index([sessionId])
-  @@index([customerWallet])
-  @@index([status])
-  @@index([createdAt])
-}
-
-// Model to track auto-deposits to prevent double deposits
-model AutoDeposit {
-  id            Int      @id @default(autoincrement())
-  walletAddress String   @unique // User's wallet address
-  amount        String   // Amount of Nash tokens deposited
   transactionHash String? // Optional: blockchain transaction hash
   createdAt     DateTime @default(now())
   
