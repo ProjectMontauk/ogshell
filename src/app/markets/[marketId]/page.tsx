@@ -1,7 +1,7 @@
 "use client";
 
 import Navbar from "../../../../components/Navbar";
-import React, { useState, useEffect, useCallback, use, Suspense } from "react";
+import React, { useState, useEffect, useCallback, use, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useActiveAccount, useReadContract, useSendTransaction } from "thirdweb/react";
 import { prepareContractCall, readContract } from "thirdweb";
@@ -158,6 +158,28 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
   useEffect(() => {
     fetchFpmmOdds();
   }, [fetchFpmmOdds]);
+
+  // Evidence tabs (Yes / No / Submit): default visible tab from market-implied odds once per market load.
+  const [evidenceTabIndex, setEvidenceTabIndex] = useState(0);
+  const evidenceTabOddsInitForMarketRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    evidenceTabOddsInitForMarketRef.current = null;
+    setEvidenceTabIndex(0);
+  }, [market.id]);
+
+  useEffect(() => {
+    if (fpmmOddsLoading) return;
+    if (fpmmOddsYes === undefined || fpmmOddsNo === undefined) return;
+    if (evidenceTabOddsInitForMarketRef.current === market.id) return;
+    evidenceTabOddsInitForMarketRef.current = market.id;
+    const scale = Math.pow(2, 64);
+    const pYes = Number(fpmmOddsYes) / scale;
+    const pNo = Number(fpmmOddsNo) / scale;
+    if (pYes > 0.5) setEvidenceTabIndex(0);
+    else if (pNo > 0.5) setEvidenceTabIndex(1);
+    else setEvidenceTabIndex(0);
+  }, [market.id, fpmmOddsYes, fpmmOddsNo, fpmmOddsLoading]);
 
   const oddsYes = fpmmOddsYes;
   const oddsNo = fpmmOddsNo;
@@ -2366,7 +2388,7 @@ useEffect(() => {
                     <span className="text-blue-600 font-semibold">No Power: {noVotingPower}x</span>
                   </div>
                 </div>
-                <Tab.Group>
+                <Tab.Group selectedIndex={evidenceTabIndex} onChange={setEvidenceTabIndex}>
                   <Tab.List className="flex w-full mb-6 bg-gray-50 rounded-lg">
                     <Tab
                       className={({ selected }: { selected: boolean }) =>
