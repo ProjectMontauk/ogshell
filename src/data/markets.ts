@@ -61,16 +61,18 @@ export const markets: Market[] = [
     rules: "The market will resolve \"Yes\" if the WSJ scientific review board finds clear and convincing evidence that SARS-CoV-2 (COVID-19) was genetically engineered in a laboratory, including but not limited to intentional modification of viral genetic material that materially departs from known natural evolution.\n\nOtherwise, the market will resolve \"No.\" This means the WSJ scientific review board did not find clear and convincing evidence that COVID-19 was genetically engineered, and natural or non-engineered origins remain more consistent with the available evidence.\n\nThis market will close February 20th, 2026 at 11:59 AM EDT and within three days of market close, the review board will resolve the market and author the case summary.\n\nFind out more about the WSJ scientific review board <a href=\"/docs?tab=review-boards\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: #2563eb; text-decoration: underline;\">here</a>."
   },
   {
-    id: 'mrna',
-    title: "Do mRNA Vaccines Cause Turbo Cancer?",
-    description: "Are mRNA COVID-19 vaccines causally linked to a new or markedly elevated risk of so-called 'turbo cancer' compared to not receiving them?",
+    id: "brigitte-macron-born-man",
+    title: "Was Brigitte Macron Born a Man?",
+    description:
+      "Is there clear and convincing evidence that Brigitte Macron was assigned male at birth or lived as male prior to her public identity as Brigitte Macron?",
     image: "/MRNATurboCancer.png",
     contractAddress: "0x2E26448da0740F3877cf9dDE6c179E396076B552",
     outcomes: [
-      "Yes, mRNA vaccines cause turbo cancer",
-      "No, mRNA vaccines do not cause turbo cancer"
+      "Yes, Brigitte Macron was born male",
+      "No, Brigitte Macron was not born male",
     ],
-    rules: "The market will resolve \"Yes\" if the WSJ scientific review board finds clear and convincing evidence that receiving mRNA COVID-19 vaccines is causally associated with a substantially increased incidence of aggressive, rapidly developing cancers (\"turbo cancer\") relative to comparable unvaccinated or non‑mRNA‑vaccinated populations, after adjusting for reasonable confounders.\n\nOtherwise, the market will resolve \"No.\" This means the WSJ scientific review board did not find clear and convincing evidence that mRNA COVID-19 vaccines cause an elevated rate of such cancers beyond what would be expected from background incidence and other factors.\n\nThis market will close February 20th, 2026 at 11:59 AM EDT and within three days of market close, the review board will resolve the market and author the case summary.\n\nFind out more about the WSJ scientific review board <a href=\"/docs?tab=review-boards\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: #2563eb; text-decoration: underline;\">here</a>."
+    rules:
+      'This market concerns whether Brigitte Macron was assigned male at birth or lived under a male identity in a way that substantiates an affirmative answer to the question in the title.\n\n<strong>Price oracle.</strong> The reference price for this market is <strong>Objection AI&rsquo;s probability estimate</strong> for an affirmative answer to that case (the estimated likelihood that the claim is true), as published or otherwise made available by Objection AI for this market. See <a href="https://objection.ai/the-process" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline;">Objection AI&rsquo;s process</a>.\n\n<strong>Publication schedule.</strong> Objection AI will publish the <strong>initial</strong> price-oracle probability estimate for this case on <strong>June 1, 2026</strong>. After that, the oracle will publish on a <strong>quarterly</strong> cadence on the first day of each subsequent quarter: <strong>September 1</strong>, <strong>December 1</strong>, <strong>March 1</strong>, and <strong>June 1</strong> each year (e.g., September 1, 2026; December 1, 2026; March 1, 2027; June 1, 2027; and so on). Each publication reflects evidence available through that date, including factual developments, court or administrative rulings, and investigative findings.\n\n<strong>No interim rulings or off-cycle oracle.</strong> There will be <strong>no interim rulings</strong> and <strong>no interim or off-schedule oracle publications</strong> for any market question that follows this quarterly Objection AI schedule. The only official oracle releases are the dates above.\n\n<strong>Reporting date vs. between updates.</strong> On each scheduled reporting date, the <strong>reference price</strong> for the market is set to match that day&rsquo;s newly published Objection AI estimate (the price update is the oracle value for that release). <strong>Between</strong> reporting dates, participants may <strong>trade freely</strong>: prices are driven by the market mechanism and participant activity, not by additional oracle resets, until the next quarterly publication.\n\nParticipants should treat the oracle as a forward-looking, evidence-weighted probability&mdash;not a final legal or journalistic determination&mdash;and should read Objection AI&rsquo;s methodology and disclaimers alongside this market (<a href="https://objection.ai/the-process" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline;">objection.ai/the-process</a>).',
   },
   {
     id: '2020',
@@ -86,14 +88,19 @@ export const markets: Market[] = [
   }
 ];
 
+const EXPOSED_MARKET_IDS = new Set<string>(["covid19", "brigitte-macron-born-man"]);
+
 export function getMarketById(id: string): Market | undefined {
-  // MVP: only expose the featured market for now.
-  if (id !== "covid19") return undefined;
+  // MVP: only expose a small set of markets for now.
+  if (!EXPOSED_MARKET_IDS.has(id)) return undefined;
   return markets.find((market) => market.id === id);
 }
 
 export function getAllMarkets(): Market[] {
-  // MVP: only expose the featured market for now.
-  const covid = markets.find((m) => m.id === "covid19");
-  return covid ? [covid] : [];
+  // MVP: only expose a small set of markets for now.
+  // Order controls homepage: [featured, ...secondary]
+  const orderedIds: string[] = ["covid19", "brigitte-macron-born-man"];
+  return orderedIds
+    .map((id) => markets.find((m) => m.id === id))
+    .filter((m): m is Market => Boolean(m));
 } 

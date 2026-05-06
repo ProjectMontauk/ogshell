@@ -240,7 +240,7 @@ export function getContractsForMarket(marketId: string) {
         outcome1PositionId: "34168952953386005158914283859524538537850500849951758432076805194426472551804", // Yes - Base position ID
         outcome2PositionId: "31399717836710254760347926979497604263634699268784540145161572320974812433148", // No - Base position ID
       };
-    case 'mrna':
+    case "brigitte-macron-born-man":
       return {
         marketContract: mrnaMarketContract,
         conditionalTokensContract: mrnaConditionalTokensContract,
