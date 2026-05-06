@@ -50,15 +50,14 @@ export const markets: Market[] = [
   },
   {
     id: 'covid19',
-    title: "Was COVID-19 Genetically Engineered?",
-    description: "Was SARS-CoV-2 (COVID-19) genetically engineered in a lab rather than arising purely from natural zoonotic spillover?",
+    title: "Was COVID-19 a Lab Leak?",
+    description:
+      "Did SARS-CoV-2 (COVID-19) reach humans through a laboratory-associated leak rather than purely through natural zoonotic spillover without such involvement?",
     image: "/CovidVaccine.png",
     contractAddress: "0x157a7bc878c625b9f85136BC75Bdb7503a0C5171",
-    outcomes: [
-      "Yes, COVID-19 was genetically engineered",
-      "No, COVID-19 was not genetically engineered"
-    ],
-    rules: "The market will resolve \"Yes\" if the WSJ scientific review board finds clear and convincing evidence that SARS-CoV-2 (COVID-19) was genetically engineered in a laboratory, including but not limited to intentional modification of viral genetic material that materially departs from known natural evolution.\n\nOtherwise, the market will resolve \"No.\" This means the WSJ scientific review board did not find clear and convincing evidence that COVID-19 was genetically engineered, and natural or non-engineered origins remain more consistent with the available evidence.\n\nThis market will close February 20th, 2026 at 11:59 AM EDT and within three days of market close, the review board will resolve the market and author the case summary.\n\nFind out more about the WSJ scientific review board <a href=\"/docs?tab=review-boards\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: #2563eb; text-decoration: underline;\">here</a>."
+    outcomes: ["Yes, COVID-19 was a lab leak", "No, COVID-19 was not a lab leak"],
+    rules:
+      'This market will resolve to &ldquo;Yes&rdquo; if there is clear and convincing evidence that SARS-CoV-2 (COVID-19) entered the human population through a laboratory leak from a research or related facility, rather than purely through natural zoonotic spillover without such involvement. Otherwise, this market will resolve to &ldquo;No.&rdquo;\n\nPrice oracle. The reference price for this market is Objection AI&rsquo;s probability estimate for the same &ldquo;Yes&rdquo; outcome described above, as published for this market. See <a href="https://objection.ai/the-process" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline;">Objection AI&rsquo;s process</a>.\n\nPublication schedule. Objection AI will publish the initial price-oracle probability estimate for this case on June 1, 2026. After that, the oracle will publish on a quarterly cadence on the first day of each subsequent quarter: September 1, December 1, March 1, and June 1 each year. Each publication reflects evidence available through that date, including factual developments, court or administrative rulings, and investigative findings.\n\nNo interim rulings or off-cycle oracle. There will be no interim rulings and no interim or off-schedule oracle publications for any market question that follows this quarterly Objection AI schedule. The only official oracle releases are the dates above.\n\nReporting date vs. between updates. On each scheduled reporting date, the reference price for the market is set to match that day&rsquo;s newly published Objection AI estimate (the price update is the oracle value for that release). Between reporting dates, participants may trade freely: prices are driven by the market mechanism and participant activity, not by additional oracle resets, until the next quarterly publication.\n\nParticipants should treat the oracle as a forward-looking, evidence-weighted probability&mdash;not a final legal or journalistic determination&mdash;and should read Objection AI&rsquo;s methodology and disclaimers alongside this market (<a href="https://objection.ai/the-process" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline;">objection.ai/the-process</a>).',
   },
   {
     id: "brigitte-macron-born-man",
@@ -88,7 +87,7 @@ export const markets: Market[] = [
   }
 ];
 
-const EXPOSED_MARKET_IDS = new Set<string>(["covid19", "brigitte-macron-born-man"]);
+const EXPOSED_MARKET_IDS = new Set<string>(["covid19"]);
 
 export function getMarketById(id: string): Market | undefined {
   // MVP: only expose a small set of markets for now.
@@ -99,7 +98,7 @@ export function getMarketById(id: string): Market | undefined {
 export function getAllMarkets(): Market[] {
   // MVP: only expose a small set of markets for now.
   // Order controls homepage: [featured, ...secondary]
-  const orderedIds: string[] = ["covid19", "brigitte-macron-born-man"];
+  const orderedIds: string[] = ["covid19"];
   return orderedIds
     .map((id) => markets.find((m) => m.id === id))
     .filter((m): m is Market => Boolean(m));
