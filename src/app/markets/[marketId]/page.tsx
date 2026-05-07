@@ -18,6 +18,7 @@ import { getMarketById } from "../../../data/markets";
 import { notFound } from "next/navigation";
 import DenariusSymbol from "../../../components/DenariusSymbol";
 import { useTheme } from "../../../contexts/ThemeContext";
+import { usePortfolio } from "../../../contexts/PortfolioContext";
 
 // Backend API base URL - same-origin Next.js API routes
 const API_BASE_URL = '';
@@ -104,6 +105,7 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
 
   const account = useActiveAccount();
   const router = useRouter();
+  const { requestCashRefresh } = usePortfolio();
 
   // Get contracts and position IDs based on market ID
   const { marketContract, conditionalTokensContract, outcome1PositionId, outcome2PositionId } = getContractsForMarket(market.id);
@@ -1402,7 +1404,8 @@ useEffect(() => {
       
       // Refetch user's token balance to update cash display
       await refetchUserTokenBalance();
-      
+      requestCashRefresh();
+
       // Fetch latest balances from Conditional Tokens (balanceOf(owner, positionId))
       let latestYesShares = 0;
       let latestNoShares = 0;
@@ -1450,20 +1453,16 @@ useEffect(() => {
       setSuccessMessage(successMessage);
       setTimeout(() => setSuccessMessage(null), 10000);
       setAmount(""); // Clear the amount only after transaction is fully completed
-      
-      // Set up a retry mechanism to ensure balances are updated
-      let retries = 0;
-      const maxRetries = 5;
-      
-      while (retries < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await fetchUserBalances();
-        retries++;
-      }
     } catch (error) {
       console.error("Error waiting for transaction confirmation:", error);
       // Fallback to immediate balance update
       await fetchUserBalances();
+      try {
+        await refetchUserTokenBalance();
+      } catch {
+        /* ignore */
+      }
+      requestCashRefresh();
       // Still show success message even if there's an error; clear after 10 seconds
       setBuyFeedback(null);
       setSuccessMessage(successMessage);

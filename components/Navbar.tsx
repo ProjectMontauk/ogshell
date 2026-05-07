@@ -50,7 +50,7 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
   const router = useRouter();
   const isEmbed = variant === "embed";
   const account = useActiveAccount();
-  const { portfolioValue, setPortfolioValue } = usePortfolio();
+  const { portfolioValue, setPortfolioValue, cashRefreshNonce } = usePortfolio();
   const [portfolioLoading, setPortfolioLoading] = useState(false);
   const { data: balance, isPending, refetch } = useReadContract({
     contract: tokenContract,
@@ -94,11 +94,16 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
         createWallet("io.zerion.wallet"),
       ];
 
-  // Fetch cash balance once when wallet connects (no polling — refresh page to update)
+  // Fetch cash balance when wallet connects or when a trade/deposit path requests refresh
   useEffect(() => {
     if (!account?.address) return;
     refetch();
   }, [account?.address, refetch]);
+
+  useEffect(() => {
+    if (!account?.address || cashRefreshNonce === 0) return;
+    void refetch();
+  }, [account?.address, cashRefreshNonce, refetch]);
 
   // Set navbar portfolio display from cash balance only on sign-in (no RPC loop).
   // Full portfolio (cash + positions) is set by the Portfolio page when the user visits it.
