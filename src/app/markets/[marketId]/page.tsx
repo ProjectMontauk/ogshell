@@ -115,6 +115,13 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
   const [outcome2Balance, setOutcome2Balance] = useState<string>("--");
   const [isBalanceLoading, setIsBalanceLoading] = useState(false);
 
+  // Only show placeholders when we don't have chain data yet — never wipe known numbers during refetch
+  const formatOutcomeSharesCell = (loading: boolean, balanceStr: string) => {
+    if (loading && balanceStr === '--') return '...';
+    if (balanceStr !== '--' && balanceStr !== 'Error') return parseFloat(balanceStr).toFixed(1);
+    return balanceStr;
+  };
+
   // Outcome indices: 0 = Yes, 1 = No (passed to FPMM calcBuyAmount / calcSellAmount)
   const YES_OUTCOME_INDEX = 0;
   const NO_OUTCOME_INDEX = 1;
@@ -2132,8 +2139,8 @@ useEffect(() => {
                         </div>
                       ) : (
                         <div className="text-xs font-semibold text-green-600 flex flex-col items-end">
-                          <span className="text-green-600">Yes Shares: {isBalanceLoading ? '...' : (outcome1Balance !== '--' && outcome1Balance !== 'Error' ? parseFloat(outcome1Balance).toFixed(1) : outcome1Balance)}</span>
-                          <span className="text-blue-600">No Shares: {isBalanceLoading ? '...' : (outcome2Balance !== '--' && outcome2Balance !== 'Error' ? parseFloat(outcome2Balance).toFixed(1) : outcome2Balance)}</span>
+                          <span className="text-green-600">Yes Shares: {formatOutcomeSharesCell(isBalanceLoading, outcome1Balance)}</span>
+                          <span className="text-blue-600">No Shares: {formatOutcomeSharesCell(isBalanceLoading, outcome2Balance)}</span>
                         </div>
                       )}
                     </div>
@@ -2301,11 +2308,11 @@ useEffect(() => {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="text-center">
                         <div className="text-xs font-semibold text-green-600 mb-1">Yes Shares</div>
-                        <div className="text-xs font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome1Balance !== '--' && outcome1Balance !== 'Error' ? parseFloat(outcome1Balance).toFixed(1) : outcome1Balance)}</div>
+                        <div className="text-xs font-bold text-gray-800">{formatOutcomeSharesCell(isBalanceLoading, outcome1Balance)}</div>
                       </div>
                       <div className="text-center">
                         <div className="text-xs font-semibold text-blue-600 mb-1">No Shares</div>
-                        <div className="text-xs font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome2Balance !== '--' && outcome2Balance !== 'Error' ? parseFloat(outcome2Balance).toFixed(1) : outcome2Balance)}</div>
+                        <div className="text-xs font-bold text-gray-800">{formatOutcomeSharesCell(isBalanceLoading, outcome2Balance)}</div>
                       </div>
                     </div>
                   </div>
@@ -2834,11 +2841,11 @@ useEffect(() => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center">
                     <div className="text-xs font-semibold text-green-600 mb-1">Yes Shares</div>
-                    <div className="text-xs font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome1Balance !== '--' && outcome1Balance !== 'Error' ? parseFloat(outcome1Balance).toFixed(1) : outcome1Balance)}</div>
+                    <div className="text-xs font-bold text-gray-800">{formatOutcomeSharesCell(isBalanceLoading, outcome1Balance)}</div>
                   </div>
                       <div className="text-center">
                         <div className="text-xs font-semibold text-blue-600 mb-1">No Shares</div>
-                        <div className="text-xs font-bold text-gray-800">{isBalanceLoading ? "..." : (outcome2Balance !== '--' && outcome2Balance !== 'Error' ? parseFloat(outcome2Balance).toFixed(1) : outcome2Balance)}</div>
+                        <div className="text-xs font-bold text-gray-800">{formatOutcomeSharesCell(isBalanceLoading, outcome2Balance)}</div>
                       </div>
                 </div>
               </div>
