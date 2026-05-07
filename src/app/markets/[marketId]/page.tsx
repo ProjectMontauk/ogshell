@@ -264,6 +264,38 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
   /** Covers wallet confirmation + post-send settlement (until balances refresh completes). */
   const [tradeInProgress, setTradeInProgress] = useState(false);
 
+  /** Frozen Max Win / Receive / Avg Price / shares after a completed trade while input is cleared */
+  type PostTradeQuoteSnapshot = {
+    mode: 'buy' | 'sell';
+    outcome: 'yes' | 'no';
+    maxWinDisplay: string | null;
+    receiveDisplay: string | null;
+    avgPriceDisplay: string;
+    sellSharesDisplay: string | null;
+  };
+  const [postTradeQuoteSnapshot, setPostTradeQuoteSnapshot] = useState<PostTradeQuoteSnapshot | null>(null);
+
+  const dismissTradeSuccess = useCallback(() => {
+    setSuccessMessage(null);
+    setPostTradeQuoteSnapshot(null);
+  }, []);
+
+  const fpmmTradingPanelRefMobile = useRef<HTMLDivElement>(null);
+  const fpmmTradingPanelRefDesktop = useRef<HTMLDivElement>(null);
+
+  /** Success state stays until user clicks outside trading panels (desktop + mobile placements). */
+  useEffect(() => {
+    if (!successMessage) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const node = e.target as Node;
+      const inMobile = fpmmTradingPanelRefMobile.current?.contains(node);
+      const inDesktop = fpmmTradingPanelRefDesktop.current?.contains(node);
+      if (!inMobile && !inDesktop) dismissTradeSuccess();
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [successMessage, dismissTradeSuccess]);
+
   // For Buy Yes
   const { mutate: sendBuyYesTransaction, status: buyYesStatus } = useSendTransaction();
   // For Buy No
@@ -1396,65 +1428,107 @@ useEffect(() => {
   }
 
   // Wait for transaction confirmation and update balances
-  const waitForTransactionConfirmation = async (transactionResult: unknown, successMessage: string) => {
+  const waitForTransactionConfirmation = async (transactionResult: unknown, successMessageArg: string) => {
+    // Capture quote line items before any await (still have `amount` and live estimates)
+    const quoteSnap: PostTradeQuoteSnapshot | null =
+      selectedOutcome && amount && !Number.isNaN(Number(amount)) && Number(amount) > 0
+        ? mode === 'buy'
+          ? (() => {
+              const maxWin = buyEstSharesLoading ? null : (buyEstSharesDisplay ?? null);
+              let avg: string = '--';
+              if (buyEstSharesDisplay) {
+                const inv = parseFloat(amount);
+                const sh = parseFloat(buyEstSharesDisplay);
+                if (Number.isFinite(sh) && sh > 0) avg = `¢${Math.round((inv / sh) * 100)}`;
+              }
+              return {
+                mode: 'buy' as const,
+                outcome: selectedOutcome,
+                maxWinDisplay: maxWin,
+                receiveDisplay: null,
+                avgPriceDisplay: avg,
+                sellSharesDisplay: null,
+              };
+            })()
+          : (() => {
+              const recv = parseFloat(amount).toFixed(2);
+              let avg: string = '--';
+              const ss = sellEstSharesLoading ? null : (sellEstSharesDisplay ?? null);
+              if (ss) {
+                const col = parseFloat(amount);
+                const sh = parseFloat(ss);
+                if (Number.isFinite(sh) && sh > 0) avg = `¢${((col / sh) * 100).toFixed(0)}`;
+              }
+              return {
+                mode: 'sell' as const,
+                outcome: selectedOutcome,
+                maxWinDisplay: null,
+                receiveDisplay: recv,
+                avgPriceDisplay: avg,
+                sellSharesDisplay: ss,
+              };
+            })()
+        : null;
+
     try {
-      // Wait for the transaction to be mined
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Update balances immediately after confirmation
+      // Transaction is already confirmed when onSuccess runs; refresh balances for UI.
       await fetchUserBalances();
-      
-      // Refetch user's token balance to update cash display
+
       await refetchUserTokenBalance();
       requestCashRefresh();
 
-      // Fetch latest balances from Conditional Tokens (balanceOf(owner, positionId))
-      let latestYesShares = 0;
-      let latestNoShares = 0;
-      if (account?.address) {
-        try {
-          const balance1 = await readContract({
-            contract: conditionalTokensContract,
-            method: "function balanceOf(address account, uint256 id) view returns (uint256)",
-            params: [account.address as `0x${string}`, BigInt(outcome1PositionId)],
-          });
-          const balance2 = await readContract({
-            contract: conditionalTokensContract,
-            method: "function balanceOf(address account, uint256 id) view returns (uint256)",
-            params: [account.address as `0x${string}`, BigInt(outcome2PositionId)],
-          });
-          latestYesShares = Math.floor(Number(balance1.toString()) / 1e18);
-          latestNoShares = Math.floor(Number(balance2.toString()) / 1e18);
-        } catch (err) {
-          console.error("Error fetching latest balances after transaction:", err);
-        }
-      }
-      
-      // Update user position and evidence after buy/sell
-      if (account?.address && market.id) {
-        await fetch('/api/update-user-position', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            marketId: market.id,
-            walletAddress: account.address,
-            yesShares: latestYesShares,
-            noShares: latestNoShares,
-          }),
-        });
-        // Refetch evidence for the current market
-        const evidenceRes = await fetch(`/api/evidence?marketId=${market.id}`);
-        if (evidenceRes.ok) {
-          const updatedEvidence = await evidenceRes.json();
-          setEvidence(updatedEvidence);
-        }
-      }
-      
-      // Show success message immediately after balance is updated; clear after 10 seconds
+      // Success + button state as soon as Published Shares / cash reflect the trade
       setBuyFeedback(null);
-      setSuccessMessage(successMessage);
-      setTimeout(() => setSuccessMessage(null), 10000);
-      setAmount(""); // Clear the amount only after transaction is fully completed
+      if (quoteSnap) setPostTradeQuoteSnapshot(quoteSnap);
+      setSuccessMessage(successMessageArg);
+      setAmount("");
+      setTradeInProgress(false);
+
+      // Server + evidence in background (don't block "Trade Completed")
+      void (async () => {
+        try {
+          let latestYesShares = 0;
+          let latestNoShares = 0;
+          if (account?.address) {
+            try {
+              const balance1 = await readContract({
+                contract: conditionalTokensContract,
+                method: "function balanceOf(address account, uint256 id) view returns (uint256)",
+                params: [account.address as `0x${string}`, BigInt(outcome1PositionId)],
+              });
+              const balance2 = await readContract({
+                contract: conditionalTokensContract,
+                method: "function balanceOf(address account, uint256 id) view returns (uint256)",
+                params: [account.address as `0x${string}`, BigInt(outcome2PositionId)],
+              });
+              latestYesShares = Math.floor(Number(balance1.toString()) / 1e18);
+              latestNoShares = Math.floor(Number(balance2.toString()) / 1e18);
+            } catch (err) {
+              console.error("Error fetching latest balances for user-position API:", err);
+            }
+          }
+
+          if (account?.address && market.id) {
+            await fetch("/api/update-user-position", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                marketId: market.id,
+                walletAddress: account.address,
+                yesShares: latestYesShares,
+                noShares: latestNoShares,
+              }),
+            });
+            const evidenceRes = await fetch(`/api/evidence?marketId=${market.id}`);
+            if (evidenceRes.ok) {
+              const updatedEvidence = await evidenceRes.json();
+              setEvidence(updatedEvidence);
+            }
+          }
+        } catch (err) {
+          console.error("Background post-trade sync failed:", err);
+        }
+      })();
     } catch (error) {
       console.error("Error waiting for transaction confirmation:", error);
       // Fallback to immediate balance update
@@ -1465,10 +1539,10 @@ useEffect(() => {
         /* ignore */
       }
       requestCashRefresh();
-      // Still show success message even if there's an error; clear after 10 seconds
+      // Still show success after best-effort balance refresh
       setBuyFeedback(null);
-      setSuccessMessage(successMessage);
-      setTimeout(() => setSuccessMessage(null), 10000);
+      if (quoteSnap) setPostTradeQuoteSnapshot(quoteSnap);
+      setSuccessMessage(successMessageArg);
       setAmount(""); // Clear the amount even if there's an error
     } finally {
       setTradeInProgress(false);
@@ -1876,7 +1950,7 @@ useEffect(() => {
   /** Show Submit row while entering a trade, during settlement, or while success label is shown on button */
   const showFpmmTradeAction =
     !!selectedOutcome &&
-    (!!successMessage || (!!amount && !Number.isNaN(Number(amount))));
+    (!!successMessage || !!postTradeQuoteSnapshot || (!!amount && !Number.isNaN(Number(amount))));
 
   const fpmmSubmitDisabled =
     !!successMessage ||
@@ -1999,7 +2073,7 @@ useEffect(() => {
                 </button>
               </div>
               {/* On mobile, show Buy/Sell card here, after Rules and before Evidence */}
-              <div className="block lg:hidden w-full mt-4">
+              <div ref={fpmmTradingPanelRefMobile} className="block lg:hidden w-full mt-4">
                 {/* Top solid grey border */}
                 <div className="w-full h-px bg-gray-200 mb-7"></div>
                 {/* Betting Card (mobile) */}
@@ -2010,6 +2084,7 @@ useEffect(() => {
                       <button
                         className={`py-1 px-3 rounded-full border ${mode === 'buy' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
                         onClick={() => {
+                          dismissTradeSuccess();
                           setMode('buy');
                           setAmount("");
                           setSelectedOutcome(null);
@@ -2021,6 +2096,7 @@ useEffect(() => {
                     <button
                       className={`py-1 px-3 rounded-full border ${mode === 'sell' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
                         onClick={() => {
+                          dismissTradeSuccess();
                           setMode('sell');
                           setAmount("");
                           setSelectedOutcome(null);
@@ -2068,6 +2144,7 @@ useEffect(() => {
                       value={amount ? `$${amount}` : ''}
                       onChange={e => {
                         const raw = e.target.value.replace(/^\$/, '').replace(/[^0-9.]/g, '');
+                        dismissTradeSuccess();
                         setAmount(raw);
                       }}
                       className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-[16px] mb-4"
@@ -2079,6 +2156,7 @@ useEffect(() => {
                       type="button"
                       className={`font-semibold px-0 py-2 rounded-lg border transition disabled:opacity-50 bg-white text-green-700 border-green-300 hover:bg-green-50 w-1/2 whitespace-nowrap ${selectedOutcome === 'yes' ? 'ring-2 ring-black' : ''}`}
                       onClick={() => {
+                        dismissTradeSuccess();
                         setSelectedOutcome('yes');
                     }}
                     >
@@ -2090,6 +2168,7 @@ useEffect(() => {
                       type="button"
                       className={`font-semibold px-0 py-2 rounded-lg border transition disabled:opacity-50 bg-white text-blue-700 border-blue-300 hover:bg-blue-50 w-1/2 whitespace-nowrap ${selectedOutcome === 'no' ? 'ring-2 ring-black' : ''}`}
                       onClick={() => {
+                        dismissTradeSuccess();
                         setSelectedOutcome('no');
                     }}
                     >
@@ -2113,7 +2192,43 @@ useEffect(() => {
                   {/* Only show Max Win/Receive, Avg Price, and Submit Trade if amount and selectedOutcome are set (or success label preserved on Submit) */}
                   {showFpmmTradeAction && (
                     <>
-                      {!successMessage && (
+                      {successMessage && postTradeQuoteSnapshot ? (
+                        <>
+                          {postTradeQuoteSnapshot.mode === "buy" && (
+                            <div className="text-[16px] font-medium text-black">
+                              Max. Win:{' '}
+                              <span className="text-green-600 font-bold">
+                                $ {postTradeQuoteSnapshot.maxWinDisplay ?? '--'}
+                              </span>
+                            </div>
+                          )}
+                          {postTradeQuoteSnapshot.mode === "sell" && (
+                            <div className="text-left text-[12px] text-gray-600 mb-2">
+                              Receive{' '}
+                              <span className="ml-2 text-[12px] text-green-600">
+                                $ {postTradeQuoteSnapshot.receiveDisplay ?? '--'}
+                              </span>
+                            </div>
+                          )}
+                          <div className="text-left text-[12px] text-gray-600 mb-4">
+                            Avg. Price
+                            {postTradeQuoteSnapshot.avgPriceDisplay !== '--' && (
+                              <span className="ml-2 text-[12px] text-gray-600">
+                                {postTradeQuoteSnapshot.avgPriceDisplay}
+                              </span>
+                            )}
+                          </div>
+                          {postTradeQuoteSnapshot.mode === "sell" && (
+                            <div className="text-left text-[14px] text-gray-800 mb-4">
+                              {postTradeQuoteSnapshot.outcome === 'yes' ? 'Yes' : 'No'} Shares to sell:{' '}
+                              <span className="ml-1 font-bold text-[16px] text-gray-900">
+                                {postTradeQuoteSnapshot.sellSharesDisplay ?? '--'}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        !successMessage && (
                         <>
                       {/* Max. Win (buy) or Receive (sell) */}
                       {mode === 'buy' && (
@@ -2140,6 +2255,7 @@ useEffect(() => {
                         </div>
                       )}
                         </>
+                      )
                       )}
                       {/* Trade button */}
                       <button
@@ -2521,13 +2637,14 @@ useEffect(() => {
               </div>
             </div>
             {/* Betting Card (desktop) */}
-            <div className="hidden lg:block bg-white shadow p-4 sm:max-w-4xl sm:mx-auto lg:pl-4 lg:pr-4 lg:py-6 lg:w-[270px] lg:self-start lg:ml-auto">
+            <div ref={fpmmTradingPanelRefDesktop} className="hidden lg:block bg-white shadow p-4 sm:max-w-4xl sm:mx-auto lg:pl-4 lg:pr-4 lg:py-6 lg:w-[270px] lg:self-start lg:ml-auto">
               {/* Buy/Sell Toggle */}
               <div className="flex items-center mb-2">
                 <div className="flex gap-2 text-[12px]">
                   <button
                     className={`py-1 px-3 rounded-full border ${mode === 'buy' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
                     onClick={() => {
+                      dismissTradeSuccess();
                       setMode('buy');
                       setAmount("");
                       setSelectedOutcome(null);
@@ -2539,6 +2656,7 @@ useEffect(() => {
                   <button
                     className={`py-1 px-3 rounded-full border ${mode === 'sell' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
                     onClick={() => {
+                      dismissTradeSuccess();
                       setMode('sell');
                       setAmount("");
                       setSelectedOutcome(null);
@@ -2559,6 +2677,7 @@ useEffect(() => {
                   value={amount ? `$${amount}` : ''}
                   onChange={e => {
                     const raw = e.target.value.replace(/^\$/, '').replace(/[^0-9.]/g, '');
+                    dismissTradeSuccess();
                     setAmount(raw);
                   }}
                   className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-[16px] mb-4"
@@ -2570,6 +2689,7 @@ useEffect(() => {
                   type="button"
                   className={`font-semibold px-0 py-2 rounded-lg border transition disabled:opacity-50 bg-white text-green-700 border-green-300 hover:bg-green-50 w-1/2 whitespace-nowrap ${selectedOutcome === 'yes' ? 'ring-2 ring-black' : ''}`}
                                         onClick={() => {
+                        dismissTradeSuccess();
                         setSelectedOutcome('yes');
                       }}
                 >
@@ -2581,6 +2701,7 @@ useEffect(() => {
                   type="button"
                   className={`font-semibold px-0 py-2 rounded-lg border transition disabled:opacity-50 bg-white text-blue-700 border-blue-300 hover:bg-blue-50 w-1/2 whitespace-nowrap ${selectedOutcome === 'no' ? 'ring-2 ring-black' : ''}`}
                                         onClick={() => {
+                        dismissTradeSuccess();
                         setSelectedOutcome('no');
                       }}
                 >
@@ -2604,7 +2725,43 @@ useEffect(() => {
               {/* Only show Max Win/Receive, Avg Price, and Submit Trade if amount and selectedOutcome are set (or success label preserved on Submit) */}
               {showFpmmTradeAction && (
                 <>
-                      {!successMessage && (
+                      {successMessage && postTradeQuoteSnapshot ? (
+                        <>
+                          {postTradeQuoteSnapshot.mode === "buy" && (
+                            <div className="text-[16px] font-medium text-black">
+                              Max. Win:{' '}
+                              <span className="text-green-600 font-bold">
+                                $ {postTradeQuoteSnapshot.maxWinDisplay ?? '--'}
+                              </span>
+                            </div>
+                          )}
+                          {postTradeQuoteSnapshot.mode === "sell" && (
+                            <div className="text-left text-[12px] text-gray-600 mb-2">
+                              Receive{' '}
+                              <span className="ml-2 text-[12px] text-green-600">
+                                $ {postTradeQuoteSnapshot.receiveDisplay ?? '--'}
+                              </span>
+                            </div>
+                          )}
+                          <div className="text-left text-[12px] text-gray-600 mb-4">
+                            Avg. Price
+                            {postTradeQuoteSnapshot.avgPriceDisplay !== '--' && (
+                              <span className="ml-2 text-[12px] text-gray-600">
+                                {postTradeQuoteSnapshot.avgPriceDisplay}
+                              </span>
+                            )}
+                          </div>
+                          {postTradeQuoteSnapshot.mode === "sell" && (
+                            <div className="text-left text-[14px] text-gray-800 mb-4">
+                              {postTradeQuoteSnapshot.outcome === 'yes' ? 'Yes' : 'No'} Shares to sell:{' '}
+                              <span className="ml-1 font-bold text-[16px] text-gray-900">
+                                {postTradeQuoteSnapshot.sellSharesDisplay ?? '--'}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        !successMessage && (
                         <>
                   {/* Max. Win (buy) or Receive (sell) */}
                   {mode === 'buy' && (
@@ -2631,6 +2788,7 @@ useEffect(() => {
                     </div>
                   )}
                         </>
+                      )
                       )}
                   {/* Trade button */}
                   <button
