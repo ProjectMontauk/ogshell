@@ -7,9 +7,9 @@ import { getContractsForMarket, tokenContract } from "../../../constants/contrac
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { readContract } from "thirdweb";
 import { usePortfolio } from "../../contexts/PortfolioContext";
-import React from "react";
 import { prepareContractCall } from "thirdweb";
 import { parseAmountToWei } from "../../utils/parseAmountToWei";
+import { readOutcomeOddsForMarket } from "../../utils/portfolioTotals";
 
 // Define Trade interface
 interface Trade {
@@ -122,90 +122,6 @@ function formatBalance(balance: bigint | undefined): number {
   return Number(balance) / 1e18;
 }
 
-type MarketContract = Parameters<typeof readContract>[0]["contract"];
-
-const FPMM_INVESTMENT_WEI = BigInt("1000000000000000000");
-
-/**
- * FPMM-style markets (e.g. covid19 / childhood-schedule): implied probs from calcBuyAmount,
- * same math as src/app/markets/[marketId]/page.tsx fetchFpmmOdds.
- */
-async function readOutcomeOddsFpmm(marketContract: MarketContract): Promise<{ oddsYes: bigint; oddsNo: bigint } | null> {
-  try {
-    const [sharesYes, sharesNo] = await Promise.all([
-      readContract({
-        contract: marketContract,
-        method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
-        params: [FPMM_INVESTMENT_WEI, 0n],
-      }),
-      readContract({
-        contract: marketContract,
-        method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
-        params: [FPMM_INVESTMENT_WEI, 1n],
-      }),
-    ]);
-    const inv = Number(FPMM_INVESTMENT_WEI);
-    const sY = Number(sharesYes);
-    const sN = Number(sharesNo);
-    if (sY <= 0 || sN <= 0 || !Number.isFinite(sY) || !Number.isFinite(sN)) return null;
-    const oddsYesRaw = inv / sY;
-    const oddsNoRaw = inv / sN;
-    const probYes = oddsYesRaw / (oddsYesRaw + oddsNoRaw);
-    const probNo = oddsNoRaw / (oddsYesRaw + oddsNoRaw);
-    return {
-      oddsYes: BigInt(Math.round(probYes * 2 ** 64)),
-      oddsNo: BigInt(Math.round(probNo * 2 ** 64)),
-    };
-  } catch {
-    return null;
-  }
-}
-
-/** LMSR-style markets: raw calcMarginalPrice (uint8 index), scaled same as rest of portfolio. */
-async function readOutcomeOddsLmsr(marketContract: MarketContract): Promise<{ oddsYes: bigint; oddsNo: bigint } | null> {
-  try {
-    const oddsYes = await readContract({
-      contract: marketContract,
-      method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
-      params: [0],
-    });
-    const oddsNo = await readContract({
-      contract: marketContract,
-      method: "function calcMarginalPrice(uint8 outcomeTokenIndex) view returns (uint256)",
-      params: [1],
-    });
-    return { oddsYes: BigInt(oddsYes as bigint), oddsNo: BigInt(oddsNo as bigint) };
-  } catch {
-    return null;
-  }
-}
-
-async function readOutcomeOddsLmsrUint256(marketContract: MarketContract): Promise<{ oddsYes: bigint; oddsNo: bigint } | null> {
-  try {
-    const oddsYes = await readContract({
-      contract: marketContract,
-      method: "function calcMarginalPrice(uint256 _outcome) view returns (uint256)",
-      params: [0n],
-    });
-    const oddsNo = await readContract({
-      contract: marketContract,
-      method: "function calcMarginalPrice(uint256 _outcome) view returns (uint256)",
-      params: [1n],
-    });
-    return { oddsYes: BigInt(oddsYes as bigint), oddsNo: BigInt(oddsNo as bigint) };
-  } catch {
-    return null;
-  }
-}
-
-async function readOutcomeOddsForMarket(marketContract: MarketContract): Promise<{ oddsYes: bigint; oddsNo: bigint } | null> {
-  const fpmm = await readOutcomeOddsFpmm(marketContract);
-  if (fpmm) return fpmm;
-  const lmsr8 = await readOutcomeOddsLmsr(marketContract);
-  if (lmsr8) return lmsr8;
-  return readOutcomeOddsLmsrUint256(marketContract);
-}
-
 export default function PortfolioPage() {
   const account = useActiveAccount();
   const { mutate: sendTransaction } = useSendTransaction();
@@ -213,7 +129,7 @@ export default function PortfolioPage() {
   const [tradesLoading, setTradesLoading] = useState(true);
   const [tradesError, setTradesError] = useState<string | null>(null);
   const [pnlHistory, setPnlHistory] = useState<{ timestamp: number; pnl: number }[]>([]);
-  const { setPortfolioValue } = usePortfolio();
+  const { requestCashRefresh } = usePortfolio();
   const [activeTab, setActiveTab] = useState<'history' | 'current'>('current');
   const [currentPositions, setCurrentPositions] = useState<CurrentPosition[]>([]);
   const [currentPositionsLoading, setCurrentPositionsLoading] = useState(false);
@@ -528,10 +444,6 @@ export default function PortfolioPage() {
   // Calculate total portfolio value using current positions
   const totalPositionsValue = currentPositions.reduce((sum, position) => sum + position.positionValue, 0);
   const totalPortfolio = cash + totalPositionsValue;
-  React.useEffect(() => {
-    setPortfolioValue(totalPortfolio.toFixed(2));
-  }, [totalPortfolio, setPortfolioValue]);
-
 
   useEffect(() => {
     if (account && balance !== undefined && Number(balance) === 0) {
@@ -544,10 +456,11 @@ export default function PortfolioPage() {
       sendTransaction(transaction, {
         onSuccess: () => {
           refetch();
+          requestCashRefresh();
         }
       });
     }
-  }, [account, balance, refetch, sendTransaction]);
+  }, [account, balance, refetch, sendTransaction, requestCashRefresh]);
 // }, [account, balance]);
 
   return (

@@ -8,6 +8,7 @@ import { tokenContract } from "../constants/contracts";
 import { inAppWallet, createWallet} from "thirdweb/wallets";
 import { base } from "thirdweb/chains";
 import { usePortfolio } from "../src/contexts/PortfolioContext";
+import { getTotalBetValueUsd } from "../src/utils/portfolioTotals";
 
 // TODO: Replace this with the actual ThirdWeb inAppWallet import
 // import { InAppWalletButton } from "thirdweb-package-path";
@@ -50,7 +51,13 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
   const router = useRouter();
   const isEmbed = variant === "embed";
   const account = useActiveAccount();
-  const { portfolioValue, setPortfolioValue, cashRefreshNonce } = usePortfolio();
+  const {
+    portfolioValue,
+    setPortfolioValue,
+    cashRefreshNonce,
+    lastPortfolioHydrateKey,
+    setLastPortfolioHydrateKey,
+  } = usePortfolio();
   const [portfolioLoading, setPortfolioLoading] = useState(false);
   const { data: balance, isPending, refetch } = useReadContract({
     contract: tokenContract,
@@ -94,33 +101,69 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
         createWallet("io.zerion.wallet"),
       ];
 
-  // Fetch cash balance when wallet connects or when a trade/deposit path requests refresh
+  // Hydrate Navbar "Portfolio" chip: cash + bet value (mark-to-market shares), matching Portfolio page.
+  // Deduped by wallet + cashRefreshNonce so remounting Navbar on route change does not re-RPC every market.
   useEffect(() => {
-    if (!account?.address) return;
-    refetch();
-  }, [account?.address, refetch]);
-
-  useEffect(() => {
-    if (!account?.address || cashRefreshNonce === 0) return;
-    void refetch();
-  }, [account?.address, cashRefreshNonce, refetch]);
-
-  // Set navbar portfolio display from cash balance only on sign-in (no RPC loop).
-  // Full portfolio (cash + positions) is set by the Portfolio page when the user visits it.
-  useEffect(() => {
-    if (!account?.address) {
+    const addr = account?.address;
+    if (!addr) {
       setPortfolioValue("--");
+      setPortfolioLoading(false);
+      setLastPortfolioHydrateKey(null);
+      return;
+    }
+
+    const hydrateKey = `${addr}::${cashRefreshNonce}`;
+
+    if (lastPortfolioHydrateKey === hydrateKey) {
+      void refetch();
       setPortfolioLoading(false);
       return;
     }
-    if (balance === undefined) {
-      setPortfolioLoading(true);
-      return;
-    }
-    setPortfolioLoading(false);
-    const cash = Number(balance) / 1e18;
-    setPortfolioValue(cash.toFixed(2));
-  }, [account?.address, balance, setPortfolioValue]);
+
+    let cancelled = false;
+    setPortfolioLoading(true);
+
+    void (async () => {
+      try {
+        const refResult = await refetch();
+        if (cancelled) return;
+
+        const data = refResult.data as bigint | undefined;
+        const cashUsd = data !== undefined ? Number(data) / 1e18 : 0;
+
+        let betUsd = 0;
+        try {
+          betUsd = await getTotalBetValueUsd(addr as `0x${string}`);
+        } catch (e) {
+          console.error("[Navbar] bet value totals failed:", e);
+        }
+
+        if (cancelled) return;
+        setPortfolioValue((cashUsd + betUsd).toFixed(2));
+        setLastPortfolioHydrateKey(hydrateKey);
+      } catch (e) {
+        console.error("[Navbar] portfolio total hydrate failed:", e);
+        if (!cancelled) {
+          setPortfolioValue("--");
+        }
+      } finally {
+        if (!cancelled) {
+          setPortfolioLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    account?.address,
+    cashRefreshNonce,
+    refetch,
+    setPortfolioValue,
+    setLastPortfolioHydrateKey,
+    lastPortfolioHydrateKey,
+  ]);
 
   const rightControls = (
     <div className="flex items-center gap-1">

@@ -5,9 +5,15 @@ import React, { createContext, useCallback, useContext, useState } from "react";
 interface PortfolioContextType {
   portfolioValue: string;
   setPortfolioValue: (value: string) => void;
-  /** Incremented after on-chain cash-affecting actions; Navbar refetches token `balanceOf` when it changes. */
+  /** Incremented after on-chain cash-affecting actions; Navbar refetches cash + portfolio total when it changes. */
   cashRefreshNonce: number;
   requestCashRefresh: () => void;
+  /**
+   * Last `${wallet}::${cashRefreshNonce}` we fully hydrated (cash + bet value across markets).
+   * Avoids re-scanning every market when Navbar remounts on client navigation.
+   */
+  lastPortfolioHydrateKey: string | null;
+  setLastPortfolioHydrateKey: (key: string | null) => void;
 }
 
 const PortfolioContext = createContext<PortfolioContextType | undefined>(undefined);
@@ -15,12 +21,20 @@ const PortfolioContext = createContext<PortfolioContextType | undefined>(undefin
 export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [portfolioValue, setPortfolioValue] = useState<string>("--");
   const [cashRefreshNonce, setCashRefreshNonce] = useState(0);
+  const [lastPortfolioHydrateKey, setLastPortfolioHydrateKey] = useState<string | null>(null);
   const requestCashRefresh = useCallback(() => {
     setCashRefreshNonce((n) => n + 1);
   }, []);
   return (
     <PortfolioContext.Provider
-      value={{ portfolioValue, setPortfolioValue, cashRefreshNonce, requestCashRefresh }}
+      value={{
+        portfolioValue,
+        setPortfolioValue,
+        cashRefreshNonce,
+        requestCashRefresh,
+        lastPortfolioHydrateKey,
+        setLastPortfolioHydrateKey,
+      }}
     >
       {children}
     </PortfolioContext.Provider>
