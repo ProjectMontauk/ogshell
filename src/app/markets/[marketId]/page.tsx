@@ -246,7 +246,7 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
   // Replace individual yesAmount and noAmount with a single amount state
   const [amount, setAmount] = useState("");
 
-  const [buyFeedback, setBuyFeedback] = useState<string | null>(null);
+  const [, setBuyFeedback] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showWalletError, setShowWalletError] = useState(false);
 
@@ -261,6 +261,8 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
   const [sellEstSharesLoading, setSellEstSharesLoading] = useState(false);
 
   const [tradeFeedback, setTradeFeedback] = useState<string | null>(null);
+  /** Covers wallet confirmation + post-send settlement (until balances refresh completes). */
+  const [tradeInProgress, setTradeInProgress] = useState(false);
 
   // For Buy Yes
   const { mutate: sendBuyYesTransaction, status: buyYesStatus } = useSendTransaction();
@@ -1468,6 +1470,8 @@ useEffect(() => {
       setSuccessMessage(successMessage);
       setTimeout(() => setSuccessMessage(null), 10000);
       setAmount(""); // Clear the amount even if there's an error
+    } finally {
+      setTradeInProgress(false);
     }
   };
 
@@ -1546,6 +1550,7 @@ useEffect(() => {
     const investmentNum = parseFloat(amount);
     if (Number.isNaN(investmentNum) || investmentNum <= 0) return;
 
+    setTradeInProgress(true);
     setBuyFeedback("Trade Submitted");
 
     const investmentAmount = BigInt(Math.floor(investmentNum * 1e18));
@@ -1564,6 +1569,7 @@ useEffect(() => {
       if (!approved && (!allowance || BigInt(allowance) < investmentAmount)) {
         setBuyFeedback("Approval failed or incomplete. Please try again.");
         setTradeFeedback(null);
+        setTradeInProgress(false);
         setTimeout(() => setBuyFeedback(null), 6000);
         return;
       }
@@ -1590,6 +1596,7 @@ useEffect(() => {
             friendly = "Transaction reverted. Try a smaller amount or try again.";
           setBuyFeedback(friendly);
           setTradeFeedback(null);
+          setTradeInProgress(false);
           setTimeout(() => setBuyFeedback(null), 8000);
         },
         onSuccess: async (result: unknown) => {
@@ -1626,6 +1633,7 @@ useEffect(() => {
       console.error("FPMM buy error:", e);
       setBuyFeedback("Trade failed. Check your input and try again.");
       setTradeFeedback(null);
+      setTradeInProgress(false);
       setTimeout(() => setBuyFeedback(null), 4000);
     }
   };
@@ -1640,6 +1648,7 @@ useEffect(() => {
     const collateralNum = parseFloat(amount);
     if (Number.isNaN(collateralNum) || collateralNum <= 0) return;
 
+    setTradeInProgress(true);
     setBuyFeedback("Preparing sell...");
     const outcomeIndex = selectedOutcome === "yes" ? 0 : 1;
     const ownedSharesHuman =
@@ -1656,6 +1665,7 @@ useEffect(() => {
       if (maxOutcomeTokensToSell <= 0n) {
         setBuyFeedback("No shares available to sell for the selected outcome.");
         setTradeFeedback(null);
+        setTradeInProgress(false);
         setTimeout(() => setBuyFeedback(null), 5000);
         return;
       }
@@ -1670,6 +1680,7 @@ useEffect(() => {
       if (tokensToSellBig > maxOutcomeTokensToSell) {
         setBuyFeedback("You don't have enough shares to receive that much collateral. Try a smaller amount.");
         setTradeFeedback(null);
+        setTradeInProgress(false);
         setTimeout(() => setBuyFeedback(null), 6000);
         return;
       }
@@ -1679,6 +1690,7 @@ useEffect(() => {
       if (!approved) {
         setBuyFeedback("Approval to sell outcome tokens failed or not completed.");
         setTradeFeedback(null);
+        setTradeInProgress(false);
         setTimeout(() => setBuyFeedback(null), 6000);
         return;
       }
@@ -1706,6 +1718,7 @@ useEffect(() => {
             friendly = "Transaction reverted. Try a smaller amount or try again.";
           setBuyFeedback(friendly);
           setTradeFeedback(null);
+          setTradeInProgress(false);
           setTimeout(() => setBuyFeedback(null), 8000);
         },
         onSuccess: async (result: unknown) => {
@@ -1743,6 +1756,7 @@ useEffect(() => {
       console.error("FPMM sell error:", e);
       setBuyFeedback("Trade failed. Check your input and try again.");
       setTradeFeedback(null);
+      setTradeInProgress(false);
       setTimeout(() => setBuyFeedback(null), 4000);
     }
   };
@@ -1858,6 +1872,21 @@ useEffect(() => {
   const chartTickFill = themeResolved === "dark" ? "#94a3b8" : "#525252";
   const chartLineYes = themeResolved === "dark" ? "#00e889" : "#22c55e";
   const chartLineNo = themeResolved === "dark" ? "#3b82f6" : "#2563eb";
+
+  /** Show Submit row while entering a trade, during settlement, or while success label is shown on button */
+  const showFpmmTradeAction =
+    !!selectedOutcome &&
+    (!!successMessage || (!!amount && !Number.isNaN(Number(amount))));
+
+  const fpmmSubmitDisabled =
+    !!successMessage ||
+    !!tradeInProgress ||
+    !selectedOutcome ||
+    (!successMessage && (!amount || Number.isNaN(Number(amount)))) ||
+    (mode === "buy" && tradeStatus === "pending") ||
+    (mode === "sell" && (sellEstSharesLoading || sellEstSharesDisplay === "--")) ||
+    (selectedOutcome === "yes" && mode === "sell" && buyYesStatus === "pending") ||
+    (selectedOutcome === "no" && mode === "sell" && buyNoStatus === "pending");
 
   return (
     <div>
@@ -2081,9 +2110,11 @@ useEffect(() => {
                       </button>
                     </div>
                   )}
-                  {/* Only show Max Win/Receive, Avg Price, and Submit Trade if amount and selectedOutcome are set */}
-                  {amount && !isNaN(Number(amount)) && selectedOutcome && (
+                  {/* Only show Max Win/Receive, Avg Price, and Submit Trade if amount and selectedOutcome are set (or success label preserved on Submit) */}
+                  {showFpmmTradeAction && (
                     <>
+                      {!successMessage && (
+                        <>
                       {/* Max. Win (buy) or Receive (sell) */}
                       {mode === 'buy' && (
                         <div className="text-[16px] font-medium text-black">Max. Win: <span className="text-green-600 font-bold">$ {buyEstSharesLoading ? '...' : (buyEstSharesDisplay ?? '--')}</span></div>
@@ -2108,19 +2139,17 @@ useEffect(() => {
                           </span>
                         </div>
                       )}
+                        </>
+                      )}
                       {/* Trade button */}
                       <button
-                        className="w-full font-semibold px-6 py-2 rounded-lg shadow transition disabled:opacity-50 bg-black text-white mb-4"
-                        disabled={
-                          !selectedOutcome ||
-                          !amount ||
-                          (mode === 'buy' && tradeStatus === 'pending') ||
-                          (mode === 'sell' && (sellEstSharesLoading || sellEstSharesDisplay === "--")) ||
-                          (selectedOutcome === 'yes' && mode === 'sell' && buyYesStatus === 'pending') ||
-                          (selectedOutcome === 'no' && mode === 'sell' && buyNoStatus === 'pending')
-                        }
+                        type="button"
+                        className={`w-full font-semibold px-4 py-2 rounded-lg shadow transition mb-4 min-h-[44px] flex items-center justify-center gap-2 text-sm ${
+                          successMessage ? "bg-green-700 text-white cursor-default disabled:opacity-100" : "bg-black text-white disabled:opacity-50"
+                        }`}
+                        disabled={fpmmSubmitDisabled}
                         onClick={() => {
-                          if (!selectedOutcome || !amount) return;
+                          if (!selectedOutcome || !amount || successMessage) return;
                           if (mode === 'buy') {
                             handleFpmmBuy(amount);
                           } else {
@@ -2128,7 +2157,21 @@ useEffect(() => {
                           }
                         }}
                       >
-                        Submit Trade
+                        {successMessage ? (
+                          <>
+                            <svg className="w-4 h-4 flex-shrink-0 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            <span className="leading-tight whitespace-normal text-center">{successMessage}</span>
+                          </>
+                        ) : tradeInProgress || tradeStatus === "pending" ? (
+                          <>
+                            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent shrink-0" aria-hidden />
+                            <span>Completing trade…</span>
+                          </>
+                        ) : (
+                          "Submit Trade"
+                        )}
                       </button>
                     </>
                   )}
@@ -2146,38 +2189,9 @@ useEffect(() => {
                       </div>
                     </div>
                   </div>
-                  {/* Transaction feedback moved below Your Purchased Shares */}
-                  {buyFeedback && (
-                    <div className={`text-center mt-4 font-semibold flex items-center justify-center gap-1 ${
-                      buyFeedback.includes('Purchase Successful') || buyFeedback.includes('Sale Successful') || buyFeedback.includes('🎉')
-                        ? 'text-green-600' 
-                        : buyFeedback.includes('Preparing transaction') || buyFeedback.includes('Checking approval') || buyFeedback === 'Trade Submitted'
-                          ? 'text-black' 
-                          : 'text-red-600'
-                    }`}>
-                      {(buyFeedback.includes('Preparing transaction') || buyFeedback.includes('Checking approval') || buyFeedback === 'Trade Submitted') && (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black flex-shrink-0"></div>
-                      )}
-                      {(buyFeedback.includes('Purchase Successful') || buyFeedback.includes('Sale Successful') || buyFeedback.includes('🎉')) && (
-                        <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                      <span className="whitespace-nowrap">{buyFeedback}</span>
-                    </div>
-                  )}
-                  {/* Success message after trade completes */}
-                  {successMessage && (
-                    <div className="text-center mt-4 text-green-600 font-semibold flex items-center justify-center gap-2">
-                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      {successMessage}
-                    </div>
-                  )}
-                </div>
-                {/* Bottom solid grey border */}
+                  {/* Bottom solid grey border */}
                 <div className="w-full h-px bg-gray-200 mt-6"></div>
+                </div>
               </div>
               {/* Evidence Section (always at the bottom of the combined card) */}
               <div className="w-full mt-8 mb-8">
@@ -2587,9 +2601,11 @@ useEffect(() => {
                   </button>
                 </div>
               )}
-              {/* Only show Max Win/Receive, Avg Price, and Submit Trade if amount and selectedOutcome are set */}
-              {amount && !isNaN(Number(amount)) && selectedOutcome && (
+              {/* Only show Max Win/Receive, Avg Price, and Submit Trade if amount and selectedOutcome are set (or success label preserved on Submit) */}
+              {showFpmmTradeAction && (
                 <>
+                      {!successMessage && (
+                        <>
                   {/* Max. Win (buy) or Receive (sell) */}
                   {mode === 'buy' && (
                     <div className="text-[16px] font-medium text-black">Max. Win: <span className="text-green-600 font-bold">$ {buyEstSharesLoading ? '...' : (buyEstSharesDisplay ?? '--')}</span></div>
@@ -2614,19 +2630,17 @@ useEffect(() => {
                       </span>
                     </div>
                   )}
+                        </>
+                      )}
                   {/* Trade button */}
                   <button
-                    className="w-full font-semibold px-6 py-2 rounded-lg shadow transition disabled:opacity-50 bg-black text-white mb-4"
-                    disabled={
-                      !selectedOutcome ||
-                      !amount ||
-                      (mode === 'buy' && tradeStatus === 'pending') ||
-                      (mode === 'sell' && (sellEstSharesLoading || sellEstSharesDisplay === "--")) ||
-                      (selectedOutcome === 'yes' && mode === 'sell' && buyYesStatus === 'pending') ||
-                      (selectedOutcome === 'no' && mode === 'sell' && buyNoStatus === 'pending')
-                    }
+                    type="button"
+                    className={`w-full font-semibold px-4 py-2 rounded-lg shadow transition mb-4 min-h-[44px] flex items-center justify-center gap-2 text-sm ${
+                      successMessage ? "bg-green-700 text-white cursor-default disabled:opacity-100" : "bg-black text-white disabled:opacity-50"
+                    }`}
+                    disabled={fpmmSubmitDisabled}
                     onClick={() => {
-                      if (!selectedOutcome || !amount) return;
+                      if (!selectedOutcome || !amount || successMessage) return;
                       if (mode === 'buy') {
                         handleFpmmBuy(amount);
                       } else {
@@ -2634,7 +2648,21 @@ useEffect(() => {
                       }
                     }}
                   >
-                    Submit Trade
+                    {successMessage ? (
+                      <>
+                        <svg className="w-4 h-4 flex-shrink-0 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        <span className="leading-tight whitespace-normal text-center">{successMessage}</span>
+                      </>
+                    ) : tradeInProgress || tradeStatus === "pending" ? (
+                      <>
+                        <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent shrink-0" aria-hidden />
+                        <span>Completing trade…</span>
+                      </>
+                    ) : (
+                      "Submit Trade"
+                    )}
                   </button>
                 </>
               )}
@@ -2652,35 +2680,6 @@ useEffect(() => {
                       </div>
                 </div>
               </div>
-              {/* Transaction feedback moved below Your Purchased Shares */}
-              {buyFeedback && (
-                <div className={`text-center mt-4 font-semibold flex items-center justify-center gap-1 ${
-                  buyFeedback.includes('Purchase Successful') || buyFeedback.includes('Sale Successful') || buyFeedback.includes('🎉')
-                    ? 'text-green-600' 
-                    : buyFeedback.includes('Preparing transaction') || buyFeedback.includes('Checking approval') || buyFeedback === 'Trade Submitted'
-                      ? 'text-black' 
-                      : 'text-red-600'
-                }`}>
-                  {(buyFeedback.includes('Preparing transaction') || buyFeedback.includes('Checking approval') || buyFeedback === 'Trade Submitted') && (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black flex-shrink-0"></div>
-                  )}
-                  {(buyFeedback.includes('Purchase Successful') || buyFeedback.includes('Sale Successful') || buyFeedback.includes('🎉')) && (
-                    <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                  <span className="whitespace-nowrap">{buyFeedback}</span>
-                </div>
-              )}
-              {/* Success message after trade completes */}
-              {successMessage && (
-                <div className="text-center mt-4 text-green-600 font-semibold flex items-center justify-center gap-2">
-                  <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  {successMessage}
-                </div>
-              )}
             </div>
           </div>
         </div>
