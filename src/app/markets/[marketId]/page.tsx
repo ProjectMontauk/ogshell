@@ -997,33 +997,37 @@ useEffect(() => {
   }, [account?.address, fetchUserVotes]);
 
   // Fetch user balances: readContract on Conditional Tokens (balanceOf(owner, positionId)) using config CT and position IDs per market
-  const fetchUserBalances = useCallback(async () => {
-    if (!account?.address) return;
+  const fetchUserBalances = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (!account?.address) return;
 
-    setIsBalanceLoading(true);
-    try {
-      const balance1 = await readContract({
-        contract: conditionalTokensContract,
-        method: "function balanceOf(address account, uint256 id) view returns (uint256)",
-        params: [account.address as `0x${string}`, BigInt(outcome1PositionId)],
-      });
-      const balance2 = await readContract({
-        contract: conditionalTokensContract,
-        method: "function balanceOf(address account, uint256 id) view returns (uint256)",
-        params: [account.address as `0x${string}`, BigInt(outcome2PositionId)],
-      });
-      const yesShares = (Number(balance1.toString()) / 1e18).toString();
-      const noShares = (Number(balance2.toString()) / 1e18).toString();
-      setOutcome1Balance(yesShares);
-      setOutcome2Balance(noShares);
-    } catch (err) {
-      console.error("Error fetching user balances:", err);
-      setOutcome1Balance("Error");
-      setOutcome2Balance("Error");
-    } finally {
-      setIsBalanceLoading(false);
-    }
-  }, [account?.address, outcome1PositionId, outcome2PositionId, conditionalTokensContract]);
+      const silent = options?.silent === true;
+      if (!silent) setIsBalanceLoading(true);
+      try {
+        const balance1 = await readContract({
+          contract: conditionalTokensContract,
+          method: "function balanceOf(address account, uint256 id) view returns (uint256)",
+          params: [account.address as `0x${string}`, BigInt(outcome1PositionId)],
+        });
+        const balance2 = await readContract({
+          contract: conditionalTokensContract,
+          method: "function balanceOf(address account, uint256 id) view returns (uint256)",
+          params: [account.address as `0x${string}`, BigInt(outcome2PositionId)],
+        });
+        const yesShares = (Number(balance1.toString()) / 1e18).toString();
+        const noShares = (Number(balance2.toString()) / 1e18).toString();
+        setOutcome1Balance(yesShares);
+        setOutcome2Balance(noShares);
+      } catch (err) {
+        console.error("Error fetching user balances:", err);
+        setOutcome1Balance("Error");
+        setOutcome2Balance("Error");
+      } finally {
+        if (!silent) setIsBalanceLoading(false);
+      }
+    },
+    [account?.address, outcome1PositionId, outcome2PositionId, conditionalTokensContract],
+  );
 
   // Fetch user balances once when page loads or wallet connects (no polling — refresh page to update)
   useEffect(() => {
@@ -1471,8 +1475,8 @@ useEffect(() => {
         : null;
 
     try {
-      // Transaction is already confirmed when onSuccess runs; refresh balances for UI.
-      await fetchUserBalances();
+      // Transaction is already confirmed when onSuccess runs; refresh balances for UI without toggling Purchased Shares to "..." (avoids blink with Trade Completed).
+      await fetchUserBalances({ silent: true });
 
       await refetchUserTokenBalance();
       requestCashRefresh();
@@ -1531,8 +1535,8 @@ useEffect(() => {
       })();
     } catch (error) {
       console.error("Error waiting for transaction confirmation:", error);
-      // Fallback to immediate balance update
-      await fetchUserBalances();
+      // Fallback to immediate balance update (silent: same UX as happy path above)
+      await fetchUserBalances({ silent: true });
       try {
         await refetchUserTokenBalance();
       } catch {
