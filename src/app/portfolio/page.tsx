@@ -77,7 +77,10 @@ function PortfolioTradesTable({
             <td className="px-2 md:px-6 py-3 md:py-4 whitespace-nowrap">
               <div>
                 <div className={`font-semibold text-xs md:text-sm ${getOutcomeColor(trade.outcome)}`}>
-                  {trade.outcome} {formatPrice(trade.avgPrice)}¢{' '}
+                  {trade.outcome}{" "}
+                  {(trade.tradeType ?? "").toLowerCase() === "redemption"
+                    ? "$1.00"
+                    : `${formatPrice(trade.avgPrice)}¢`}{" "}
                   <span className="text-gray-500 font-normal ml-1 text-[10px] md:text-xs">{trade.shares.toFixed(2)} shares</span>
                 </div>
                 <div className="text-gray-900 font-medium text-xs md:text-sm leading-tight">{trade.marketTitle}</div>
@@ -87,13 +90,17 @@ function PortfolioTradesTable({
               {formatTradeDate(trade.createdAt)}
             </td>
             <td className="px-2 md:px-6 py-3 md:py-4 whitespace-nowrap text-gray-700 text-xs md:text-sm min-w-[70px]">
-              {(trade.tradeType ?? "BUY").toUpperCase()}
+              {(trade.tradeType ?? "BUY").toLowerCase() === "redemption"
+                ? "Redemption"
+                : (trade.tradeType ?? "BUY").toUpperCase()}
             </td>
             <td className="px-2 md:px-6 py-3 md:py-4 text-center text-gray-900 text-xs md:text-base min-w-[100px]">
-              {formatPrice(trade.avgPrice)}¢
+              {(trade.tradeType ?? "").toLowerCase() === "redemption"
+                ? "$1.00"
+                : `${formatPrice(trade.avgPrice)}¢`}
             </td>
             <td className="px-2 md:px-6 py-3 md:py-4 text-center text-gray-900 text-xs md:text-base min-w-[100px]">
-              ${trade.betAmount.toFixed(2)}
+              ${Number(trade.betAmount).toFixed(2)}
             </td>
           </tr>
         ))}
@@ -176,7 +183,14 @@ export default function PortfolioPage() {
       cur.lastTradeAt = t.createdAt || cur.lastTradeAt;
       if (!isActiveOpenStatus(t.status)) cur.anyClosed = true;
 
-      if (type !== "SELL") {
+      if (type === "SELL" || type === "REDEMPTION") {
+        // SELL / redemption: reduce shares, keep avg cost per share
+        cur.dbNetShares = Math.max(0, cur.dbNetShares - sh);
+        if (cur.dbNetShares === 0) {
+          cur.avgCostPerShare = null;
+          cur.firstBuyAt = undefined;
+        }
+      } else {
         // BUY
         const buyCostPerShare = Number.isFinite(bet) && bet >= 0 ? bet / sh : 0;
         const prevShares = cur.dbNetShares;
@@ -187,13 +201,6 @@ export default function PortfolioPage() {
         cur.dbNetShares = newShares;
         cur.avgCostPerShare = newShares > 0 ? newCost / newShares : null;
         if (!cur.firstBuyAt) cur.firstBuyAt = t.createdAt;
-      } else {
-        // SELL (average-cost): reduce shares, keep avg cost per share
-        cur.dbNetShares = Math.max(0, cur.dbNetShares - sh);
-        if (cur.dbNetShares === 0) {
-          cur.avgCostPerShare = null;
-          cur.firstBuyAt = undefined;
-        }
       }
 
       map.set(key, cur);

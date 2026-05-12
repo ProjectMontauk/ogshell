@@ -19,6 +19,8 @@ import { notFound } from "next/navigation";
 import DenariusSymbol from "../../../components/DenariusSymbol";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { usePortfolio } from "../../../contexts/PortfolioContext";
+import ConditionalTokensRedeemShares from "../../../components/ConditionalTokensRedeemShares";
+import { getMarketRedeemDefaults } from "../../../constants/marketRedeemDefaults";
 
 // Backend API base URL - same-origin Next.js API routes
 const API_BASE_URL = '';
@@ -109,11 +111,17 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
 
   // Get contracts and position IDs based on market ID
   const { marketContract, conditionalTokensContract, outcome1PositionId, outcome2PositionId } = getContractsForMarket(market.id);
+  const redeemDefaults = getMarketRedeemDefaults(market.id);
+  const tradingResolved = Boolean(market.tradingResolved);
+  const forceFpmmDevTrading = searchParams?.get("fpmmDevTrading") === "1";
+  const showFpmmTradingUi = !tradingResolved || forceFpmmDevTrading;
 
   // For Your Balance card - use market-specific PositionIDs
   const [outcome1Balance, setOutcome1Balance] = useState<string>("--");
   const [outcome2Balance, setOutcome2Balance] = useState<string>("--");
   const [isBalanceLoading, setIsBalanceLoading] = useState(false);
+  /** Snapshot winning outcome shares when user starts redeem (chain read before wallet). */
+  const preRedeemWinningRef = useRef<{ shares: number; outcomeLabel: string } | null>(null);
 
   // Only show placeholders when we don't have chain data yet — never wipe known numbers during refetch
   const formatOutcomeSharesCell = (loading: boolean, balanceStr: string) => {
@@ -255,6 +263,8 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
 
   const [, setBuyFeedback] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  /** Shown above “Your positions” after a successful conditional-tokens redeem + balance refresh. */
+  const [redeemSuccessMessage, setRedeemSuccessMessage] = useState<string | null>(null);
   const [showWalletError, setShowWalletError] = useState(false);
 
 // Buy mode: simple cost display (amount entered)
@@ -514,10 +524,9 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
           recordNewOdds();
       },
       onSettled: () => {
-          setTimeout(() => {
-            setBuyFeedback(null);
-            setSuccessMessage(null);
-          }, 10000);
+        setTimeout(() => {
+          setBuyFeedback(null);
+        }, 10000);
       }
     });
   };
@@ -635,10 +644,9 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
           recordNewOdds();
       },
       onSettled: () => {
-          setTimeout(() => {
-            setBuyFeedback(null);
-            setSuccessMessage(null);
-          }, 10000);
+        setTimeout(() => {
+          setBuyFeedback(null);
+        }, 10000);
       }
     });
   };
@@ -741,7 +749,6 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
       onSettled: () => {
         setTimeout(() => {
           setBuyFeedback(null);
-          setSuccessMessage(null);
         }, 10000);
       }
     });
@@ -797,7 +804,6 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
       onSettled: () => {
         setTimeout(() => {
           setBuyFeedback(null);
-          setSuccessMessage(null);
         }, 10000);
       }
     });
@@ -1006,7 +1012,7 @@ useEffect(() => {
   // Fetch user balances: readContract on Conditional Tokens (balanceOf(owner, positionId)) using config CT and position IDs per market
   const fetchUserBalances = useCallback(
     async (options?: { silent?: boolean }) => {
-      if (!account?.address) return;
+      if (!account?.address) return undefined;
 
       const silent = options?.silent === true;
       if (!silent) setIsBalanceLoading(true);
@@ -1021,19 +1027,84 @@ useEffect(() => {
           method: "function balanceOf(address account, uint256 id) view returns (uint256)",
           params: [account.address as `0x${string}`, BigInt(outcome2PositionId)],
         });
-        const yesShares = (Number(balance1.toString()) / 1e18).toString();
-        const noShares = (Number(balance2.toString()) / 1e18).toString();
-        setOutcome1Balance(yesShares);
-        setOutcome2Balance(noShares);
+        const yesHuman = Number(balance1.toString()) / 1e18;
+        const noHuman = Number(balance2.toString()) / 1e18;
+        setOutcome1Balance(yesHuman.toString());
+        setOutcome2Balance(noHuman.toString());
+        return { yes: yesHuman, no: noHuman };
       } catch (err) {
         console.error("Error fetching user balances:", err);
         setOutcome1Balance("Error");
         setOutcome2Balance("Error");
+        return undefined;
       } finally {
         if (!silent) setIsBalanceLoading(false);
       }
     },
     [account?.address, outcome1PositionId, outcome2PositionId, conditionalTokensContract],
+  );
+
+  const handleRedeemStart = useCallback(async () => {
+    setRedeemSuccessMessage(null);
+    if (!account?.address) {
+      preRedeemWinningRef.current = null;
+      return;
+    }
+    const b = await fetchUserBalances({ silent: true });
+    if (!b) {
+      preRedeemWinningRef.current = null;
+      return;
+    }
+    const [yesLabel, noLabel] = market.outcomes;
+    const winningShares = Math.max(b.yes, b.no);
+    if (!Number.isFinite(winningShares) || winningShares <= 0) {
+      preRedeemWinningRef.current = null;
+      return;
+    }
+    const outcomeLabel = b.yes >= b.no ? yesLabel : noLabel;
+    preRedeemWinningRef.current = { shares: winningShares, outcomeLabel };
+  }, [account?.address, fetchUserBalances, market.outcomes]);
+
+  const handleRedeemSuccess = useCallback(
+    async (txResult?: unknown) => {
+      const snap = preRedeemWinningRef.current;
+      preRedeemWinningRef.current = null;
+      const txHash = txHashFromResult(txResult);
+      try {
+        await fetchUserBalances({ silent: true });
+        await refetchUserTokenBalance();
+        requestCashRefresh();
+        setRedeemSuccessMessage(
+          "Redeem complete. Your Yes/No position balances below are updated; collateral from redeemed tokens is paid to your wallet — check Cash in the header.",
+        );
+
+        if (account?.address && snap && snap.shares > 0) {
+          try {
+            await submitTrade({
+              walletAddress: account.address,
+              marketTitle: market.title,
+              marketId: market.id,
+              outcome: snap.outcomeLabel,
+              shares: snap.shares,
+              avgPrice: 1,
+              betAmount: snap.shares,
+              toWin: 0,
+              status: "SETTLED",
+              txHash,
+              tradeType: "Redemption",
+            });
+          } catch (err) {
+            console.error("Redemption trade history submit failed:", err);
+          }
+        }
+      } catch (e) {
+        console.error("Post-redeem balance refresh failed:", e);
+        setRedeemSuccessMessage(
+          "Redeem was submitted. If numbers look unchanged, wait a few seconds for the chain to catch up, then refresh the page.",
+        );
+      }
+    },
+    [account?.address, market, fetchUserBalances, refetchUserTokenBalance, requestCashRefresh],
   );
 
   // Fetch user balances once when page loads or wallet connects (no polling — refresh page to update)
@@ -2089,6 +2160,13 @@ useEffect(() => {
                 <div className="w-full h-px bg-gray-200 mb-7"></div>
                 {/* Betting Card (mobile) */}
                 <div className="bg-white p-0 w-full max-w-[600px]">
+                  {showFpmmTradingUi ? (
+                  <>
+                  {tradingResolved && forceFpmmDevTrading && (
+                    <div className="mb-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-900">
+                      Dev: <code className="font-mono">?fpmmDevTrading=1</code> — buy/sell UI visible for internal testing.
+                    </div>
+                  )}
                   {/* Buy/Sell Toggle */}
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex gap-2 text-[12px]">
@@ -2316,6 +2394,44 @@ useEffect(() => {
                       </div>
                     </div>
                   </div>
+                  </>
+                  ) : (
+                  <>
+                    {redeemSuccessMessage && (
+                      <div className="mb-2 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-xs font-medium text-green-900">
+                        {redeemSuccessMessage}
+                      </div>
+                    )}
+                    <ConditionalTokensRedeemShares
+                      conditionalTokensContract={conditionalTokensContract}
+                      defaultCollateralToken={redeemDefaults?.collateralToken ?? ""}
+                      defaultParentCollectionId={redeemDefaults?.parentCollectionId ?? "0x0000000000000000000000000000000000000000000000000000000000000000"}
+                      defaultConditionId={redeemDefaults?.conditionId ?? ""}
+                      defaultIndexSets={redeemDefaults?.defaultIndexSets ?? "1"}
+                      className="mb-2"
+                      hideParameterFields={!!redeemDefaults}
+                      onRedeemStart={handleRedeemStart}
+                      onRedeemSuccess={handleRedeemSuccess}
+                    />
+                    <div className="mt-2 border-t border-gray-200 pt-4">
+                      <h3 className="text-sm font-bold text-gray-900 mb-1">Your positions</h3>
+                      <p className="mb-3 text-xs text-gray-500">
+                        After a successful redeem, Yes/No shares drop and matching collateral appears in your wallet cash
+                        balance.
+                      </p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center">
+                          <div className="text-xs font-semibold text-green-600 mb-1">Yes Shares</div>
+                          <div className="text-xs font-bold text-gray-800">{formatOutcomeSharesCell(isBalanceLoading, outcome1Balance)}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs font-semibold text-blue-600 mb-1">No Shares</div>
+                          <div className="text-xs font-bold text-gray-800">{formatOutcomeSharesCell(isBalanceLoading, outcome2Balance)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                  )}
                   {/* Bottom solid grey border */}
                 <div className="w-full h-px bg-gray-200 mt-6"></div>
                 </div>
@@ -2649,6 +2765,13 @@ useEffect(() => {
             </div>
             {/* Betting Card (desktop) */}
             <div ref={fpmmTradingPanelRefDesktop} className="hidden lg:block bg-white shadow p-4 sm:max-w-4xl sm:mx-auto lg:pl-4 lg:pr-4 lg:py-6 lg:w-[270px] lg:self-start lg:ml-auto">
+              {showFpmmTradingUi ? (
+              <>
+              {tradingResolved && forceFpmmDevTrading && (
+                <div className="mb-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-900">
+                  Dev: <code className="font-mono">?fpmmDevTrading=1</code> — buy/sell UI visible for internal testing.
+                </div>
+              )}
               {/* Buy/Sell Toggle */}
               <div className="flex items-center mb-2">
                 <div className="flex gap-2 text-[12px]">
@@ -2849,6 +2972,44 @@ useEffect(() => {
                       </div>
                 </div>
               </div>
+              </>
+              ) : (
+              <>
+                {redeemSuccessMessage && (
+                  <div className="mb-2 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-xs font-medium text-green-900">
+                    {redeemSuccessMessage}
+                  </div>
+                )}
+                <ConditionalTokensRedeemShares
+                  conditionalTokensContract={conditionalTokensContract}
+                  defaultCollateralToken={redeemDefaults?.collateralToken ?? ""}
+                  defaultParentCollectionId={redeemDefaults?.parentCollectionId ?? "0x0000000000000000000000000000000000000000000000000000000000000000"}
+                  defaultConditionId={redeemDefaults?.conditionId ?? ""}
+                  defaultIndexSets={redeemDefaults?.defaultIndexSets ?? "1"}
+                  className="mb-2"
+                  hideParameterFields={!!redeemDefaults}
+                  onRedeemStart={handleRedeemStart}
+                  onRedeemSuccess={handleRedeemSuccess}
+                />
+                <div className="mt-2 border-t border-gray-200 pt-4">
+                  <h3 className="text-sm font-bold text-gray-900 mb-1">Your positions</h3>
+                  <p className="mb-3 text-xs text-gray-500">
+                    After a successful redeem, Yes/No shares drop and matching collateral appears in your wallet cash
+                    balance.
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center">
+                      <div className="text-xs font-semibold text-green-600 mb-1">Yes Shares</div>
+                      <div className="text-xs font-bold text-gray-800">{formatOutcomeSharesCell(isBalanceLoading, outcome1Balance)}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs font-semibold text-blue-600 mb-1">No Shares</div>
+                      <div className="text-xs font-bold text-gray-800">{formatOutcomeSharesCell(isBalanceLoading, outcome2Balance)}</div>
+                    </div>
+                  </div>
+                </div>
+              </>
+              )}
             </div>
           </div>
         </div>
