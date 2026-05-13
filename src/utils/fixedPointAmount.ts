@@ -14,7 +14,7 @@ export function bigintWeiToDecimalString(amountWei: bigint, decimals: number): s
   if (frac === 0n) {
     return (neg ? "-" : "") + intPart.toString();
   }
-  let fracStr = frac.toString().padStart(decimals, "0").replace(/0+$/, "");
+  const fracStr = frac.toString().padStart(decimals, "0").replace(/0+$/, "");
   return (neg ? "-" : "") + `${intPart.toString()}.${fracStr}`;
 }
 
