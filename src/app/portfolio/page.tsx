@@ -1,14 +1,15 @@
 "use client";
 
 import Navbar from "../../../components/Navbar";
-import { useActiveAccount, useReadContract, useSendTransaction } from "thirdweb/react";
+import { useActiveAccount, useReadContract } from "thirdweb/react";
 import { fetchTrades } from "../../utils/tradeApi";
 import { getContractsForMarket, tokenContract } from "../../../constants/contracts";
+import {
+  CASH_TOKEN_SCALE,
+} from "../../../constants/tokenUnits";
+import { bigintWeiToHumanNumber } from "../../utils/fixedPointAmount";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { readContract } from "thirdweb";
-import { usePortfolio } from "../../contexts/PortfolioContext";
-import { prepareContractCall } from "thirdweb";
-import { parseAmountToWei } from "../../utils/parseAmountToWei";
 import { readOutcomeOddsForMarket } from "../../utils/portfolioTotals";
 
 // Define Trade interface
@@ -125,18 +126,15 @@ interface CurrentPosition {
 
 function formatBalance(balance: bigint | undefined): number {
   if (!balance) return 0;
-  // Divide by 10^18 and show as a number
-  return Number(balance) / 1e18;
+  return Number(balance) / CASH_TOKEN_SCALE;
 }
 
 export default function PortfolioPage() {
   const account = useActiveAccount();
-  const { mutate: sendTransaction } = useSendTransaction();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [tradesLoading, setTradesLoading] = useState(true);
   const [tradesError, setTradesError] = useState<string | null>(null);
   const [pnlHistory, setPnlHistory] = useState<{ timestamp: number; pnl: number }[]>([]);
-  const { requestCashRefresh } = usePortfolio();
   const [activeTab, setActiveTab] = useState<'history' | 'current'>('current');
   const [currentPositions, setCurrentPositions] = useState<CurrentPosition[]>([]);
   const [currentPositionsLoading, setCurrentPositionsLoading] = useState(false);
@@ -223,7 +221,8 @@ export default function PortfolioPage() {
 
       for (const market of markets) {
         try {
-          const { conditionalTokensContract, outcome1PositionId, outcome2PositionId } = getContractsForMarket(market.id);
+          const { conditionalTokensContract, outcome1PositionId, outcome2PositionId, marketContract, outcomeTokenDecimals } =
+            getContractsForMarket(market.id);
           
           // Fetch Yes shares balance
           const yesBalance = await readContract({
@@ -245,12 +244,17 @@ export default function PortfolioPage() {
             ],
           });
 
-          // Convert to real numbers (divide by 10^18)
-          const yesShares = Number(yesBalance) / 1e18;
-          const noShares = Number(noBalance) / 1e18;
+          // Convert to human share amounts (per-market fixed-point decimals, e.g. 6 or 18)
+          const yesShares = bigintWeiToHumanNumber(
+            typeof yesBalance === "bigint" ? yesBalance : BigInt(String(yesBalance)),
+            outcomeTokenDecimals
+          );
+          const noShares = bigintWeiToHumanNumber(
+            typeof noBalance === "bigint" ? noBalance : BigInt(String(noBalance)),
+            outcomeTokenDecimals
+          );
 
-          const { marketContract } = getContractsForMarket(market.id);
-          const odds = await readOutcomeOddsForMarket(marketContract);
+          const odds = await readOutcomeOddsForMarket(marketContract, outcomeTokenDecimals);
           if (!odds) {
             throw new Error("Could not read market odds (FPMM or LMSR)");
           }
@@ -300,7 +304,7 @@ export default function PortfolioPage() {
   }, [account?.address]);
 
   // Fetch user's cash balance from contract (same as Navbar)
-  const { data: balance, refetch } = useReadContract({
+  const { data: balance } = useReadContract({
     contract: tokenContract,
     method: "function balanceOf(address account) view returns (uint256)",
     params: [account?.address ?? "0x0000000000000000000000000000000000000000"],
@@ -451,24 +455,6 @@ export default function PortfolioPage() {
   // Calculate total portfolio value using current positions
   const totalPositionsValue = currentPositions.reduce((sum, position) => sum + position.positionValue, 0);
   const totalPortfolio = cash + totalPositionsValue;
-
-  useEffect(() => {
-    if (account && balance !== undefined && Number(balance) === 0) {
-      const parsedAmount = parseAmountToWei("100");
-      const transaction = prepareContractCall({
-        contract: tokenContract,
-        method: "function mint(address account, uint256 amount)",
-        params: [account.address, parsedAmount],
-      });
-      sendTransaction(transaction, {
-        onSuccess: () => {
-          refetch();
-          requestCashRefresh();
-        }
-      });
-    }
-  }, [account, balance, refetch, sendTransaction, requestCashRefresh]);
-// }, [account, balance]);
 
   return (
     <div>

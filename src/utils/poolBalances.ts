@@ -1,4 +1,5 @@
 import { readContract } from "thirdweb";
+import { OUTCOME_TOKEN_SCALE_BI } from "../../constants/tokenUnits";
 
 type Contract = Parameters<typeof readContract>[0]["contract"];
 
@@ -19,7 +20,7 @@ export type OutcomePoolConstantK = {
   kWeiSquared: bigint;
 };
 
-const WEI_PER_TOKEN = 1000000000000000000n;
+const WEI_PER_TOKEN = OUTCOME_TOKEN_SCALE_BI;
 
 /**
  * Fetches the AMM/market maker's pool balances for two outcome position IDs.

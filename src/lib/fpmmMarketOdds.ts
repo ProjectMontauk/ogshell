@@ -1,9 +1,14 @@
 import { getContract, readContract } from "thirdweb";
 import { client } from "@/client";
-import { baseSepolia } from "thirdweb/chains";
+import { base } from "thirdweb/chains";
 import type { Market } from "@/data/markets";
 
-const INVESTMENT_AMOUNT = BigInt("1000000000000000000"); // 1e18 for FPMM calcBuyAmount
+import { CASH_TOKEN_DECIMALS, CASH_TOKEN_SCALE_BI } from "../../constants/tokenUnits";
+import { getContractsForMarket } from "../../constants/contracts";
+import { bigintWeiToHumanNumber } from "../utils/fixedPointAmount";
+
+/** One USDC (6 decimals) as `investmentAmount` for `calcBuyAmount` on Base mainnet. */
+const INVESTMENT_AMOUNT = CASH_TOKEN_SCALE_BI;
 
 /** Fixed-point scale used in `odds-history` rows (same as markets UI). */
 export const ODDS_HISTORY_FIXED_POINT = Number("18446744073709551616");
@@ -15,7 +20,7 @@ export async function fetchFpmmProbsForMarket(
   try {
     const contract = getContract({
       client,
-      chain: baseSepolia,
+      chain: base,
       address: market.contractAddress,
     });
     const [sharesYes, sharesNo] = await Promise.all([
@@ -32,12 +37,19 @@ export async function fetchFpmmProbsForMarket(
         params: [INVESTMENT_AMOUNT, 1n],
       }),
     ]);
-    const inv = Number(INVESTMENT_AMOUNT);
-    const sY = Number(sharesYes);
-    const sN = Number(sharesNo);
+    const outcomeTokenDecimals = getContractsForMarket(market.id).outcomeTokenDecimals;
+    const invHuman = bigintWeiToHumanNumber(INVESTMENT_AMOUNT, CASH_TOKEN_DECIMALS);
+    const sY = bigintWeiToHumanNumber(
+      typeof sharesYes === "bigint" ? sharesYes : BigInt(String(sharesYes)),
+      outcomeTokenDecimals
+    );
+    const sN = bigintWeiToHumanNumber(
+      typeof sharesNo === "bigint" ? sharesNo : BigInt(String(sharesNo)),
+      outcomeTokenDecimals
+    );
     if (sY <= 0 || sN <= 0) return null;
-    const oddsYesRaw = inv / sY;
-    const oddsNoRaw = inv / sN;
+    const oddsYesRaw = invHuman / sY;
+    const oddsNoRaw = invHuman / sN;
     const probYes = oddsYesRaw / (oddsYesRaw + oddsNoRaw);
     const probNo = oddsNoRaw / (oddsYesRaw + oddsNoRaw);
     return { yes: probYes, no: probNo };

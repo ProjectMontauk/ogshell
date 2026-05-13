@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getContractsForMarket } from "../../constants/contracts";
 import { calculateSharesFromBetAmount } from "../../src/utils/calculateSharesFromBetAmount";
 import { getAllowedOrigin } from "../../lib/cors";
+import { CASH_TOKEN_SCALE } from "../../constants/tokenUnits";
+import { bigintWeiToHumanNumber } from "../../src/utils/fixedPointAmount";
 
 /**
  * One-off test: GET /api/test-shares?amount=100&outcome=0
@@ -23,10 +25,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const amount = Math.abs(Number(req.query.amount ?? 100));
   const outcome = Number(req.query.outcome ?? 0) === 1 ? 1 : 0;
 
-  const { conditionalTokensContract, marketContract, outcome1PositionId, outcome2PositionId } =
+  const { conditionalTokensContract, marketContract, outcome1PositionId, outcome2PositionId, outcomeTokenDecimals } =
     getContractsForMarket("jfk");
 
-  const betAmountWei = BigInt(Math.floor(amount * 1e18));
+  const betAmountWei = BigInt(Math.floor(amount * CASH_TOKEN_SCALE));
 
   try {
     const sharesWei = await calculateSharesFromBetAmount(
@@ -35,9 +37,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       outcome1PositionId,
       outcome2PositionId,
       outcome as 0 | 1,
-      betAmountWei
+      betAmountWei,
+      { outcomeTokenDecimals }
     );
-    const sharesHuman = Number(sharesWei) / 1e18;
+    const sharesHuman = bigintWeiToHumanNumber(sharesWei, outcomeTokenDecimals);
     return res.status(200).json({
       betAmountUsd: amount,
       outcome: outcome === 0 ? "Yes" : "No",

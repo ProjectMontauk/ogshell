@@ -6,6 +6,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useActiveAccount, useReadContract, useSendTransaction } from "thirdweb/react";
 import { prepareContractCall, readContract } from "thirdweb";
 import { getContractsForMarket, tokenContract } from "../../../../constants/contracts";
+import {
+  CASH_TOKEN_DECIMALS,
+  CASH_TOKEN_SCALE,
+  CASH_TOKEN_SCALE_BI,
+} from "../../../../constants/tokenUnits";
+import { bigintWeiToHumanNumber } from "../../../utils/fixedPointAmount";
 import { Tab } from "@headlessui/react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
@@ -110,7 +116,9 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
   const { requestCashRefresh } = usePortfolio();
 
   // Get contracts and position IDs based on market ID
-  const { marketContract, conditionalTokensContract, outcome1PositionId, outcome2PositionId } = getContractsForMarket(market.id);
+  const { marketContract, conditionalTokensContract, outcome1PositionId, outcome2PositionId, outcomeTokenDecimals } =
+    getContractsForMarket(market.id);
+  const outcomeScale = 10 ** outcomeTokenDecimals;
   const redeemDefaults = getMarketRedeemDefaults(market.id);
   const tradingResolved = Boolean(market.tradingResolved);
   const forceFpmmDevTrading = searchParams?.get("fpmmDevTrading") === "1";
@@ -134,8 +142,8 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
   const YES_OUTCOME_INDEX = 0;
   const NO_OUTCOME_INDEX = 1;
 
-  // All markets use FPMM-style odds: calcBuyAmount(1e18, outcomeIndex) -> odds = investment / shares, then normalized to 2^64 for display
-  const INVESTMENT_AMOUNT = BigInt("1000000000000000000"); // 1 = 1e18
+  // FPMM odds: calcBuyAmount(1 USDC in 6 decimals, outcomeIndex) -> normalized to 2^64 for display
+  const INVESTMENT_AMOUNT = CASH_TOKEN_SCALE_BI;
   const [fpmmOddsYes, setFpmmOddsYes] = useState<bigint | undefined>(undefined);
   const [fpmmOddsNo, setFpmmOddsNo] = useState<bigint | undefined>(undefined);
   const [fpmmOddsLoading, setFpmmOddsLoading] = useState(false);
@@ -155,12 +163,18 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
           params: [INVESTMENT_AMOUNT, 1n],
         }),
       ]);
-      const inv = Number(INVESTMENT_AMOUNT);
-      const sY = Number(sharesYes);
-      const sN = Number(sharesNo);
+      const invHuman = bigintWeiToHumanNumber(INVESTMENT_AMOUNT, CASH_TOKEN_DECIMALS);
+      const sY = bigintWeiToHumanNumber(
+        typeof sharesYes === "bigint" ? sharesYes : BigInt(String(sharesYes)),
+        outcomeTokenDecimals
+      );
+      const sN = bigintWeiToHumanNumber(
+        typeof sharesNo === "bigint" ? sharesNo : BigInt(String(sharesNo)),
+        outcomeTokenDecimals
+      );
       if (sY <= 0 || sN <= 0) return;
-      const oddsYesRaw = inv / sY;
-      const oddsNoRaw = inv / sN;
+      const oddsYesRaw = invHuman / sY;
+      const oddsNoRaw = invHuman / sN;
       const probYes = oddsYesRaw / (oddsYesRaw + oddsNoRaw);
       const probNo = oddsNoRaw / (oddsYesRaw + oddsNoRaw);
       setFpmmOddsYes(BigInt(Math.round(probYes * 2 ** 64)));
@@ -172,7 +186,7 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
     } finally {
       setFpmmOddsLoading(false);
     }
-  }, [marketContract]);
+  }, [marketContract, outcomeTokenDecimals]);
 
   useEffect(() => {
     fetchFpmmOdds();
@@ -391,9 +405,9 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
   const handleBuyYesWithApproval = async (amount: string) => {
     if (!handleWalletCheck()) return;
     const usdAmount = parseFloat(amount);
-    // userTokenBalance is in wei (1e18), usdAmount is in dollars
+    // userTokenBalance is USDC base units (6 decimals); usdAmount is in dollars
     // If userTokenBalance is undefined, treat as 0
-    const cashAvailable = userTokenBalance ? Number(userTokenBalance) / 1e18 : 0;
+    const cashAvailable = userTokenBalance ? Number(userTokenBalance) / CASH_TOKEN_SCALE : 0;
     if (usdAmount > cashAvailable) {
       setBuyFeedback("Please bet less than cash available!"); 
       setTimeout(() => setBuyFeedback(null), 3000);
@@ -416,12 +430,12 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
     setBuyFeedback("Preparing transaction (1/3)");
     const usdAmount = parseFloat(amount);
     
-    // Convert full amount to USDC (18 decimals) for Base Sepolia
-    const betAmountInUSDC = BigInt(Math.floor(usdAmount * 1e18));
+    // Convert full amount to USDC (6 decimals on Base mainnet)
+    const betAmountInUSDC = BigInt(Math.floor(usdAmount * CASH_TOKEN_SCALE));
     
     // Get the exact shares that will be received (using discounted amount for preview)
     const discountedBetAmount = usdAmount * 0.99;
-    const discountedBetAmountInUSDC = BigInt(Math.floor(discountedBetAmount * 1e18));
+    const discountedBetAmountInUSDC = BigInt(Math.floor(discountedBetAmount * CASH_TOKEN_SCALE));
     
     let sharesToBuy: number;
     try {
@@ -431,9 +445,13 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
         outcome1PositionId,
         outcome2PositionId,
         0,
-        discountedBetAmountInUSDC
+        discountedBetAmountInUSDC,
+        { outcomeTokenDecimals }
       );
-      sharesToBuy = Number(sharesResult) / 1e18;
+      sharesToBuy = bigintWeiToHumanNumber(
+        typeof sharesResult === "bigint" ? sharesResult : BigInt(String(sharesResult)),
+        outcomeTokenDecimals
+      );
       if (isNaN(sharesToBuy) || sharesToBuy <= 0) {
         setBuyFeedback("Invalid price calculation. Please try again.");
         setTimeout(() => setBuyFeedback(null), 3000);
@@ -536,12 +554,12 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
     setBuyFeedback("Preparing transaction (1/3)");
     const usdAmount = parseFloat(amount);
     
-    // Convert full amount to USDC (6 decimals) for Base Sepolia
-    const betAmountInUSDC = BigInt(Math.floor(usdAmount * 1e18));
+    // USDC (6 decimals on Base mainnet)
+    const betAmountInUSDC = BigInt(Math.floor(usdAmount * CASH_TOKEN_SCALE));
     
     // Get the exact shares that will be received (using discounted amount for preview)
     const discountedBetAmount = usdAmount * 0.99;
-    const discountedBetAmountInUSDC = BigInt(Math.floor(discountedBetAmount * 1e18));
+    const discountedBetAmountInUSDC = BigInt(Math.floor(discountedBetAmount * CASH_TOKEN_SCALE));
     
     let sharesToBuy: number;
     try {
@@ -551,9 +569,13 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
         outcome1PositionId,
         outcome2PositionId,
         1,
-        discountedBetAmountInUSDC
+        discountedBetAmountInUSDC,
+        { outcomeTokenDecimals }
       );
-      sharesToBuy = Number(sharesResult) / 1e18;
+      sharesToBuy = bigintWeiToHumanNumber(
+        typeof sharesResult === "bigint" ? sharesResult : BigInt(String(sharesResult)),
+        outcomeTokenDecimals
+      );
       if (isNaN(sharesToBuy) || sharesToBuy <= 0) {
         setBuyFeedback("Invalid price calculation. Please try again.");
         setTimeout(() => setBuyFeedback(null), 3000);
@@ -654,7 +676,7 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
   const handleBuyNoWithApproval = async (amount: string) => {
     if (!handleWalletCheck()) return;
     const usdAmount = parseFloat(amount);
-    const cashAvailable = userTokenBalance ? Number(userTokenBalance) / 1e18 : 0;
+    const cashAvailable = userTokenBalance ? Number(userTokenBalance) / CASH_TOKEN_SCALE : 0;
     if (usdAmount > cashAvailable) {
       setBuyFeedback("Please bet less than cash available");
       setTimeout(() => setBuyFeedback(null), 3000);
@@ -871,7 +893,7 @@ useEffect(() => {
   let cancelled = false;
   setBuyEstSharesLoading(true);
   setBuyEstSharesDisplay(null);
-  const investmentAmount = BigInt(Math.floor(num * 1e18));
+  const investmentAmount = BigInt(Math.floor(num * CASH_TOKEN_SCALE));
   const outcomeIndex = selectedOutcome === 'yes' ? 0 : 1;
   readContract({
     contract: marketContract,
@@ -880,7 +902,8 @@ useEffect(() => {
   })
     .then((sharesWei) => {
       if (cancelled) return;
-      const sharesHuman = Number(sharesWei) / 1e18;
+      const sw = typeof sharesWei === "bigint" ? sharesWei : BigInt(String(sharesWei));
+      const sharesHuman = bigintWeiToHumanNumber(sw, outcomeTokenDecimals);
       setBuyEstSharesDisplay(sharesHuman >= 0 ? sharesHuman.toFixed(2) : "--");
     })
     .catch(() => {
@@ -890,7 +913,7 @@ useEffect(() => {
       if (!cancelled) setBuyEstSharesLoading(false);
     });
   return () => { cancelled = true; };
-}, [mode, selectedOutcome, amount, marketContract]);
+}, [mode, selectedOutcome, amount, marketContract, outcomeTokenDecimals]);
 
 // Sell mode: quote required shares for a desired collateral return using calcSellAmount(returnAmount, outcomeIndex).
 useEffect(() => {
@@ -908,7 +931,7 @@ useEffect(() => {
   let cancelled = false;
   setSellEstSharesLoading(true);
   setSellEstSharesDisplay(null);
-  const returnAmount = BigInt(Math.floor(collateralNum * 1e18));
+  const returnAmount = BigInt(Math.floor(collateralNum * CASH_TOKEN_SCALE));
   const outcomeIndex = selectedOutcome === "yes" ? 0 : 1;
   readContract({
     contract: marketContract,
@@ -918,7 +941,7 @@ useEffect(() => {
     .then((tokensToSell) => {
       if (cancelled) return;
       const t = typeof tokensToSell === "bigint" ? tokensToSell : BigInt(tokensToSell);
-      const sharesHuman = Number(t) / 1e18;
+      const sharesHuman = bigintWeiToHumanNumber(t, outcomeTokenDecimals);
       setSellEstSharesDisplay(Number.isFinite(sharesHuman) ? sharesHuman.toFixed(2) : "--");
     })
     .catch(() => {
@@ -930,7 +953,7 @@ useEffect(() => {
   return () => {
     cancelled = true;
   };
-}, [mode, selectedOutcome, amount, marketContract]);
+}, [mode, selectedOutcome, amount, marketContract, outcomeTokenDecimals]);
 
 
 
@@ -1027,8 +1050,10 @@ useEffect(() => {
           method: "function balanceOf(address account, uint256 id) view returns (uint256)",
           params: [account.address as `0x${string}`, BigInt(outcome2PositionId)],
         });
-        const yesHuman = Number(balance1.toString()) / 1e18;
-        const noHuman = Number(balance2.toString()) / 1e18;
+        const b1 = typeof balance1 === "bigint" ? balance1 : BigInt(String(balance1));
+        const b2 = typeof balance2 === "bigint" ? balance2 : BigInt(String(balance2));
+        const yesHuman = bigintWeiToHumanNumber(b1, outcomeTokenDecimals);
+        const noHuman = bigintWeiToHumanNumber(b2, outcomeTokenDecimals);
         setOutcome1Balance(yesHuman.toString());
         setOutcome2Balance(noHuman.toString());
         return { yes: yesHuman, no: noHuman };
@@ -1041,7 +1066,7 @@ useEffect(() => {
         if (!silent) setIsBalanceLoading(false);
       }
     },
-    [account?.address, outcome1PositionId, outcome2PositionId, conditionalTokensContract],
+    [account?.address, outcome1PositionId, outcome2PositionId, conditionalTokensContract, outcomeTokenDecimals],
   );
 
   const handleRedeemStart = useCallback(async () => {
@@ -1137,12 +1162,12 @@ useEffect(() => {
           outcome2PositionId,
           outcome1Wei: outcome1Wei.toString(),
           outcome2Wei: outcome2Wei.toString(),
-          outcome1Human: Number(outcome1Wei) / 1e18,
-          outcome2Human: Number(outcome2Wei) / 1e18,
+          outcome1Human: bigintWeiToHumanNumber(outcome1Wei, outcomeTokenDecimals),
+          outcome2Human: bigintWeiToHumanNumber(outcome2Wei, outcomeTokenDecimals),
         });
 
         // Debug: quote collateral out for selling 151.31 shares of outcome 0 (Yes).
-        const sharesToSellWei = BigInt(Math.floor(151.31 * 1e18));
+        const sharesToSellWei = BigInt(Math.floor(151.31 * outcomeScale));
         const quote = quoteCollateralOutWeiForSellShares({
           outcome1Wei,
           outcome2Wei,
@@ -1153,7 +1178,7 @@ useEffect(() => {
         console.log("[sellQuote] 151.31 shares outcome0", {
           sharesToSellWei: sharesToSellWei.toString(),
           collateralOutWei: quote.collateralOutWei.toString(),
-          collateralOutHuman: Number(quote.collateralOutWei) / 1e18,
+          collateralOutHuman: bigintWeiToHumanNumber(quote.collateralOutWei, outcomeTokenDecimals),
         });
       } catch (e) {
         if (!cancelled) console.error("[poolBalances] failed", e);
@@ -1162,7 +1187,7 @@ useEffect(() => {
     return () => {
       cancelled = true;
     };
-  }, [conditionalTokensContract, marketContract.address, market.id, outcome1PositionId, outcome2PositionId]);
+  }, [conditionalTokensContract, marketContract.address, market.id, outcome1PositionId, outcome2PositionId, outcomeTokenDecimals]);
 
   // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1583,8 +1608,10 @@ useEffect(() => {
                 method: "function balanceOf(address account, uint256 id) view returns (uint256)",
                 params: [account.address as `0x${string}`, BigInt(outcome2PositionId)],
               });
-              latestYesShares = Math.floor(Number(balance1.toString()) / 1e18);
-              latestNoShares = Math.floor(Number(balance2.toString()) / 1e18);
+              const b1 = typeof balance1 === "bigint" ? balance1 : BigInt(String(balance1));
+              const b2 = typeof balance2 === "bigint" ? balance2 : BigInt(String(balance2));
+              latestYesShares = Math.floor(bigintWeiToHumanNumber(b1, outcomeTokenDecimals));
+              latestNoShares = Math.floor(bigintWeiToHumanNumber(b2, outcomeTokenDecimals));
             } catch (err) {
               console.error("Error fetching latest balances for user-position API:", err);
             }
@@ -1641,35 +1668,45 @@ useEffect(() => {
 
   // For conditional tokens approval (for selling)
   const { mutate: sendSetApprovalForAll } = useSendTransaction();
-  const { data: isOperatorApproved, refetch: refetchOperatorApproval } = useReadContract({
+  const { data: _isOperatorApprovedSynced, refetch: refetchOperatorApproval } = useReadContract({
     contract: conditionalTokensContract,
     method: "function isApprovedForAll(address owner, address operator) view returns (bool)",
     params: [account?.address || "", marketContract.address || ""],
   });
 
   const handleSetApprovalForAllIfNeeded = async () => {
-    if (!isOperatorApproved) {
-      const transaction = prepareContractCall({
-        contract: conditionalTokensContract,
-        method: "function setApprovalForAll(address operator, bool approved)",
-        params: [marketContract.address, true],
-      });
-      let approved = false;
-      await new Promise((resolve) => {
-        sendSetApprovalForAll(transaction, {
-          onSuccess: async () => {
-            // Wait 4 seconds after approval
-            await new Promise((r) => setTimeout(r, 4000));
-            refetchOperatorApproval();
-            approved = true;
-            resolve(true);
-          },
-          onError: () => resolve(false),
-        });
-      });
-      return approved;
+    if (!account?.address || !marketContract.address) {
+      console.error("ERC1155 approval: missing wallet or market address");
+      return false;
     }
-    return true;
+
+    const { data: approvedNow } = await refetchOperatorApproval();
+    if (approvedNow === true) return true;
+
+    const transaction = prepareContractCall({
+      contract: conditionalTokensContract,
+      method: "function setApprovalForAll(address operator, bool approved)",
+      params: [marketContract.address, true],
+    });
+
+    const ok = await new Promise<boolean>((resolve) => {
+      sendSetApprovalForAll(transaction, {
+        onSuccess: async () => {
+          // Wait until RPC sees operator approval — sell() uses safeTransferFrom as the market.
+          for (let i = 0; i < 24; i++) {
+            await new Promise((r) => setTimeout(r, 500));
+            const { data } = await refetchOperatorApproval();
+            if (data === true) {
+              resolve(true);
+              return;
+            }
+          }
+          resolve(false);
+        },
+        onError: () => resolve(false),
+      });
+    });
+    return ok;
   };
 
   // Wrap the sell handlers to check approval first
@@ -1709,7 +1746,7 @@ useEffect(() => {
     setTradeInProgress(true);
     setBuyFeedback("Trade Submitted");
 
-    const investmentAmount = BigInt(Math.floor(investmentNum * 1e18));
+    const investmentAmount = BigInt(Math.floor(investmentNum * CASH_TOKEN_SCALE));
     const outcomeIndex = selectedOutcome === "yes" ? 0 : 1;
 
     try {
@@ -1760,7 +1797,9 @@ useEffect(() => {
           // Record trade to DB (best-effort, don't block UX)
           try {
             if (account?.address) {
-              const sharesHuman = Number(expectedShares) / 1e18;
+              const es =
+                typeof expectedShares === "bigint" ? expectedShares : BigInt(String(expectedShares));
+              const sharesHuman = bigintWeiToHumanNumber(es, outcomeTokenDecimals);
               const avgPrice = sharesHuman > 0 ? investmentNum / sharesHuman : 0;
               await submitTrade({
                 walletAddress: account.address,
@@ -1815,7 +1854,7 @@ useEffect(() => {
         : outcome2Balance !== "--" && outcome2Balance !== "Error"
           ? parseFloat(outcome2Balance)
           : 0;
-    const maxOutcomeTokensToSell = BigInt(Math.floor(Math.max(0, ownedSharesHuman) * 1e18));
+    const maxOutcomeTokensToSell = BigInt(Math.floor(Math.max(0, ownedSharesHuman) * outcomeScale));
 
     try {
       if (maxOutcomeTokensToSell <= 0n) {
@@ -1826,7 +1865,7 @@ useEffect(() => {
         return;
       }
 
-      const returnAmount = BigInt(Math.floor(collateralNum * 1e18));
+      const returnAmount = BigInt(Math.floor(collateralNum * CASH_TOKEN_SCALE));
       const tokensToSell = await readContract({
         contract: marketContract,
         method: "function calcSellAmount(uint256 returnAmount, uint256 outcomeIndex) view returns (uint256)",
@@ -1868,6 +1907,9 @@ useEffect(() => {
           let friendly = "Sell failed. Check your inputs and balance.";
           if (msg.includes("user rejected") || msg.includes("denied"))
             friendly = "Transaction cancelled in wallet.";
+          else if (msg.includes("operator approval") || msg.includes("erc1155"))
+            friendly =
+              "Outcome-token approval is still pending or missing. Wait a few seconds after approving, then try again.";
           else if (msg.includes("insufficient") || msg.includes("maximum sell amount exceeded"))
             friendly = "Insufficient balance or slippage. Try a smaller amount.";
           else if (msg.includes("revert"))
@@ -1882,8 +1924,10 @@ useEffect(() => {
           // Record trade to DB (best-effort, don't block UX)
           try {
             if (account?.address) {
-              const proceeds = Number(returnAmount) / 1e18;
-              const tokensSoldHuman = Number(tokensToSellBig) / 1e18;
+              const proceeds = Number(returnAmount) / CASH_TOKEN_SCALE;
+              const tsb =
+                typeof tokensToSellBig === "bigint" ? tokensToSellBig : BigInt(String(tokensToSellBig));
+              const tokensSoldHuman = bigintWeiToHumanNumber(tsb, outcomeTokenDecimals);
               const avgPrice = tokensSoldHuman > 0 ? proceeds / tokensSoldHuman : 0;
               await submitTrade({
                 walletAddress: account.address,
@@ -1927,7 +1971,7 @@ useEffect(() => {
         : outcome2Balance !== "--" && outcome2Balance !== "Error"
           ? parseFloat(outcome2Balance)
           : 0;
-    const ownedSharesWei = BigInt(Math.floor(Math.max(0, ownedSharesHuman) * 1e18));
+    const ownedSharesWei = BigInt(Math.floor(Math.max(0, ownedSharesHuman) * outcomeScale));
     const outcomeIndex: 0 | 1 = selectedOutcome === "yes" ? 0 : 1;
     if (ownedSharesWei <= 0n) {
       setBuyFeedback("No shares available to sell for the selected outcome.");
@@ -1943,7 +1987,7 @@ useEffect(() => {
         outcome2PositionId
       );
       const outWei = quoteCollateralOutWeiForSellAll(pool, ownedSharesWei, outcomeIndex, 0n);
-      const outHuman = Number(outWei) / 1e18;
+      const outHuman = bigintWeiToHumanNumber(outWei, outcomeTokenDecimals);
       const adjusted = Math.max(0, outHuman - 0.01);
       setAmount(Number.isFinite(adjusted) ? adjusted.toFixed(2) : "");
     } catch (e) {
@@ -1962,6 +2006,7 @@ useEffect(() => {
     marketContract.address,
     outcome1PositionId,
     outcome2PositionId,
+    outcomeTokenDecimals,
   ]);
 
   // Wrap recordNewOdds in useCallback
@@ -1981,11 +2026,17 @@ useEffect(() => {
           params: [INVESTMENT_AMOUNT, 1n],
         }),
       ]);
-      const inv = Number(INVESTMENT_AMOUNT);
-      const sY = Number(sharesYes);
-      const sN = Number(sharesNo);
-      const oddsYesRaw = sY > 0 ? inv / sY : 0;
-      const oddsNoRaw = sN > 0 ? inv / sN : 0;
+      const invHuman = bigintWeiToHumanNumber(INVESTMENT_AMOUNT, CASH_TOKEN_DECIMALS);
+      const sY = bigintWeiToHumanNumber(
+        typeof sharesYes === "bigint" ? sharesYes : BigInt(String(sharesYes)),
+        outcomeTokenDecimals
+      );
+      const sN = bigintWeiToHumanNumber(
+        typeof sharesNo === "bigint" ? sharesNo : BigInt(String(sharesNo)),
+        outcomeTokenDecimals
+      );
+      const oddsYesRaw = sY > 0 ? invHuman / sY : 0;
+      const oddsNoRaw = sN > 0 ? invHuman / sN : 0;
       const sum = oddsYesRaw + oddsNoRaw;
       const pY = sum > 0 ? oddsYesRaw / sum : 0;
       const pN = sum > 0 ? oddsNoRaw / sum : 0;
@@ -2022,7 +2073,7 @@ useEffect(() => {
     } catch (error) {
       console.error('Failed to record odds:', error);
     }
-  }, [marketContract, market.id, fetchOddsHistory, refetchOddsFromContract]);
+  }, [marketContract, market.id, fetchOddsHistory, refetchOddsFromContract, outcomeTokenDecimals]);
 
   const chartGridStroke = themeResolved === "dark" ? "#52525b" : "#bdbdbd";
   const chartTickFill = themeResolved === "dark" ? "#94a3b8" : "#525252";
@@ -2204,7 +2255,7 @@ useEffect(() => {
                             ? '$--'
                             : (() => {
                                 if (!userTokenBalance) return '$0';
-                                const amount = Number(userTokenBalance) / 1e18;
+                                const amount = Number(userTokenBalance) / CASH_TOKEN_SCALE;
                                 const formatted =
                                   amount % 1 === 0
                                     ? amount.toLocaleString(undefined, { maximumFractionDigits: 0 })

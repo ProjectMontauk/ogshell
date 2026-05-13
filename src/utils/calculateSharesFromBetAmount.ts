@@ -1,4 +1,9 @@
 import { readContract } from "thirdweb";
+import {
+  CASH_TOKEN_DECIMALS,
+  OUTCOME_TOKEN_DECIMALS,
+} from "../../constants/tokenUnits";
+import { bigintWeiToHumanNumber } from "./fixedPointAmount";
 
 type Contract = Parameters<typeof readContract>[0]["contract"];
 
@@ -6,10 +11,15 @@ const BALANCE_OF_ABI =
   "function balanceOf(address account, uint256 id) view returns (uint256)";
 
 /** Default LMSR liquidity parameter (b) from market docs; can be overridden per market. */
-const DEFAULT_LIQUIDITY_B = 10000;
+export const DEFAULT_LIQUIDITY_B = 10000;
 
-const DECIMALS = 18;
-const SCALE = 10 ** DECIMALS;
+const CASH_SCALE = 10 ** CASH_TOKEN_DECIMALS;
+
+export type CalculateSharesFromBetAmountOptions = {
+  liquidityB?: number;
+  /** ERC1155 / outcome token fixed-point decimals (e.g. 6 for some markets, 18 default). */
+  outcomeTokenDecimals?: number;
+};
 
 /**
  * Fetches the AMM pool's outcome token balances from the conditional tokens contract.
@@ -48,14 +58,8 @@ async function getPoolBalancesWei(
  * Solving for x: x = b * ln( S*(e^(betAmount/b) - 1) + e^(q_i/b) ) - q_i,
  * where S = sum_j e^(q_j/b). Pool state uses q_i = -balance_i (same sign convention as calcMarginalPrice).
  *
- * @param conditionalTokensContract - Conditional tokens contract (ERC1155)
- * @param marketContractAddress - Market (AMM) contract address (pool owner)
- * @param outcome1PositionId - Position ID for outcome 0 (Yes)
- * @param outcome2PositionId - Position ID for outcome 1 (No)
- * @param outcome - Outcome index: 0 = Yes, 1 = No
- * @param betAmountWei - Bet amount in token wei (18 decimals)
- * @param liquidityB - LMSR liquidity parameter b (default 10000 per market docs)
- * @returns Shares in wei (18 decimals). Use Number(result) / 1e18 for human-readable shares.
+ * @param betAmountWei - Bet amount in USDC base units (6 decimals on Base mainnet).
+ * @returns Outcome-token amount in the market's `outcomeTokenDecimals` fixed point.
  */
 export async function calculateSharesFromBetAmount(
   conditionalTokensContract: Contract,
@@ -64,8 +68,12 @@ export async function calculateSharesFromBetAmount(
   outcome2PositionId: string,
   outcome: 0 | 1,
   betAmountWei: bigint,
-  liquidityB: number = DEFAULT_LIQUIDITY_B
+  options?: CalculateSharesFromBetAmountOptions
 ): Promise<bigint> {
+  const liquidityB = options?.liquidityB ?? DEFAULT_LIQUIDITY_B;
+  const outcomeDecimals = options?.outcomeTokenDecimals ?? OUTCOME_TOKEN_DECIMALS;
+  const outcomeScale = 10 ** outcomeDecimals;
+
   const [balance0Wei, balance1Wei] = await getPoolBalancesWei(
     conditionalTokensContract,
     marketContractAddress,
@@ -73,11 +81,10 @@ export async function calculateSharesFromBetAmount(
     outcome2PositionId
   );
 
-  // Pool state in LMSR: q_i = -balance_i (same convention as contract's calcMarginalPrice)
-  const q0 = -Number(balance0Wei) / SCALE;
-  const q1 = -Number(balance1Wei) / SCALE;
+  const q0 = -bigintWeiToHumanNumber(balance0Wei, outcomeDecimals);
+  const q1 = -bigintWeiToHumanNumber(balance1Wei, outcomeDecimals);
   const b = liquidityB;
-  const betAmountHuman = Number(betAmountWei) / SCALE;
+  const betAmountHuman = Number(betAmountWei) / CASH_SCALE;
 
   if (betAmountHuman <= 0 || !Number.isFinite(betAmountHuman)) {
     return 0n;
@@ -103,12 +110,12 @@ export async function calculateSharesFromBetAmount(
     return 0n;
   }
 
-  return BigInt(Math.floor(xHuman * SCALE));
+  return BigInt(Math.floor(xHuman * outcomeScale));
 }
 
 /**
- * Convenience: bet amount in human units, returns shares in human units.
- * Uses 18 decimals. Apply any discount (e.g. 0.99) before passing if needed.
+ * Convenience: bet amount in human units (USD), returns shares in human units.
+ * Apply any discount (e.g. 0.99) before passing if needed.
  */
 export async function getSharesFromBetAmountHuman(
   conditionalTokensContract: Contract,
@@ -117,9 +124,10 @@ export async function getSharesFromBetAmountHuman(
   outcome2PositionId: string,
   outcome: 0 | 1,
   betAmountHuman: number,
-  liquidityB?: number
+  liquidityB?: number,
+  options?: CalculateSharesFromBetAmountOptions
 ): Promise<number> {
-  const betAmountWei = BigInt(Math.floor(betAmountHuman * SCALE));
+  const betAmountWei = BigInt(Math.floor(betAmountHuman * CASH_SCALE));
   const sharesWei = await calculateSharesFromBetAmount(
     conditionalTokensContract,
     marketContractAddress,
@@ -127,7 +135,8 @@ export async function getSharesFromBetAmountHuman(
     outcome2PositionId,
     outcome,
     betAmountWei,
-    liquidityB
+    { liquidityB, ...options }
   );
-  return Number(sharesWei) / SCALE;
+  const outcomeDecimals = options?.outcomeTokenDecimals ?? OUTCOME_TOKEN_DECIMALS;
+  return bigintWeiToHumanNumber(sharesWei, outcomeDecimals);
 }

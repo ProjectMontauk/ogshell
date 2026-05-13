@@ -41,7 +41,7 @@ function decodeEthCallPayload(params: unknown): { selector: string; name: string
 
 /**
  * Simple client-side logger that instruments fetch calls to Thirdweb's RPC.
- * Logs every JSON-RPC request hitting 84532.rpc.thirdweb.com and prints the
+ * Logs every JSON-RPC request hitting 8453.rpc.thirdweb.com and prints the
  * RPC method (e.g. eth_call), and for eth_call the decoded function being read.
  */
 export default function RpcLogger() {
@@ -72,7 +72,7 @@ export default function RpcLogger() {
             ? input.url
             : "";
 
-        if (url.includes("84532.rpc.thirdweb.com")) {
+        if (url.includes("8453.rpc.thirdweb.com")) {
           debugWindow.__thirdwebRpcCount = (debugWindow.__thirdwebRpcCount ?? 0) + 1;
           let methodName = "unknown";
           let body: unknown = init?.body;

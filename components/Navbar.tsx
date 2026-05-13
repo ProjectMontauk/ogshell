@@ -5,6 +5,7 @@ import { ConnectButton, useActiveAccount, useReadContract } from "thirdweb/react
 import { client } from "../src/client";
 import { useRouter } from "next/navigation";
 import { tokenContract } from "../constants/contracts";
+import { CASH_TOKEN_SCALE } from "../constants/tokenUnits";
 import { inAppWallet, createWallet} from "thirdweb/wallets";
 import { base } from "thirdweb/chains";
 import { usePortfolio } from "../src/contexts/PortfolioContext";
@@ -34,7 +35,7 @@ interface Trade {
 function formatBalance(balance: bigint | undefined): string {
   if (!balance) return "0";
   // Divide by 10^18 and show decimal places only when needed
-  const amount = Number(balance) / 1e18;
+  const amount = Number(balance) / CASH_TOKEN_SCALE;
   return amount % 1 === 0 
     ? amount.toLocaleString(undefined, { maximumFractionDigits: 0 })
     : amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -129,7 +130,7 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
         if (cancelled) return;
 
         const data = refResult.data as bigint | undefined;
-        const cashUsd = data !== undefined ? Number(data) / 1e18 : 0;
+        const cashUsd = data !== undefined ? Number(data) / CASH_TOKEN_SCALE : 0;
 
         let betUsd = 0;
         try {

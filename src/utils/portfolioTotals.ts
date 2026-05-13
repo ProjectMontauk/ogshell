@@ -5,12 +5,22 @@
 import { readContract } from "thirdweb";
 import { getContractsForMarket, tokenContract } from "../../constants/contracts";
 import { getAllMarkets } from "../data/markets";
+import {
+  CASH_TOKEN_DECIMALS,
+  CASH_TOKEN_SCALE_BI,
+  OUTCOME_TOKEN_DECIMALS,
+} from "../../constants/tokenUnits";
+import { bigintWeiToHumanNumber } from "./fixedPointAmount";
 
 type MarketContract = Parameters<typeof readContract>[0]["contract"];
 
-const FPMM_INVESTMENT_WEI = BigInt("1000000000000000000");
+/** One USDC in base units for FPMM `calcBuyAmount` reference odds. */
+const FPMM_INVESTMENT_WEI = CASH_TOKEN_SCALE_BI;
 
-async function readOutcomeOddsFpmm(marketContract: MarketContract): Promise<{ oddsYes: bigint; oddsNo: bigint } | null> {
+async function readOutcomeOddsFpmm(
+  marketContract: MarketContract,
+  outcomeTokenDecimals: number
+): Promise<{ oddsYes: bigint; oddsNo: bigint } | null> {
   try {
     const [sharesYes, sharesNo] = await Promise.all([
       readContract({
@@ -24,12 +34,18 @@ async function readOutcomeOddsFpmm(marketContract: MarketContract): Promise<{ od
         params: [FPMM_INVESTMENT_WEI, 1n],
       }),
     ]);
-    const inv = Number(FPMM_INVESTMENT_WEI);
-    const sY = Number(sharesYes);
-    const sN = Number(sharesNo);
+    const invHuman = bigintWeiToHumanNumber(FPMM_INVESTMENT_WEI, CASH_TOKEN_DECIMALS);
+    const sY = bigintWeiToHumanNumber(
+      typeof sharesYes === "bigint" ? sharesYes : BigInt(String(sharesYes)),
+      outcomeTokenDecimals
+    );
+    const sN = bigintWeiToHumanNumber(
+      typeof sharesNo === "bigint" ? sharesNo : BigInt(String(sharesNo)),
+      outcomeTokenDecimals
+    );
     if (sY <= 0 || sN <= 0 || !Number.isFinite(sY) || !Number.isFinite(sN)) return null;
-    const oddsYesRaw = inv / sY;
-    const oddsNoRaw = inv / sN;
+    const oddsYesRaw = invHuman / sY;
+    const oddsNoRaw = invHuman / sN;
     const probYes = oddsYesRaw / (oddsYesRaw + oddsNoRaw);
     const probNo = oddsNoRaw / (oddsYesRaw + oddsNoRaw);
     return {
@@ -78,8 +94,11 @@ async function readOutcomeOddsLmsrUint256(marketContract: MarketContract): Promi
 }
 
 /** FPMM or LMSR implied odds scaled to same 2^64 convention as Portfolio page */
-export async function readOutcomeOddsForMarket(marketContract: MarketContract): Promise<{ oddsYes: bigint; oddsNo: bigint } | null> {
-  const fpmm = await readOutcomeOddsFpmm(marketContract);
+export async function readOutcomeOddsForMarket(
+  marketContract: MarketContract,
+  outcomeTokenDecimals: number = OUTCOME_TOKEN_DECIMALS
+): Promise<{ oddsYes: bigint; oddsNo: bigint } | null> {
+  const fpmm = await readOutcomeOddsFpmm(marketContract, outcomeTokenDecimals);
   if (fpmm) return fpmm;
   const lmsr8 = await readOutcomeOddsLmsr(marketContract);
   if (lmsr8) return lmsr8;
@@ -92,7 +111,7 @@ export async function getCashBalanceUsd(walletAddress: `0x${string}`): Promise<n
     method: "function balanceOf(address account) view returns (uint256)",
     params: [walletAddress],
   });
-  return Number(balance as bigint) / 1e18;
+  return bigintWeiToHumanNumber(balance as bigint, CASH_TOKEN_DECIMALS);
 }
 
 /**
@@ -105,7 +124,8 @@ export async function getTotalBetValueUsd(walletAddress: `0x${string}`): Promise
 
   for (const market of markets) {
     try {
-      const { conditionalTokensContract, outcome1PositionId, outcome2PositionId, marketContract } = getContractsForMarket(market.id);
+      const { conditionalTokensContract, outcome1PositionId, outcome2PositionId, marketContract, outcomeTokenDecimals } =
+        getContractsForMarket(market.id);
 
       const [yesBalance, noBalance, odds] = await Promise.all([
         readContract({
@@ -118,13 +138,19 @@ export async function getTotalBetValueUsd(walletAddress: `0x${string}`): Promise
           method: "function balanceOf(address account, uint256 id) view returns (uint256)",
           params: [walletAddress, BigInt(outcome2PositionId)],
         }),
-        readOutcomeOddsForMarket(marketContract),
+        readOutcomeOddsForMarket(marketContract, outcomeTokenDecimals),
       ]);
 
       if (!odds) continue;
 
-      const yesShares = Number(yesBalance as bigint) / 1e18;
-      const noShares = Number(noBalance as bigint) / 1e18;
+      const yesShares = bigintWeiToHumanNumber(
+        typeof yesBalance === "bigint" ? yesBalance : BigInt(String(yesBalance)),
+        outcomeTokenDecimals
+      );
+      const noShares = bigintWeiToHumanNumber(
+        typeof noBalance === "bigint" ? noBalance : BigInt(String(noBalance)),
+        outcomeTokenDecimals
+      );
       const currentPriceYes = Number(odds.oddsYes) / Math.pow(2, 64);
       const currentPriceNo = Number(odds.oddsNo) / Math.pow(2, 64);
 
