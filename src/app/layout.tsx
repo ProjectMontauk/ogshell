@@ -22,7 +22,6 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Time Discovers Truth",
-  description: "A home for honest debate.",
 };
 
 export default function RootLayout({
