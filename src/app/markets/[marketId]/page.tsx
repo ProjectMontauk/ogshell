@@ -3130,4 +3130,3 @@ export default function MarketPage(props: { params: Promise<{ marketId: string }
   );
 }
 
-}
