@@ -9,13 +9,15 @@ import { useSearchParams } from 'next/navigation';
 function DocsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams?.get('tab');
-  const initialTab = (tabParam === 'trial-resolution' || tabParam === 'review-boards' || tabParam === 'idea-futures' || tabParam === 'economics') 
-    ? tabParam 
-    : 'trial-resolution';
-  const [activeTab, setActiveTab] = useState<'trial-resolution' | 'economics' | 'idea-futures' | 'review-boards'>(initialTab);
+  const validTabs = ['flf-docs', 'superforecaster-methodology', 'relegation-system', 'how-derps-work', 'quarterly-trial-procedure', 'economics', 'idea-futures', 'review-boards'] as const;
+  type DocsTab = typeof validTabs[number];
+  const isValidTab = (tab: string | null | undefined): tab is DocsTab =>
+    !!tab && validTabs.includes(tab as DocsTab);
+  const initialTab = isValidTab(tabParam) ? tabParam : 'flf-docs';
+  const [activeTab, setActiveTab] = useState<DocsTab>(initialTab);
   
   useEffect(() => {
-    if (tabParam && (tabParam === 'trial-resolution' || tabParam === 'review-boards' || tabParam === 'idea-futures' || tabParam === 'economics')) {
+    if (isValidTab(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [tabParam]);
@@ -27,14 +29,54 @@ function DocsContent() {
         <div className="max-w-3xl mx-auto px-4 py-8">
           <div className="flex gap-4 mb-6 border-b border-gray-200">
             <button
-              onClick={() => setActiveTab('trial-resolution')}
-              className={`pb-2 px-1 font-sans text-lg font-semibold transition-colors ${
-                activeTab === 'trial-resolution'
+              onClick={() => setActiveTab('flf-docs')}
+              className={`pb-2 px-1 font-sans text-[0.956rem] font-semibold transition-colors ${
+                activeTab === 'flf-docs'
                   ? 'text-black border-b-2 border-black'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              Trial & Resolution Procedure
+              Documentation
+            </button>
+            <button
+              onClick={() => setActiveTab('superforecaster-methodology')}
+              className={`pb-2 px-1 font-sans text-[0.956rem] font-semibold transition-colors ${
+                activeTab === 'superforecaster-methodology'
+                  ? 'text-black border-b-2 border-black'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Superforecasters
+            </button>
+            <button
+              onClick={() => setActiveTab('how-derps-work')}
+              className={`pb-2 px-1 font-sans text-[0.956rem] font-semibold transition-colors ${
+                activeTab === 'how-derps-work'
+                  ? 'text-black border-b-2 border-black'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Market Making
+            </button>
+            <button
+              onClick={() => setActiveTab('relegation-system')}
+              className={`pb-2 px-1 font-sans text-[0.956rem] font-semibold transition-colors ${
+                activeTab === 'relegation-system'
+                  ? 'text-black border-b-2 border-black'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Idea Futures
+            </button>
+            <button
+              onClick={() => setActiveTab('quarterly-trial-procedure')}
+              className={`pb-2 px-1 font-sans text-[0.956rem] font-semibold transition-colors ${
+                activeTab === 'quarterly-trial-procedure'
+                  ? 'text-black border-b-2 border-black'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Trial Procedure
             </button>
             <button
               onClick={() => setActiveTab('economics')}
@@ -68,149 +110,419 @@ function DocsContent() {
             </button>
           </div>
 
-          {activeTab === 'trial-resolution' && (
+          {activeTab === 'flf-docs' && (
             <div>
+              <div className="relative w-full mb-6 mt-10" style={{ paddingBottom: '56.25%' }}>
+                <iframe
+                  className="absolute top-0 left-0 w-full h-full rounded-lg"
+                  src="https://www.youtube.com/embed/8AGufGYTa-M"
+                  title="Walkthrough"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+
               <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Introduction</h2>
               <p className="text-gray-800 leading-7 mb-4">
-                The concept of science courts originated with Professor Arthur Kantrowitz, who proposed it in the 1960s and persuaded the Ford administration to explore establishing them. However, Ford&apos;s loss in the 1976 election prevented further research at the federal level. The trial procedure proposed below draws from Kantrowitz and the work of Professor Ellad Tadmor, who ran a Science Court seminar at the University of Minnesota from 2019 to 2022 for undergraduate students.
+                The Citizen is a futures market platform designed to surface truth about disputed historical and scientific claims through financial incentives and adversarial adjudication. The world&apos;s top forecasters are contracted to continuously provide probability estimates on contested claims that lack a clear resolution event, such as &quot;Was COVID-19 a lab leak?&quot; A futures market is then listed against the Superforecaster probability estimate, enabling market participants to trade positions, like &quot;Yes, COVID-19 was a lab leak.&quot; The result is that long-horizon truth becomes a tradeable asset, giving participants a direct financial incentive to surface evidence that uncovers the truth about the underlying question.
               </p>
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Design</h2>
               <p className="text-gray-800 leading-7 mb-4">
-                Kantrowitz&apos;s courts dealt with questions of scientific fact like whether the Love Canal environmental disaster increased birth defects and genetic hazards among residents. After an adversarial process of cross examination, technical judges submitted opinions on the merits of each side&apos;s argument but the court avoided total resolution of the underlying question. Kantrowitz viewed the exercise as encouraging, noting that it added clarity on a complex issue.
-              </p>
-              <p className="text-gray-800 leading-7 mb-4">
-                Tadmor&apos;s courts dealt with policy questions like &quot;should the US increase investment in nuclear energy&quot; and at the end of the deliberation process, jurors voted on what action they would recommend based on an agreed upon fact sheet produced by the trial procedure. Tadmor&apos;s court used unpaid volunteers since the course was run as a class at the University of Minnesota while Kantrowitz&apos;s court used jurors with technical expertise.
-              </p>
-              <p className="text-gray-800 leading-7 mb-4">
-                The trial procedure for the science courts run by Tadmor and Kantrowitz are nearly identical, so The Citizen will implement the same trial and procedure process from these previous attempts. The first point of differentiation between previous science courts is that The Citizen will venture to resolve the market by making a judgement about the underlying claim based on the factsheet produced by the trial. The second point of differentiation is that The Citizen&apos;s crowd-sourced evidence section will aid the case managers in their research. Case managers are responsible for representing a market position and responding to any challenges from opposing counsel regarding disputed facts. The case manager&apos;s research is not limited to the evidence section but the evidence section should be useful in finding good evidence in support of the respective positions. If the evidence section is effective at finding and ranking the best arguments, The Citizen will explore removing case managers entirely and proceed with having technical jurors review the claims made in the evidence section.
-              </p>
-              
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Market Rules</h2>
-              <p className="text-gray-800 leading-7 mb-4">
-                Before proceeding to the trial procedure, the market question scope and the burden of proof need to be clearly defined.
-              </p>
-              
-              <h3 className="text-xl font-bold text-black font-sans mb-3 mt-6">Question Scope</h3>
-              <p className="text-gray-800 leading-7 mb-4">
-                The question scope defines the core claim that the prediction market seeks to answer. For a JFK-themed market, possible formulations range from broad to narrow. Consider these examples:
-              </p>
-              <p className="text-gray-800 leading-7 mb-4">
-                <strong>General:</strong> Was the CIA involved in the assassination of JFK?
-              </p>
-              <p className="text-gray-800 leading-7 mb-4">
-                <strong>Specific:</strong> Did multiple assassins shoot at JFK on November 22, 1963?
-              </p>
-              <p className="text-gray-800 leading-7 mb-4">
-                The specific version targets a single factual claim (multiple shooters), while the general version encompasses a wider range of potential forms of involvement. Involved is explicitly defined as any of the following:
+                The other tabs provide more information about the Citizen&apos;s design choices. Below is a summary of each tab:
               </p>
               <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
-                <li>Direct participation in planning or executing the assassination</li>
-                <li>Foreknowledge coupled with failure to prevent it</li>
-                <li>Facilitation through assets or proxies</li>
-                <li>Participation in a post-assassination cover-up</li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('superforecaster-methodology')}
+                    className="font-semibold text-blue-600 underline hover:text-blue-800"
+                  >
+                    Superforecasters
+                  </button>
+                  : Superforecasters are professional forecasters qualified by track record. We use them as the price oracle because their judgments are scored against real-world outcomes and have a demonstrated history of accurate calibration.
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('how-derps-work')}
+                    className="font-semibold text-blue-600 underline hover:text-blue-800"
+                  >
+                    Market Making
+                  </button>
+                  : Market making on The Citizen is handled by derp.trade futures markets. We use futures because they can track an index continuously, even when there are no earnings and no final resolution event.
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('relegation-system')}
+                    className="font-semibold text-blue-600 underline hover:text-blue-800"
+                  >
+                    Idea Futures
+                  </button>
+                  : Idea futures are long-dated markets where Superforecasters trade contested claims against one another. We chose this design so the panel continuously updates probabilities through competition, and a relegation system selects for the strongest track records over time.
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('quarterly-trial-procedure')}
+                    className="font-semibold text-blue-600 underline hover:text-blue-800"
+                  >
+                    Trial Procedure
+                  </button>
+                  : The trial procedure is a Science Court-style review in which Superforecasters act as judges and case managers. We use it to test contested claims adversarially, publish accepted facts, and identify the cruxes most likely to move the market.
+                </li>
               </ul>
+            </div>
+          )}
+
+          {activeTab === 'superforecaster-methodology' && (
+            <div>
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Who Are Superforecasters?</h2>
               <p className="text-gray-800 leading-7 mb-4">
-                Tadmor recommends the general question because it generates a broader, more comprehensive fact sheet. However, broader questions complicate trial proceedings because the more sub-claims a question invites, the more elements the jury must evaluate.
-              </p>
-              <p className="text-gray-800 leading-7 mb-4">
-                Despite this trade-off, the general formulation is adopted here to maximize informational value. The market will use the following as the market quesiton:
-              </p>
-              <p className="text-gray-800 leading-7 mb-4">
-                Was the CIA involved in the assassination of JFK?
-              </p>
-              <p className="text-gray-800 leading-7 mb-4">
-                Involved is defined as: direct participation in planning or executing the act; foreknowledge and failure to prevent it; facilitation through assets or proxies; or participation in a post-assassination cover-up.
+                &quot;Superforecaster&quot; is a term coined by psychologist Philip Tetlock and Barbara Mellers. It grew out of the Good Judgment Project. The Good Judgment Project was the winning entry in IARPA&apos;s Aggregative Contingent Estimation tournament, a multi-year competition run by the US intelligence community to find the most accurate forecasting method available. Superforecasters emerged as the clear winner. They are qualified by proven performance, not by title. Every forecast they make is scored against a real-world outcome. Their edge is not opinion. It is measured, repeated, and public.
               </p>
 
-              <h3 className="text-xl font-bold text-black font-sans mb-3 mt-6">Burden of Proof</h3>
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">A Track Record That Consistently Beats the Competition</h2>
               <p className="text-gray-800 leading-7 mb-4">
-                Next, the market needs to define the burden of proof by which the jury (&quot;board&quot;) will evaluate the claim. Below are some options for the burden of proof:
-              </p>
-              <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 mb-4">
-                <li><strong>More likely than not (&gt;51% confidence):</strong> The market resolves &quot;Yes&quot; if the board finds it more likely than not that the CIA was involved in JFK&apos;s assassination. Otherwise, the market will resolve &quot;No.&quot;</li>
-                <li><strong>Preponderance of the evidence (&gt;51% confidence):</strong> The market resolves &quot;Yes&quot; if the board finds a preponderance of the evidence that the CIA was involved. Otherwise, the market will resolve &quot;No.&quot;</li>
-                <li><strong>Clear and convincing evidence (&gt;75% confidence, approximate):</strong> The market resolves &quot;Yes&quot; if the board finds clear and convincing evidence that the CIA was involved. Otherwise, the market will resolve &quot;No.&quot;</li>
-                <li><strong>Beyond a reasonable doubt (&gt;95% confidence, approximate):</strong> The market resolves &quot;Yes&quot; if the board finds the CIA&apos;s involvement proven beyond a reasonable doubt. Otherwise, the market will resolve &quot;No.&quot;</li>
-              </ol>
-              <p className="text-gray-800 leading-7 mb-4">
-                Previous science courts did not seek final resolution so they did not define specific market rules. Tadmor&apos;s science court did define a &quot;pro-ish&quot; and &quot;con-ish&quot; side of their policy debate but this framework cannot be applied to a question of historical fact. 
-              </p>
-              <p className="text-gray-800 leading-7 mb-4">
-                Clear and convincing evidence is the recommended burden of proof because it uses clear language and it provides a reasonable threshold for proof. Beyond a reasonable doubt is too difficult to prove considering that The Citizen does not have the authority to subpoena any involved party. More likely than not might cause the trial proceedings to be too circumstantial leading to a flimsy resolution that could be easily overturned at a later date. The market rules will proceed with the following phrasing:
-              </p>
-              <p className="text-gray-800 leading-7 mb-4">
-                The market will resolve &quot;Yes&quot; if the board finds that there is clear and convincing evidence that the CIA was involved in the assassination of JFK. Otherwise, the market will resolve &quot;No.&quot;
-              </p>
-              <p className="text-gray-800 leading-7 mb-4">
-                Involved means direct participation in planning or executing the act, foreknowledge and failure to prevent it, facilitation through assets or proxies, or post-assassination cover-up.
-              </p>
-
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Personnel Selection &amp; Pay</h2>
-              <p className="text-gray-800 leading-7 mb-4">
-                The markets will be resolved by a panel of three neutral jurors known as the &quot;board&quot; who have domain expertise. The Citizen will draft three jurors who meet the following criteria:
+                Superforecasters do not just forecast well. They consistently outperform every other established method of intelligence gathering.
               </p>
               <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
-                <li>Born in the United States</li>
-                <li>PhD or PhD candidate in a relevant field</li>
-                <li>Self-proclaimed neutral and undecided on the particular question at hand</li>
+                <li><strong>They beat classified intelligence.</strong> In the original IARPA tournament, superforecasters were found to be 30% more accurate than intelligence analysts working with access to classified information. The finding rocked conventional wisdom across the intelligence community.</li>
+                <li><strong>They beat AI.</strong> In July 2026, the Financial Times tested a leading AI forecasting model against the market on Federal Reserve rate decisions. The AI model matched the market but never beat it. It could not reproduce the judgment that sets superforecasters apart: knowing when to step away from the crowd. When Silicon Valley Bank failed in 2023 and markets swung sharply toward a Fed policy pivot, superforecasters saw no real signal and barely moved their forecast. They were right. The market corrected its overreaction later.</li>
               </ul>
               <p className="text-gray-800 leading-7 mb-4">
-                The board will be compensated at a level commensurate with one week&apos;s wages for a typical postdoctoral program. Each juror will be paid $1,300 in exchange for one week of their time, bringing the total cost of fielding the jury to $3,900. Compensation may be adjusted based on current wage market conditions, field of expertise, or seniority.
-              </p>
-              <p className="text-gray-800 leading-7 mb-4">
-                Case managers are responsible for representing their respective side of the market and are ideally pundits who already publicly debate the market position. If possible, The Citizen will not pay case managers since the trial procedures serve as a platform to increase their personal profile. In the Love Canal case, case managers were unpaid local scientists who had already debated the issue in community and academic settings.
+                This makes superforecasters uniquely suited to power a price oracle. They carry a demonstrated record of outperforming classified intelligence and now AI, across decades of real-world tests.
               </p>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Procedure Timing</h2>
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Why They&apos;re Qualified</h2>
               <p className="text-gray-800 leading-7 mb-4">
-                The market timing and resolution will follow :
-              </p>
-              <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 mb-4">
-                <li><strong>Trading &amp; Discovery (Three Months)</strong> - The market and evidence section will be open for a period of three months to enable traders to take positions and post relevant evidence to the evidence section. At the end of the discovery period, case managers will submit their list of factual claims ordered by importance to their case.</li>
-                <li><strong>Deliberation &amp; Resolution (One Week)</strong> - Immediately after market close, the deliberation process will begin as described below in the trial procedure section. At the end of this period, the jurors will produce a fact sheet that they will use to resolve the market.</li>
-              </ol>
-              <p className="text-gray-800 leading-7 mb-4">
-                The procedure timing aligns with Tadmor&apos;s court which designated two months for research prior to a one week trial period that consisted of a one-day pre-trial session, a one-day mediation session, and a three-hour jury session. 
+                Forecast accuracy is measured with the Brier score. It captures the gap between a forecaster&apos;s stated probability and the actual outcome. A score of 0 is perfect. A score of 2 is the worst possible result. Superforecasters posted an average Brier score of roughly 0.166 across tournament seasons. The broader forecaster pool averaged about 0.259. That gap holds across hundreds of real-world geopolitical and economic questions. It is the foundation of their qualification: demonstrated calibration rather than credentials alone.
               </p>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Trial Procedure</h2>
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">How They&apos;re Vetted</h2>
               <p className="text-gray-800 leading-7 mb-4">
-                After the three-month trading and discovery period closes and both case managers submit their prioritized lists of factual claims, the one-week deliberation and resolution phase begins. During this phase, the board follows the mediation-then-adversary procedure originally proposed by Kantrowitz. Tadmor&apos;s implementation followed a similar structure, though typically in an oral, classroom format.
-              </p>
-              <p className="text-gray-800 leading-7 mb-4">
-                The process proceeds as follows:
-              </p>
-              <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 mb-4">
-                <li>Each case manager reviews the prioritized list of factual statements submitted by the opposing case manager.</li>
-                <li>Each case manager indicates whether they accept or challenge each of the opponent&apos;s statements.</li>
-                <li>Statements accepted by both sides become the first component of the court&apos;s output (agreed-upon facts).</li>
-                <li>Challenged statements enter a mediation phase: The case managers attempt to narrow disagreements or negotiate revised wording that both can accept.</li>
-                <li>Any successfully mediated statements are added to the court&apos;s output. Remaining challenged statements proceed to an adversary procedure.</li>
-                <li>For each remaining challenged statement (starting with the highest-priority one), case managers prepare and submit substantiation papers to the board and the opposing case manager.</li>
-                <li>The substantiation is subject to cross-examination: Opposing case managers and board members may question claims, present contrary evidence from the posted materials, and cross-examine responses.</li>
-                <li>A second mediation attempt is made to reach agreement on a revised statement. If successful, the agreed statement is added to the output.</li>
-                <li>If mediation fails, the board deliberates and issues a written opinion on the contested statement, stating their findings and confidence level.</li>
-                <li>This cycle of mediation, cross-examinination, and opinion if needed repeats for each remaining challenged statement, in order of priority.</li>
-              </ol>
-              <p className="text-gray-800 leading-7 mb-4">
-                The final output consists of:
+                Good Judgment&apos;s vetting process is rigorous, and the SBI panel draws on the same standard.
               </p>
               <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
-                <li>All statements accepted or mediated by both sides</li>
-                <li>The board&apos;s written opinions on any unresolved contested statements.</li>
+                <li><strong>Minimum sample size.</strong> A forecaster must answer at least 50 questions within a tournament season before becoming eligible. This rules out a lucky streak.</li>
+                <li><strong>Accuracy threshold.</strong> Superforecaster status goes to roughly the top 2% of forecasters by average accuracy score within that season.</li>
+                <li><strong>Qualitative review.</strong> Good Judgment also reviews comment quality and collegiality. Reasoning matters as much as the number itself. Superforecasters work in small teams, and their rationale is delivered to clients alongside every probability.</li>
+                <li><strong>Re-qualification.</strong> Status is not permanent. Track record is re-evaluated every season. Underperformance can cost a forecaster their status. The SBI panel applies this same relegation logic internally.</li>
               </ul>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">How Many Superforecasters Are Used</h2>
               <p className="text-gray-800 leading-7 mb-4">
-                This fact sheet constitutes the basis for the board&apos;s final judgment, resolving the market to Yes or No under the established burden of proof.
+                Good Judgment Inc. maintains an active pool of roughly 180 professional superforecasters. They are drawn from a base of over 100,000 forecasters who have taken part in the original tournament and its successor, Good Judgment Open.
               </p>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Trial Resolution</h2>
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Good Judgment&apos;s Aggregation Methodology</h2>
               <p className="text-gray-800 leading-7 mb-4">
-                Using only the fact sheet produced by the board, each member independently issues a written opinion stating whether, in their view, the evidence meets the defined burden of proof - clear and convincing evidence that the CIA was involved in the assassination of JFK.
+                Good Judgment does not average forecasts naively. Its method is often called elitist aggregation, and it combines two steps.
+              </p>
+              <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+                <li><strong>Weighting.</strong> Each forecaster&apos;s input is weighted by track record and by recency. A better track record earns more weight. A recently updated forecast earns more weight than a stale one.</li>
+                <li><strong>Extremizing.</strong> The weighted average is then pushed further toward 0 or 1 than a simple average would suggest. This corrects a known bias: forecasters&apos; private information overlaps only partially, so a plain average tends to land closer to 50% than the group&apos;s true collective knowledge supports. The larger and more diverse the forecaster pool, the further the aggregate can safely be pushed toward certainty.</li>
+              </ul>
+              <p className="text-gray-800 leading-7 mb-4">
+                This weighted and extremized approach beat simple averaging, unweighted medians, and in several tournament years, live prediction markets, inside IARPA&apos;s tournament. The SBI methodology follows the same model. Individual superforecaster estimates are weighted by track record and recency, then extremized, to produce the published index value.
               </p>
               <p className="text-gray-800 leading-7 mb-4">
-                For the market to resolve Yes, at least two of the three board members must conclude that the burden has been satisfied. If fewer than two agree, the market resolves No.
+                Learn more about Good Judgment&apos;s research and services at{' '}
+                <a href="https://goodjudgment.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                  goodjudgment.com
+                </a>.
+              </p>
+            </div>
+          )}
+
+          {activeTab === 'relegation-system' && (
+            <div>
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">What Are Idea Futures?</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                Idea futures are long-dated prediction markets. Unlike short-horizon markets that resolve when a near-term event occurs, an idea future stays open until a claim can be settled by a committee in the future, based on the evidence available at that time. Traders take positions on whether a contested fact or story is true or false, and the market price reflects the collective probability assigned to that claim over time.
               </p>
               <p className="text-gray-800 leading-7 mb-4">
-                Once the judgment is complete, the full fact sheet is published publicly. The market is then officially resolved based on the board&apos;s determination.
+                On The Citizen, each idea futures market is run internally among Superforecasters. They compete in a market-based competition: by trading against one another, they continuously update each market so that its price reflects the true probability that the underlying event occurred or did not occur, as new evidence arrives.
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                We will begin by contracting a basic probability estimate from Superforecasters. Over time, we will switch to a full idea futures model, where Superforecasters trade against one another and the market price itself becomes the published probability.
+              </p>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Idea Futures Relegation</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                Superforecasters on the price oracle are ranked annually by unlevered profit and loss (P&amp;L) across every market they trade. At year-end, the bottom quartile by P&amp;L is removed from the price oracle and replaced by qualified challenger forecasters carrying the strongest P&amp;L track records. It functions like a promotion/relegation system: a seat on the price oracle is earned and re-earned every year, so the panel continuously selects for the traders who price uncertainty most accurately and update fastest on new evidence. Over time, this continuous selection process means the price oracle comes to represent the market consensus of the best people in the world at anticipating which facts or stories are true or false.
+              </p>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Worked Example: &quot;Did Mark Kill Peter?&quot;</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                Consider a contested-claims market: Did Mark kill Peter? The YES contract opens trading at 5¢ (a 5% implied probability), reflecting thin initial evidence.
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                Investigators later disclose that a rag stained with Peter&apos;s blood was found in the trunk of Mark&apos;s car. The market reacts immediately, and YES rises from 5¢ to 90¢ as calibrated forecasters update toward Mark&apos;s guilt.
+              </p>
+
+              <h3 className="text-xl font-bold text-black font-sans mb-3 mt-6">Three Traders</h3>
+              <p className="text-gray-800 leading-7 mb-4">
+                Three Superforecasters each trade the market with $1,000 in unlevered capital:
+              </p>
+              <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+                <li><strong>Trader A (&quot;The Skeptic&quot;)</strong>: buys NO early at 95¢/share.</li>
+                <li><strong>Trader B (&quot;The Sharp&quot;)</strong>: buys YES early at 5¢/share, before the evidence breaks.</li>
+                <li><strong>Trader C (&quot;The Second Mover&quot;)</strong>: buys YES mid-move at 50¢/share, after rumors surface but before the rag is confirmed.</li>
+              </ul>
+              <p className="text-gray-800 leading-7 mb-4">
+                When the market settles near 90¢ YES (10¢ NO), the results diverge sharply:
+              </p>
+
+              <div className="overflow-x-auto mb-6">
+                <table className="w-full text-sm text-gray-800 border border-gray-200">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left font-semibold px-3 py-2">Trader</th>
+                      <th className="text-left font-semibold px-3 py-2">Position</th>
+                      <th className="text-left font-semibold px-3 py-2">Entry Price</th>
+                      <th className="text-left font-semibold px-3 py-2">Capital</th>
+                      <th className="text-left font-semibold px-3 py-2">Shares</th>
+                      <th className="text-left font-semibold px-3 py-2">Value after Rag</th>
+                      <th className="text-left font-semibold px-3 py-2">P&amp;L ($)</th>
+                      <th className="text-left font-semibold px-3 py-2">P&amp;L (%)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-gray-200">
+                      <td className="px-3 py-2">A</td>
+                      <td className="px-3 py-2">NO</td>
+                      <td className="px-3 py-2">$0.95</td>
+                      <td className="px-3 py-2">$1,000</td>
+                      <td className="px-3 py-2">1,053</td>
+                      <td className="px-3 py-2">$105 (at $0.10)</td>
+                      <td className="px-3 py-2">−$895</td>
+                      <td className="px-3 py-2">−89.5%</td>
+                    </tr>
+                    <tr className="border-b border-gray-200">
+                      <td className="px-3 py-2">B</td>
+                      <td className="px-3 py-2">YES</td>
+                      <td className="px-3 py-2">$0.05</td>
+                      <td className="px-3 py-2">$1,000</td>
+                      <td className="px-3 py-2">20,000</td>
+                      <td className="px-3 py-2">$18,000 (at $0.90)</td>
+                      <td className="px-3 py-2">+$17,000</td>
+                      <td className="px-3 py-2">+1,700%</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2">C</td>
+                      <td className="px-3 py-2">YES</td>
+                      <td className="px-3 py-2">$0.50</td>
+                      <td className="px-3 py-2">$1,000</td>
+                      <td className="px-3 py-2">2,000</td>
+                      <td className="px-3 py-2">$1,800 (at $0.90)</td>
+                      <td className="px-3 py-2">+$800</td>
+                      <td className="px-3 py-2">+80%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Relegation</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                At year-end, the three traders are ranked by P&amp;L. Trader A backed the wrong side of a real-world outcome and posted the panel&apos;s worst P&amp;L. Trader A falls into the bottom quartile and is relegated, removed from the price oracle and replaced by a new forecaster with a proven record of positive unlevered P&amp;L. Traders B and C, having correctly priced and moved with the evidence, keep their seats and re-enter the following year&apos;s price oracle. Over time, this continuous selection process means The Citizen&apos;s price oracle will select for market participants who are best able to price uncertainty and discover truth as quickly as possible.
+              </p>
+            </div>
+          )}
+
+          {activeTab === 'how-derps-work' && (
+            <div>
+              <p className="text-gray-800 leading-7 mb-4 mt-10">
+                The Citizen&apos;s futures markets are powered by{' '}
+                <a href="https://derp.trade" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                  derp.trade
+                </a>
+                , which handles all market making and trade execution. The overview below explains how DERPs work in plain language. For formulas, code, and the full technical specification, see the{' '}
+                <a href="https://docs.derp.trade/docs/protocol/overview" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                  derp.trade protocol docs
+                </a>.
+              </p>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">The Basics</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                A derivative is a financial contract whose value is based on the price of something else. On derp.trade, that &quot;something else&quot; is a token, such as SOL, WIF, or any other Solana token. On The Citizen, the underlying is the probability of a contested claim resolving one way or the other.
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                When you trade on The Citizen, you are not buying or selling the underlying claim directly. Instead, you are opening a position that tracks the market&apos;s implied probability:
+              </p>
+              <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+                <li><strong>Long</strong>: you profit if the price goes up.</li>
+                <li><strong>Short</strong>: you profit if the price goes down.</li>
+              </ul>
+              <p className="text-gray-800 leading-7 mb-4">
+                You can use leverage to amplify your position. For example, 10x leverage means a 1% price move gives you a 10% gain (or loss). All positions are denominated in USDT. You deposit USDT as collateral and receive your profits in USDT.
+              </p>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">How Trading Works</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                Here is the flow of a typical trade on The Citizen:
+              </p>
+              <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+                <li><strong>Pick a market</strong>: browse the available contested-claims markets on The Citizen.</li>
+                <li><strong>Choose long or short</strong>: decide whether you think the implied probability will go up or down.</li>
+                <li><strong>Set your position size and leverage</strong>: enter the amount of USDT you want to put up as collateral and choose your leverage multiplier.</li>
+                <li><strong>The AMM takes the other side</strong>: derp.trade&apos;s automated market maker fills your order instantly. There is no waiting for a counterparty.</li>
+                <li><strong>Your PnL updates in real time</strong>: as the market price moves, your unrealized profit or loss changes.</li>
+                <li><strong>Close when you are ready</strong>, or get liquidated if your collateral runs out.</li>
+              </ol>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">The AMM: Your Trading Partner</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                On traditional exchanges, you need another person on the other side of your trade. On derp.trade, an automated market maker (AMM) fills that role. The AMM is a smart contract that is always willing to trade with you.
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                Because the AMM is always available, markets can exist for tokens with low trading volume. There is no minimum liquidity requirement; the AMM handles everything.
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                The AMM earns trading fees and funding payments, which build up its liquidity over time. The more a market is traded, the deeper its liquidity becomes.
+              </p>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Funding Rates</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                To keep markets balanced, derp.trade uses funding rates. If many more traders are long than short (or vice versa), the majority side pays a small fee to the minority side. This encourages traders to take the less popular side and keeps the market healthy.
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                Funding is charged continuously, every 15 seconds in small amounts. You can see the current funding rate for any market on the trading page before you open a position.
+              </p>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Leverage and Liquidation</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                Leverage lets you control a larger position with less collateral. For example, with 10x leverage and 10 USDT of collateral, you control a 100 USDT position.
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                The tradeoff is risk. Higher leverage means your position gets liquidated more easily. Liquidation happens when your losses eat through your collateral. At that point, the protocol closes your position and you lose your deposited collateral.
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                Before opening any trade, check your liquidation price, the price at which your position would be liquidated. The trading UI shows this clearly.
+              </p>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">DERPs vs. Traditional Perps</h2>
+              <div className="overflow-x-auto mb-6">
+                <table className="w-full text-sm text-gray-800 border border-gray-200">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left font-semibold px-3 py-2"></th>
+                      <th className="text-left font-semibold px-3 py-2">Traditional perps</th>
+                      <th className="text-left font-semibold px-3 py-2">DERPs</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-gray-200">
+                      <td className="px-3 py-2 font-semibold">Liquidity</td>
+                      <td className="px-3 py-2">Order book: needs many buyers and sellers</td>
+                      <td className="px-3 py-2">AMM: always available</td>
+                    </tr>
+                    <tr className="border-b border-gray-200">
+                      <td className="px-3 py-2 font-semibold">Supported assets</td>
+                      <td className="px-3 py-2">Major tokens only (BTC, ETH, SOL)</td>
+                      <td className="px-3 py-2">Any token on Solana</td>
+                    </tr>
+                    <tr className="border-b border-gray-200">
+                      <td className="px-3 py-2 font-semibold">Market creation</td>
+                      <td className="px-3 py-2">Requires exchange approval and liquidity</td>
+                      <td className="px-3 py-2">Permissionless and free</td>
+                    </tr>
+                    <tr className="border-b border-gray-200">
+                      <td className="px-3 py-2 font-semibold">Margin type</td>
+                      <td className="px-3 py-2">Cross or isolated</td>
+                      <td className="px-3 py-2">Isolated only</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 font-semibold">Unique risk</td>
+                      <td className="px-3 py-2">Counterparty and exchange risk</td>
+                      <td className="px-3 py-2">
+                        AMM payout risk (
+                        <a href="https://docs.derp.trade/docs/risk/risk-overview" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                          learn more
+                        </a>
+                        )
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Further Reading</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                Market making on The Citizen is handled entirely by derp.trade. For step-by-step guides and the complete documentation, visit the derp.trade docs:
+              </p>
+              <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+                <li>
+                  <a href="https://docs.derp.trade/docs/welcome/how-derps-work" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                    How DERPs work
+                  </a>
+                </li>
+                <li>
+                  <a href="https://docs.derp.trade/docs/getting-started/setting-up-your-wallet" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                    Setting up your wallet
+                  </a>
+                </li>
+                <li>
+                  <a href="https://docs.derp.trade/docs/getting-started/your-first-trade" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                    Your first trade
+                  </a>
+                </li>
+                <li>
+                  <a href="https://docs.derp.trade/docs/protocol/overview" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                    Protocol overview
+                  </a>
+                </li>
+                <li>
+                  <a href="https://docs.derp.trade/docs/risk/risk-overview" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                    Risk overview
+                  </a>
+                </li>
+              </ul>
+            </div>
+          )}
+
+          {activeTab === 'quarterly-trial-procedure' && (
+            <div>
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">The Science Court Proposal</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                Physicist Arthur Kantrowitz first proposed a &quot;Science Court&quot; in 1967. His model separated questions of scientific fact from questions of policy or value. Two case managers, one for each side of a contested issue, would submit statements of fact. A panel of judges, senior scientists with no stake in the outcome, would test each statement through adversarial questioning until it was either accepted or set aside as unresolved. A federal task force reviewed the proposal in 1976, and the idea has since been revived in practice.
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                Ellad Tadmor at the University of Minnesota runs a modern version called SciCourt, which carries contested public-policy topics through the same structure: pretrial evidence agreement, adversarial presentation, and neutral judgment aimed at building consensus rather than declaring a winner.
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                We adapt this same structure to give the SBI panel a formal, recurring check on the claims embedded in its markets.
+              </p>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">The Quarterly Trial Procedure</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                Once per quarter, a subset of superforecasters is convened as judges for a given market or cluster of related markets.
+              </p>
+
+              <h3 className="text-xl font-bold text-black font-sans mb-3 mt-6">Roles</h3>
+              <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+                <li><strong>Judges.</strong> Drawn from the superforecaster panel. To remain neutral, judges may not hold an open position in the market under review and may not have a recent trading history on it.</li>
+                <li><strong>Case Managers.</strong> Other superforecasters, assigned as advocates to opposing sides of the contested claim. Each case manager compiles supporting evidence and drafts a prioritized list of the factual statements they want the judges to accept.</li>
+              </ul>
+
+              <h3 className="text-xl font-bold text-black font-sans mb-3 mt-6">Process</h3>
+              <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+                <li><strong>Evidence submission.</strong> Case managers submit their supporting material to the evidence section, along with a prioritized list of the individual factual statements they wish to establish.</li>
+                <li><strong>Adversarial questioning.</strong> Judges question each statement directly against the opposing case manager, so weak or unsupported claims are exposed and can be met with counter-evidence.</li>
+                <li><strong>Resolution.</strong> Questioning continues until every statement is either accepted as stated, mediated into wording both sides can endorse, or set aside as unresolved. Nothing is silently dropped.</li>
+                <li><strong>Final output.</strong> The judges publish a single document containing every accepted or mediated statement, along with a clear record of anything left unresolved.</li>
+                <li><strong>Cruxes and new questions.</strong> Alongside the accepted statements, judges identify the cruxes: the specific points where the two sides still disagree and where new evidence would most change the market&apos;s probability. These are published back to the broader panel as new sub-questions that market participants can trade on and use to update their forecasts.</li>
+              </ol>
+
+              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Why This Matters</h2>
+              <p className="text-gray-800 leading-7 mb-4">
+                A single probability number can hide which underlying arguments still hold up under scrutiny. The Quarterly Trial forces that disagreement onto the table on a fixed schedule. It converts vague suspicion into named cruxes, and it gives market participants a fresh, testable set of questions instead of requiring them to sift through raw evidence themselves. Over time, this should sharpen the calibration of the underlying market by directing new evidence-gathering toward exactly the claims most likely to move the price.
+              </p>
+              <p className="text-gray-800 leading-7 mb-4">
+                Learn more about the modern SciCourt revival at{' '}
+                <a href="https://scicourt.umn.edu/introduction-science-court" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                  scicourt.umn.edu
+                </a>.
               </p>
             </div>
           )}
@@ -726,7 +1038,7 @@ function DocsContent() {
                 <strong>Daily Price Change Caps:</strong> A absolute 15% limit on total price change per market day prevents rapid price changes associated with multiple manipulator attacks. This ensures that even well-funded coalitions cannot force prices to extreme levels quickly; instead, they must sustain pressure over multiple days, giving the market time to respond. The daily cap forces manipulators to spread attacks across time, increasing both coordination complexity and the opportunity for detection.
               </li>
               <li>
-                <strong>Threat of Fund Seizure:</strong> The possibility of losing funds for coordinated manipulation creates significant deterrent risk. By maintaining the authority to seize or freeze funds associated with suspicious trading patterns, the market creates asymmetric risk for manipulators—they risk losing not just their manipulation profits but their entire capital. This threat, especially when combined with KYC identity verification, makes coordinated attacks financially hazardous beyond just their execution costs.
+                <strong>Threat of Fund Seizure:</strong> The possibility of losing funds for coordinated manipulation creates significant deterrent risk. By maintaining the authority to seize or freeze funds associated with suspicious trading patterns, the market creates asymmetric risk for manipulators, who risk losing not just their manipulation profits but their entire capital. This threat, especially when combined with KYC identity verification, makes coordinated attacks financially hazardous beyond just their execution costs.
               </li>
             </ol>
             <p className="text-gray-800 leading-7 text-base mb-4">
