@@ -1,18 +1,17 @@
 "use client";
 
 import Navbar from "../../../components/Navbar";
+import Link from "next/link";
 import { useActiveAccount, useReadContract } from "thirdweb/react";
 import { fetchTrades } from "../../utils/tradeApi";
 import { getContractsForMarket, tokenContract } from "../../../constants/contracts";
-import {
-  CASH_TOKEN_SCALE,
-} from "../../../constants/tokenUnits";
+import { CASH_TOKEN_SCALE } from "../../../constants/tokenUnits";
 import { bigintWeiToHumanNumber } from "../../utils/fixedPointAmount";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { readContract } from "thirdweb";
 import { readOutcomeOddsForMarket } from "../../utils/portfolioTotals";
+import { Skeleton } from "../../components/ui/Skeleton";
 
-// Define Trade interface
 interface Trade {
   id: number;
   walletAddress: string;
@@ -52,65 +51,57 @@ function formatTradeDate(iso: string | undefined): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
-function PortfolioTradesTable({
-  trades,
-  getOutcomeColor,
-  formatPrice,
-}: {
-  trades: Trade[];
-  getOutcomeColor: (outcome: string) => string;
-  formatPrice: (price: number) => number;
-}) {
+function sideClass(label: string) {
+  const k = outcomeKind(label);
+  return k === "yes" ? "text-yes" : k === "no" ? "text-no" : "text-ink";
+}
+
+function formatCents(price: number) {
+  return `${Math.round(price * 100)}¢`;
+}
+
+const th = "px-3 py-2.5 text-left text-small font-medium text-muted first:pl-0 last:pr-0";
+// Rows sit on dotted rules and take a tint on hover, as in the broadsheet tables.
+const td = "border-b border-dotted border-rule px-3 py-3.5 align-top text-small first:pl-0 last:pr-0";
+
+function TradesTable({ trades }: { trades: Trade[] }) {
   return (
-    <table className="min-w-full divide-y divide-gray-200">
-      <thead className="bg-gray-50">
-        <tr>
-          <th className="px-2 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-semibold text-gray-600 tracking-wider">MARKET</th>
-          <th className="px-2 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-semibold text-gray-600 tracking-wider min-w-[92px]">DATE</th>
-          <th className="px-2 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-semibold text-gray-600 tracking-wider min-w-[70px]">TYPE</th>
-          <th className="px-2 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-semibold text-gray-600 text-center min-w-[100px]">AVG PRICE</th>
-          <th className="px-2 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-semibold text-gray-600 text-center min-w-[100px]">SIZE</th>
+    <table className="w-full min-w-[640px] border-collapse">
+      <thead>
+        <tr className="border-b border-ink">
+          <th className={th}>MARKET</th>
+          <th className={th}>DATE</th>
+          <th className={th}>TYPE</th>
+          <th className={`${th} text-right`}>AVG PRICE</th>
+          <th className={`${th} text-right`}>SIZE</th>
         </tr>
       </thead>
-      <tbody className="bg-white divide-y divide-gray-200">
-        {trades.map((trade) => (
-          <tr key={trade.id} className="hover:bg-gray-50 transition">
-            <td className="px-2 md:px-6 py-3 md:py-4 whitespace-nowrap">
-              <div>
-                <div className={`font-semibold text-xs md:text-sm ${getOutcomeColor(trade.outcome)}`}>
-                  {trade.outcome}{" "}
-                  {(trade.tradeType ?? "").toLowerCase() === "redemption"
-                    ? "$1.00"
-                    : `${formatPrice(trade.avgPrice)}¢`}{" "}
-                  <span className="text-gray-500 font-normal ml-1 text-[10px] md:text-xs">{trade.shares.toFixed(2)} shares</span>
+      <tbody className="[&>tr]:transition-colors [&>tr:hover]:bg-ground-2">
+        {trades.map((trade) => {
+          const redemption = (trade.tradeType ?? "").toLowerCase() === "redemption";
+          return (
+            <tr key={trade.id}>
+              <td className={td}>
+                <div className="flex flex-col gap-0.5">
+                  <span className={`text-small font-medium ${sideClass(trade.outcome)}`}>
+                    {trade.outcome} {redemption ? "$1.00" : formatCents(trade.avgPrice)}
+                    <span className="num ml-2 font-normal text-muted">{trade.shares.toFixed(2)} shares</span>
+                  </span>
+                  <span className="serif text-body font-semibold text-ink">{trade.marketTitle}</span>
                 </div>
-                <div className="text-gray-900 font-medium text-xs md:text-sm leading-tight">{trade.marketTitle}</div>
-              </div>
-            </td>
-            <td className="px-2 md:px-6 py-3 md:py-4 whitespace-nowrap text-gray-700 text-xs md:text-sm min-w-[92px]">
-              {formatTradeDate(trade.createdAt)}
-            </td>
-            <td className="px-2 md:px-6 py-3 md:py-4 whitespace-nowrap text-gray-700 text-xs md:text-sm min-w-[70px]">
-              {(trade.tradeType ?? "BUY").toLowerCase() === "redemption"
-                ? "Redemption"
-                : (trade.tradeType ?? "BUY").toUpperCase()}
-            </td>
-            <td className="px-2 md:px-6 py-3 md:py-4 text-center text-gray-900 text-xs md:text-base min-w-[100px]">
-              {(trade.tradeType ?? "").toLowerCase() === "redemption"
-                ? "$1.00"
-                : `${formatPrice(trade.avgPrice)}¢`}
-            </td>
-            <td className="px-2 md:px-6 py-3 md:py-4 text-center text-gray-900 text-xs md:text-base min-w-[100px]">
-              ${Number(trade.betAmount).toFixed(2)}
-            </td>
-          </tr>
-        ))}
+              </td>
+              <td className={`${td} whitespace-nowrap text-ink-2`}>{formatTradeDate(trade.createdAt)}</td>
+              <td className={`${td} text-ink-2`}>{redemption ? "Redemption" : (trade.tradeType ?? "BUY").toUpperCase()}</td>
+              <td className={`${td} num text-right text-ink`}>{redemption ? "$1.00" : formatCents(trade.avgPrice)}</td>
+              <td className={`${td} num text-right text-ink`}>${Number(trade.betAmount).toFixed(2)}</td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );
 }
 
-// Interface for current positions
 interface CurrentPosition {
   marketId: string;
   marketTitle: string;
@@ -118,15 +109,20 @@ interface CurrentPosition {
   shares: number;
   currentPrice: number;
   positionValue: number;
-  avgPrice?: number; // We'll need to calculate this from trade history
-  betAmount?: number; // We'll need to calculate this from trade history
-  toWin?: number; // We'll need to calculate this from trade history
-  pnl?: number; // We'll need to calculate this
 }
 
 function formatBalance(balance: bigint | undefined): number {
   if (!balance) return 0;
   return Number(balance) / CASH_TOKEN_SCALE;
+}
+
+function Figure({ label, value, muted = false }: { label: string; value: string; muted?: boolean }) {
+  return (
+    <div className="flex flex-col gap-1.5 py-4 sm:px-6 sm:first:pl-0 sm:[&+&]:border-l sm:[&+&]:border-rule">
+      <span className="text-small text-muted">{label}</span>
+      <span className={`serif num text-[clamp(36px,5.4vw,64px)] font-extrabold leading-none tracking-[-0.03em] ${muted ? "text-ink-2" : "text-ink"}`}>{value}</span>
+    </div>
+  );
 }
 
 export default function PortfolioPage() {
@@ -456,204 +452,169 @@ export default function PortfolioPage() {
   const totalPositionsValue = currentPositions.reduce((sum, position) => sum + position.positionValue, 0);
   const totalPortfolio = cash + totalPositionsValue;
 
+
+  const rowsSkeleton = (
+    <div className="flex flex-col gap-3 py-2" aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="flex items-center gap-4">
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="ml-auto h-4 w-14" />
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div>
       <Navbar />
-      <div className="min-h-screen bg-white flex flex-col pt-8 w-full">
-        <div className="max-w-6xl w-full mx-auto px-4 md:px-6 lg:px-8">
-          {/* Portfolio Balance Card */}
-          <div className="bg-white rounded-2xl shadow border border-gray-200 p-8 mb-8 flex items-start justify-start w-[700px] max-w-full" style={{ height: 176 }}>
-            <div>
-              <div className="flex items-center mb-2">
-                <span className="uppercase tracking-widest text-gray-500 font-semibold text-xs md:text-sm">Portfolio</span>
-              </div>
-              <div className="text-2xl md:text-4xl font-bold text-gray-900 mb-2">
-                ${totalPortfolio.toFixed(2)}
-              </div>
-            </div>
-            <div className="flex flex-col items-start ml-20">
-                              <span className="text-gray-500 font-semibold text-xs md:text-sm uppercase tracking-widest mb-1">Cash</span>
-                              <span className="text-gray-900 font-bold text-xs md:text-[14px] mb-4">
-                                ${cash.toFixed(2)}
-                              </span>
-              <span className="text-gray-500 font-semibold text-xs md:text-sm uppercase tracking-widest mb-1 block" style={{ paddingTop: 12 }}>Bet Value</span>
-                              <span className="text-gray-900 font-bold text-xs md:text-[14px] mb-4">
-                                ${totalPositionsValue.toFixed(2)}
-                              </span>
-            </div>
-            </div>
+      <div className="container-page pb-24 pt-10 md:pt-14">
+        <header className="border-t-2 border-ink">
+          <div className="grid grid-cols-1 divide-y divide-rule sm:grid-cols-3 sm:divide-y-0">
+            <Figure label="Portfolio" value={`$${totalPortfolio.toFixed(2)}`} />
+            <Figure label="Cash" value={`$${cash.toFixed(2)}`} muted />
+            <Figure label="Bet Value" value={`$${totalPositionsValue.toFixed(2)}`} muted />
+          </div>
+        </header>
 
-          <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
-            {/* Tab Buttons */}
-            <div className="flex border-b border-gray-200 dark:border-border">
-              <button
-                onClick={() => setActiveTab('current')}
-                className={`flex-1 py-3 px-4 text-sm font-semibold transition-colors border-b-2 ${
-                  activeTab === 'current'
-                    ? 'bg-gray-200 text-green-700 border-green-600 dark:bg-zinc-800 dark:text-accent-yes dark:border-accent-yes'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-zinc-800/60'
-                }`}
-              >
+          <section className="mt-8">
+            <div role="tablist" aria-label="Portfolio" className="tabs !border-b-4 !border-double !border-ink">
+              <button role="tab" type="button" aria-selected={activeTab === "current"} onClick={() => setActiveTab("current")} className="tab">
                 Open
               </button>
-              <button
-                onClick={() => setActiveTab('history')}
-                className={`flex-1 py-3 px-4 text-sm font-semibold transition-colors border-b-2 ${
-                  activeTab === 'history'
-                    ? 'bg-gray-200 text-green-700 border-green-600 dark:bg-zinc-800 dark:text-accent-yes dark:border-accent-yes'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-zinc-800/60'
-                }`}
-              >
+              <button role="tab" type="button" aria-selected={activeTab === "history"} onClick={() => setActiveTab("history")} className="tab">
                 Trade History
               </button>
             </div>
 
-            {/* Tab Content */}
-            <div className="overflow-x-auto">
-              {activeTab === 'history' &&
+            <div className="mt-2 overflow-x-auto">
+              {activeTab === "history" &&
                 (tradesLoading ? (
-                  <div className="text-center text-gray-500 py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-                    Loading trade history...
-                  </div>
+                  rowsSkeleton
                 ) : tradesError ? (
-                  <div className="text-center text-red-500 py-12">{tradesError}</div>
+                  <p className="py-6 text-small text-danger">{tradesError}</p>
+                ) : trades.length === 0 ? (
+                  <p className="py-6 text-small text-muted">No trades yet. Your portfolio will appear here after you make your first trade.</p>
                 ) : (
                   <>
-                    <PortfolioTradesTable
-                      trades={trades}
-                      getOutcomeColor={getOutcomeColor}
-                      formatPrice={formatPrice}
-                    />
-                    {trades.length === 0 && (
-                      <div className="text-center text-gray-500 py-12">
-                        No trades yet. Your portfolio will appear here after you make your first trade.
-                      </div>
-                    )}
+                    <div className="hidden md:block">
+                      <TradesTable trades={trades} />
+                    </div>
+                    <ol className="row-list md:hidden">
+                      {trades.map((trade) => {
+                        const redemption = (trade.tradeType ?? "").toLowerCase() === "redemption";
+                        return (
+                          <li key={trade.id} className="flex flex-col gap-1 border-b border-dotted border-rule py-3.5">
+                            <div className="flex items-baseline justify-between gap-3">
+                              <span className={`text-small font-medium ${sideClass(trade.outcome)}`}>
+                                {trade.outcome} {redemption ? "$1.00" : formatCents(trade.avgPrice)}
+                                <span className="num ml-2 font-normal text-muted">{trade.shares.toFixed(2)} shares</span>
+                              </span>
+                              <span className="num text-small font-medium text-ink">${Number(trade.betAmount).toFixed(2)}</span>
+                            </div>
+                            <span className="serif text-body font-semibold text-ink">{trade.marketTitle}</span>
+                            <span className="num text-small text-muted">
+                              {formatTradeDate(trade.createdAt)} <span className="ml-2">{redemption ? "Redemption" : (trade.tradeType ?? "BUY").toUpperCase()}</span>
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ol>
                   </>
                 ))}
 
-              {activeTab === 'current' && (
-                <>
-                  {currentPositionsLoading ? (
-                    <div className="text-center text-gray-500 py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-                      Loading open positions...
-                    </div>
-                  ) : currentPositions.length === 0 ? (
-                    <div className="text-center text-gray-500 py-12">
-                      No open positions. Trades for markets you still hold on-chain will appear here after you buy through
-                      the app.
-                    </div>
-                  ) : tradesLoading ? (
-                    <div className="text-center text-gray-500 py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-                      Loading saved trade details...
-                    </div>
-                  ) : tradesError ? (
-                    <div className="text-center text-red-500 py-12">{tradesError}</div>
-                  ) : openPositions.length === 0 ? (
-                    <div className="text-center text-gray-500 py-12">
-                      No saved trades match your open positions yet. Positions bought through this app will show entry
-                      price, bet, and P/L here.
-                    </div>
-                  ) : (
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-2 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-semibold text-gray-600 tracking-wider">
-                            MARKET
-                          </th>
-                          <th className="px-2 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-semibold text-gray-600 tracking-wider min-w-[92px]">
-                            DATE
-                          </th>
-                          <th className="px-2 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-semibold text-gray-600 text-center min-w-[90px]">
-                            <span title="Average Purchase Price">AVG PRICE</span>
-                          </th>
-                          <th className="px-2 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-semibold text-gray-600 text-center min-w-[90px]">
-                            NOW
-                          </th>
-                          <th className="px-2 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-semibold text-gray-600 text-center min-w-[80px]">
-                            SHARES
-                          </th>
-                          <th className="px-2 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-semibold text-gray-600 text-center min-w-[90px]">
-                            BET
-                          </th>
-                          <th className="px-2 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-semibold text-gray-600 text-center min-w-[90px]">
-                            VALUE
-                          </th>
-                          <th className="px-2 md:px-6 py-2 md:py-3 text-[10px] md:text-xs font-semibold text-gray-600 text-center min-w-[90px]">
-                            P/L
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {openPositions.map((pos) => {
-                          const markValue = pos.shares * pos.currentPrice;
-                          const avgPriceCents =
-                            pos.avgCostPerShare !== null ? formatPrice(pos.avgCostPerShare) : null;
-                          const betBasis =
-                            pos.avgCostPerShare !== null ? pos.shares * pos.avgCostPerShare : null;
-                          const pl = betBasis !== null ? markValue - betBasis : null;
-                          return (
-                            <tr key={pos.key} className="hover:bg-gray-50 transition">
-                              <td className="px-2 md:px-6 py-3 md:py-4 whitespace-nowrap">
-                                <div>
-                                  <div className={`font-semibold text-xs md:text-sm ${getOutcomeColor(pos.outcomeLabel)}`}>
-                                    {pos.outcomeLabel} {avgPriceCents !== null ? `${avgPriceCents}¢` : "—"}{" "}
-                                    <span className="text-gray-500 font-normal ml-1 text-[10px] md:text-xs">
-                                      {pos.shares.toFixed(2)} shares
-                                    </span>
-                                  </div>
-                                  <div className="text-gray-900 font-medium text-xs md:text-sm leading-tight">
-                                    {pos.marketTitle}
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-2 md:px-6 py-3 md:py-4 whitespace-nowrap text-gray-700 text-xs md:text-sm min-w-[92px]">
-                                {formatTradeDate(pos.openedAt)}
-                              </td>
-                              <td className="px-2 md:px-6 py-3 md:py-4 text-center text-gray-900 text-xs md:text-base min-w-[90px]">
-                                {avgPriceCents !== null ? `${avgPriceCents}¢` : "—"}
-                              </td>
-                              <td className="px-2 md:px-6 py-3 md:py-4 text-center text-gray-900 text-xs md:text-base min-w-[90px]">
-                                {formatPrice(pos.currentPrice)}¢
-                              </td>
-                              <td className="px-2 md:px-6 py-3 md:py-4 text-center text-gray-900 text-xs md:text-base min-w-[80px]">
-                                {pos.shares.toFixed(2)}
-                              </td>
-                              <td className="px-2 md:px-6 py-3 md:py-4 text-center text-gray-900 text-xs md:text-base min-w-[90px]">
-                                {betBasis !== null ? `$${betBasis.toFixed(2)}` : "—"}
-                              </td>
-                              <td
-                                className="px-2 md:px-6 py-3 md:py-4 text-center text-xs md:text-base font-bold min-w-[90px]"
-                                style={{
-                                  color: betBasis !== null && markValue > betBasis ? '#16a34a' : '#dc2626',
-                                }}
-                              >
-                                ${markValue.toFixed(2)}
-                              </td>
-                              <td
-                                className="px-2 md:px-6 py-3 md:py-4 text-center text-xs md:text-base font-bold min-w-[90px]"
-                                style={{
-                                  color: pl === null ? '#6b7280' : pl > 0 ? '#16a34a' : pl < 0 ? '#dc2626' : '#6b7280',
-                                }}
-                              >
-                                {pl === null ? "—" : `${pl > 0 ? "+" : pl < 0 ? "-" : ""}$${Math.abs(pl).toFixed(2)}`}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  )}
-                </>
-              )}
+              {activeTab === "current" &&
+                (currentPositionsLoading ? (
+                  rowsSkeleton
+                ) : currentPositions.length === 0 ? (
+                  <p className="py-6 text-small text-muted">
+                    No open positions. Trades for markets you still hold on-chain will appear here after you buy through
+                    the app.
+                  </p>
+                ) : tradesLoading ? (
+                  rowsSkeleton
+                ) : tradesError ? (
+                  <p className="py-6 text-small text-danger">{tradesError}</p>
+                ) : openPositions.length === 0 ? (
+                  <p className="py-6 text-small text-muted">
+                    No saved trades match your open positions yet. Positions bought through this app will show entry
+                    price, bet, and P/L here.
+                  </p>
+                ) : (
+                  <>
+                  <ol className="row-list md:hidden">
+                    {openPositions.map((pos) => {
+                      const markValue = pos.shares * pos.currentPrice;
+                      const betBasis = pos.avgCostPerShare !== null ? pos.shares * pos.avgCostPerShare : null;
+                      const pl = betBasis !== null ? markValue - betBasis : null;
+                      const plClass = pl === null ? "text-muted" : pl > 0 ? "text-yes" : pl < 0 ? "text-danger" : "text-muted";
+                      return (
+                        <li key={pos.key} className="flex flex-col gap-1.5 border-b border-dotted border-rule py-3.5">
+                          <div className="flex items-baseline justify-between gap-3">
+                            <span className={`text-small font-medium ${pos.kind === "yes" ? "text-yes" : "text-no"}`}>{pos.outcomeLabel}</span>
+                            <span className={`num text-small font-medium ${plClass}`}>{pl === null ? "—" : `${pl > 0 ? "+" : pl < 0 ? "-" : ""}$${Math.abs(pl).toFixed(2)}`}</span>
+                          </div>
+                          <Link href={`/markets/${pos.marketId}`} className="serif text-body font-semibold text-ink">
+                            {pos.marketTitle}
+                          </Link>
+                          <div className="num flex flex-wrap gap-x-4 gap-y-0.5 text-small text-muted">
+                            <span>{pos.shares.toFixed(2)} shares</span>
+                            <span>AVG PRICE {pos.avgCostPerShare !== null ? formatCents(pos.avgCostPerShare) : "—"}</span>
+                            <span>NOW {formatCents(pos.currentPrice)}</span>
+                            <span className="text-ink">VALUE ${markValue.toFixed(2)}</span>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                  <table className="hidden w-full min-w-[720px] border-collapse md:table">
+                    <thead>
+                      <tr className="border-b border-ink">
+                        <th className={th}>MARKET</th>
+                        <th className={th}>DATE</th>
+                        <th className={`${th} text-right`}><span title="Average Purchase Price">AVG PRICE</span></th>
+                        <th className={`${th} text-right`}>NOW</th>
+                        <th className={`${th} text-right`}>SHARES</th>
+                        <th className={`${th} text-right`}>BET</th>
+                        <th className={`${th} text-right`}>VALUE</th>
+                        <th className={`${th} text-right`}>P/L</th>
+                      </tr>
+                    </thead>
+                    <tbody className="[&>tr]:transition-colors [&>tr:hover]:bg-ground-2">
+                      {openPositions.map((pos) => {
+                        const markValue = pos.shares * pos.currentPrice;
+                        const betBasis = pos.avgCostPerShare !== null ? pos.shares * pos.avgCostPerShare : null;
+                        const pl = betBasis !== null ? markValue - betBasis : null;
+                        const plClass = pl === null ? "text-muted" : pl > 0 ? "text-yes" : pl < 0 ? "text-danger" : "text-muted";
+                        return (
+                          <tr key={pos.key}>
+                            <td className={td}>
+                              <div className="flex flex-col gap-0.5">
+                                <span className={`text-small font-medium ${pos.kind === "yes" ? "text-yes" : "text-no"}`}>{pos.outcomeLabel}</span>
+                                <Link href={`/markets/${pos.marketId}`} className="serif text-body font-semibold text-ink underline-offset-[3px] hover:underline hover:decoration-hairline-2">
+                                  {pos.marketTitle}
+                                </Link>
+                              </div>
+                            </td>
+                            <td className={`${td} whitespace-nowrap text-ink-2`}>{formatTradeDate(pos.openedAt)}</td>
+                            <td className={`${td} num text-right text-ink-2`}>{pos.avgCostPerShare !== null ? formatCents(pos.avgCostPerShare) : "—"}</td>
+                            <td className={`${td} num text-right text-ink`}>{formatCents(pos.currentPrice)}</td>
+                            <td className={`${td} num text-right text-ink-2`}>{pos.shares.toFixed(2)}</td>
+                            <td className={`${td} num text-right text-ink-2`}>{betBasis !== null ? `$${betBasis.toFixed(2)}` : "—"}</td>
+                            <td className={`${td} num text-right font-medium text-ink`}>${markValue.toFixed(2)}</td>
+                            <td className={`${td} num text-right font-medium ${plClass}`}>
+                              {pl === null ? "—" : `${pl > 0 ? "+" : pl < 0 ? "-" : ""}$${Math.abs(pl).toFixed(2)}`}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  </>
+                ))}
             </div>
-          </div>
-        </div>
+          </section>
       </div>
-      <div className="w-full h-8 bg-white"></div>
     </div>
   );
-} 
+}

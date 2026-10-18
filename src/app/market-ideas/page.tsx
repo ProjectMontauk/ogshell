@@ -1,13 +1,14 @@
 "use client";
 
 import Navbar from "../../../components/Navbar";
+import PageShell from "@/components/ui/PageShell";
 import React, { useState, useEffect, useCallback } from "react";
 import { useActiveAccount } from "thirdweb/react";
+import { ArrowUp } from "@phosphor-icons/react";
+import { SkeletonLines } from "../../components/ui/Skeleton";
 
-// Backend API base URL - same-origin Next.js API routes
-const API_BASE_URL = '';
+const API_BASE_URL = "";
 
-// Define MarketIdea type
 interface MarketIdea {
   id: number;
   title: string;
@@ -16,7 +17,11 @@ interface MarketIdea {
   netVotes: number;
   walletAddress: string;
   createdAt?: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
+}
+
+function shortAddress(a: string) {
+  return `${a.slice(0, 6)}...${a.slice(-4)}`;
 }
 
 export default function MarketIdeasPage() {
@@ -231,137 +236,101 @@ export default function MarketIdeasPage() {
   return (
     <div>
       <Navbar />
-      <div className="min-h-screen bg-white flex flex-col items-center pt-8 w-full">
-        <div className="w-full max-w-4xl mx-auto px-4">
-          <h2 className="text-lg font-semibold text-citizen-ink mb-2">Rules</h2>
-          <div className="text-base text-gray-700 mb-6">
-            Vote for your favorite markets. Each week, the most popular market will be created and propose new questions on the Submit New Idea tab. 
-          </div>
-          {/* Tabs */}
-          <div className="flex mb-8 border-b border-gray-200">
-            <button
-              className={`px-6 py-2 font-semibold text-sm focus:outline-none transition border-b-2 ${activeTab === 'proposed' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-black'}`}
-              onClick={() => setActiveTab('proposed')}
-              type="button"
-            >
+      <PageShell
+        title="Rules"
+        note="Vote for your favorite markets. Each week, the most popular market will be created and propose new questions on the Submit New Idea tab."
+      >
+        <div>
+          <div role="tablist" aria-label="Market ideas" className="tabs">
+            <button role="tab" type="button" aria-selected={activeTab === "proposed"} onClick={() => setActiveTab("proposed")} className="tab">
               Proposed Markets
             </button>
-            <button
-              className={`ml-2 px-6 py-2 font-semibold text-sm focus:outline-none transition border-b-2 ${activeTab === 'submit' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-black'}`}
-              onClick={() => setActiveTab('submit')}
-              type="button"
-            >
+            <button role="tab" type="button" aria-selected={activeTab === "submit"} onClick={() => setActiveTab("submit")} className="tab">
               Submit New Idea
             </button>
           </div>
 
-          {/* Tab Panels */}
-          {activeTab === 'submit' && (
-            <div className="bg-white rounded-xl shadow border border-gray-200 p-8 mb-8">
-              <h2 className="text-xl font-bold text-citizen-ink mb-4">Submit New Market Idea</h2>
-              <form onSubmit={handleSubmitIdea} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Market Title *
-                  </label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g., Was Atlantis a real place?"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                  />
-                </div>
-
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !account?.address}
-                  className="w-full font-semibold px-6 py-3 rounded-lg shadow transition disabled:opacity-50 bg-black text-white hover:bg-gray-800"
-                >
-                  {isSubmitting ? 'Submitting...' : 'Submit Market Idea'}
+          {activeTab === "submit" && (
+            <form onSubmit={handleSubmitIdea} className="mt-6 flex flex-col gap-4" noValidate>
+              <h2 className="kicker">Submit New Market Idea</h2>
+              <div>
+                <label htmlFor="idea-title" className="label">
+                  Market Title *
+                </label>
+                <input
+                  id="idea-title"
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g., Was Atlantis a real place?"
+                  className="field"
+                />
+              </div>
+              {submitFeedback && (
+                <p role="status" className={`text-small font-semibold ${submitFeedback.includes("success") ? "text-yes" : "text-danger"}`}>
+                  {submitFeedback}
+                </p>
+              )}
+              <div>
+                <button type="submit" disabled={isSubmitting || !account?.address} className="btn btn-primary btn-lg">
+                  {isSubmitting ? "Submitting..." : "Submit Market Idea"}
                 </button>
-                {submitFeedback && (
-                  <div className={`text-center font-semibold ${
-                    submitFeedback.includes('success') ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {submitFeedback}
-                  </div>
-                )}
-              </form>
-            </div>
+              </div>
+            </form>
           )}
 
-          {activeTab === 'proposed' && (
-            <div className="bg-white rounded-xl shadow border border-gray-200 p-8">
-              <h2 className="text-xl font-bold text-citizen-ink mb-6">Proposed Markets</h2>
+          {activeTab === "proposed" && (
+            <div className="mt-6">
+              <h2 className="kicker">Proposed Markets</h2>
               {loading ? (
-                <div className="text-gray-500 text-center py-8">Loading market ideas...</div>
+                <>
+                  <p className="sr-only">Loading market ideas...</p>
+                  <SkeletonLines rows={5} className="py-4" />
+                </>
               ) : sortedIdeas.length === 0 ? (
-                <div className="text-gray-500 text-center py-8">No market ideas submitted yet.</div>
+                <p className="py-4 text-body text-muted">No market ideas submitted yet.</p>
               ) : (
-                <div className="space-y-6">
-                  {sortedIdeas.map((idea, idx) => (
-                    <div
-                      key={idea.id}
-                      className="border rounded-lg py-3 px-6 bg-white shadow-sm border-gray-200"
-                    >
-                      <div className="flex">
-                        {/* Voting column */}
-                        <div className="flex flex-col items-center mr-4 select-none">
+                <ol className="row-list">
+                  {sortedIdeas.map((idea, idx) => {
+                    const voted = userVotes.has(idea.id);
+                    return (
+                      <li key={idea.id} className="row-hover flex gap-3 border-b border-dotted border-rule py-4">
+                        <div className="flex w-11 shrink-0 flex-col items-center">
                           <button
-                            className={`text-lg p-0 mb-1 transition-all duration-200 ${
-                              votingIdeaId === idea.id ? 'opacity-50 cursor-not-allowed' : ''
-                            } ${userVotes.has(idea.id) ? 'bg-green-600 rounded-lg p-1' : ''}`}
-                            onClick={() => handleVote(idea.id)}
-                            aria-label={userVotes.has(idea.id) ? "Remove vote" : "Upvote"}
                             type="button"
+                            onClick={() => handleVote(idea.id)}
                             disabled={votingIdeaId === idea.id}
+                            aria-pressed={voted}
+                            aria-label={voted ? "Remove vote" : "Upvote"}
+                            className={`flex h-8 w-8 items-center justify-center border transition-[background-color,border-color,color,transform] duration-200 ease-out-quart active:scale-95 disabled:opacity-50 ${
+                              voted ? "border-ink bg-ink text-ground" : "border-ink bg-transparent text-ink hover:bg-ink hover:text-ground"
+                            }`}
                           >
-                            <svg 
-                              width="20" 
-                              height="20" 
-                              viewBox="0 0 20 20" 
-                              fill="none" 
-                              stroke="currentColor" 
-                              strokeWidth="2"
-                              className={userVotes.has(idea.id) ? 'text-white' : 'text-gray-600'}
-                            >
-                              <path d="M10 2v16" strokeLinecap="round"/>
-                              <path d="M5 7l5-5 5 5" strokeLinecap="round"/>
-                            </svg>
+                            <ArrowUp size={15} aria-hidden />
                           </button>
-                          <div className="flex flex-col items-center">
-                            <div className="bg-black text-white rounded-full px-1.5 py-0.5 text-xs font-semibold mb-1" style={{minWidth: '1.48rem', textAlign: 'center'}}>
-                              {idea.netVotes}
-                            </div>
-                            <div className="text-green-600 text-xs font-semibold min-h-[1.25rem]" style={{minHeight: '1.25rem'}}>
-                              {userVotes.has(idea.id) ? '+1' : <span className="opacity-0">+0</span>}
+                          <span className="num mt-1.5 text-small font-medium text-ink">{idea.netVotes}</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start gap-2">
+                            <span className="num shrink-0 pt-1 text-small font-semibold text-muted">#{idx + 1}</span>
+                            <div className="min-w-0">
+                              <p className="serif text-lead font-semibold leading-snug text-ink">{idea.title}</p>
+                              <p className="mt-1 text-small text-muted">
+                                Submitted by <span className="num">{shortAddress(idea.walletAddress)}</span> •{" "}
+                                {idea.createdAt ? new Date(idea.createdAt).toLocaleDateString() : "Unknown date"}
+                              </p>
                             </div>
                           </div>
                         </div>
-                        {/* Idea content */}
-                        <div className="flex-1">
-                          <div className="flex items-center mb-2">
-                            <span className="text-sm font-semibold mr-2">#{idx + 1}</span>
-                            <span className="text-sm font-bold text-citizen-ink">
-                              {idea.title}
-                            </span>
-                          </div>
-                          <div className="text-xs text-gray-400">
-                            Submitted by {idea.walletAddress.slice(0, 6)}...{idea.walletAddress.slice(-4)} • {idea.createdAt ? new Date(idea.createdAt).toLocaleDateString() : 'Unknown date'}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      </li>
+                    );
+                  })}
+                </ol>
               )}
             </div>
           )}
         </div>
-      </div>
-      <div className="w-full h-8 bg-white"></div>
+      </PageShell>
     </div>
   );
-} 
+}

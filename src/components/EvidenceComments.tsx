@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import Comment from './Comment';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import Comment from "./Comment";
+import { SkeletonLines } from "./ui/Skeleton";
 
-// Backend API base URL - same-origin Next.js API routes
-const API_BASE_URL = '';
+const API_BASE_URL = "";
 
 interface Evidence {
   id: number;
-  type: 'yes' | 'no';
+  type: "yes" | "no";
   title: string;
   url?: string;
   description: string;
@@ -33,13 +33,9 @@ interface EvidenceCommentsProps {
   onShowSignInModal?: () => void;
 }
 
-const EvidenceComments: React.FC<EvidenceCommentsProps> = ({
-  evidence,
-  currentUserAddress,
-  onShowSignInModal
-}) => {
+const EvidenceComments: React.FC<EvidenceCommentsProps> = ({ evidence, currentUserAddress, onShowSignInModal }) => {
   const [comments, setComments] = useState<CommentData[]>([]);
-  const [newComment, setNewComment] = useState('');
+  const [newComment, setNewComment] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -48,52 +44,35 @@ const EvidenceComments: React.FC<EvidenceCommentsProps> = ({
     if (!evidence) return;
     setIsLoading(true);
     try {
-      const params = new URLSearchParams({
-        evidenceId: evidence.id.toString()
-      });
-      if (currentUserAddress) {
-        params.append('walletAddress', currentUserAddress);
-      }
+      const params = new URLSearchParams({ evidenceId: evidence.id.toString() });
+      if (currentUserAddress) params.append("walletAddress", currentUserAddress);
       const response = await fetch(`${API_BASE_URL}/api/comments?${params}`);
-      if (response.ok) {
-        const data = await response.json();
-        setComments(data);
-      }
+      if (response.ok) setComments(await response.json());
     } catch (error) {
-      console.error('Failed to fetch comments:', error);
+      console.error("Failed to fetch comments:", error);
     } finally {
       setIsLoading(false);
     }
   }, [evidence, currentUserAddress]);
 
-  // Fetch comments on mount and when evidence changes
   useEffect(() => {
     fetchComments();
     // eslint-disable-next-line
   }, [evidence]);
 
-  // Auto-expand textarea as user types
   const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const textarea = e.target;
-    
-    // If user is not signed in and tries to type, show sign-in modal
     if (!currentUserAddress && textarea.value.trim().length > 0) {
-      if (onShowSignInModal) {
-        onShowSignInModal();
-      }
-      // Clear the textarea
-      setNewComment('');
-      textarea.value = '';
-      if (textareaRef.current) {
-        textareaRef.current.style.height = '2.5rem';
-      }
+      onShowSignInModal?.();
+      setNewComment("");
+      textarea.value = "";
+      if (textareaRef.current) textareaRef.current.style.height = "";
       return;
     }
-    
     setNewComment(textarea.value);
     if (textareaRef.current) {
-      textareaRef.current.style.height = '2.5rem'; // Reset to min height
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+      textareaRef.current.style.height = "";
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   };
 
@@ -103,20 +82,17 @@ const EvidenceComments: React.FC<EvidenceCommentsProps> = ({
     setIsSubmitting(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          evidenceId: evidence.id,
-          content: newComment,
-          walletAddress: currentUserAddress
-        })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ evidenceId: evidence.id, content: newComment, walletAddress: currentUserAddress }),
       });
       if (response.ok) {
-        setNewComment('');
+        setNewComment("");
+        if (textareaRef.current) textareaRef.current.style.height = "";
         await fetchComments();
       }
     } catch (error) {
-      console.error('Failed to submit comment:', error);
+      console.error("Failed to submit comment:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -126,140 +102,101 @@ const EvidenceComments: React.FC<EvidenceCommentsProps> = ({
     if (!evidence || !currentUserAddress) return;
     try {
       const response = await fetch(`${API_BASE_URL}/api/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          evidenceId: evidence.id,
-          parentId,
-          content,
-          walletAddress: currentUserAddress
-        })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ evidenceId: evidence.id, parentId, content, walletAddress: currentUserAddress }),
       });
-      if (response.ok) {
-        await fetchComments();
-      }
+      if (response.ok) await fetchComments();
     } catch (error) {
-      console.error('Failed to submit reply:', error);
+      console.error("Failed to submit reply:", error);
       throw error;
     }
   };
 
-  const handleVote = async (commentId: number, voteType: 'upvote' | 'downvote') => {
+  const handleVote = async (commentId: number, voteType: "upvote" | "downvote") => {
     if (!currentUserAddress) return;
     try {
       const response = await fetch(`${API_BASE_URL}/api/comment-vote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          commentId,
-          walletAddress: currentUserAddress,
-          voteType
-        })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commentId, walletAddress: currentUserAddress, voteType }),
       });
       if (response.ok) {
-        // Optimistically update the comment in the local state
-        const updateCommentVotes = (comments: CommentData[]): CommentData[] => {
-          return comments.map(comment => {
+        const updateCommentVotes = (list: CommentData[]): CommentData[] =>
+          list.map((comment) => {
             if (comment.id === commentId) {
-              const updatedComment = { ...comment };
+              const updated = { ...comment };
               if (comment.userVote === voteType) {
-                // Removing vote
-                if (voteType === 'upvote') {
-                  updatedComment.upvotes = Math.max(0, comment.upvotes - 1);
-                } else {
-                  updatedComment.downvotes = Math.max(0, comment.downvotes - 1);
-                }
-                updatedComment.userVote = null;
+                if (voteType === "upvote") updated.upvotes = Math.max(0, comment.upvotes - 1);
+                else updated.downvotes = Math.max(0, comment.downvotes - 1);
+                updated.userVote = null;
               } else if (comment.userVote && comment.userVote !== voteType) {
-                // Changing vote
-                if (voteType === 'upvote') {
-                  updatedComment.upvotes = comment.upvotes + 1;
-                  updatedComment.downvotes = Math.max(0, comment.downvotes - 1);
+                if (voteType === "upvote") {
+                  updated.upvotes = comment.upvotes + 1;
+                  updated.downvotes = Math.max(0, comment.downvotes - 1);
                 } else {
-                  updatedComment.downvotes = comment.downvotes + 1;
-                  updatedComment.upvotes = Math.max(0, comment.upvotes - 1);
+                  updated.downvotes = comment.downvotes + 1;
+                  updated.upvotes = Math.max(0, comment.upvotes - 1);
                 }
-                updatedComment.userVote = voteType;
+                updated.userVote = voteType;
               } else {
-                // Adding new vote
-                if (voteType === 'upvote') {
-                  updatedComment.upvotes = comment.upvotes + 1;
-                } else {
-                  updatedComment.downvotes = comment.downvotes + 1;
-                }
-                updatedComment.userVote = voteType;
+                if (voteType === "upvote") updated.upvotes = comment.upvotes + 1;
+                else updated.downvotes = comment.downvotes + 1;
+                updated.userVote = voteType;
               }
-              return updatedComment;
+              return updated;
             }
-            return {
-              ...comment,
-              replies: updateCommentVotes(comment.replies)
-            };
+            return { ...comment, replies: updateCommentVotes(comment.replies) };
           });
-        };
         setComments(updateCommentVotes);
       }
     } catch (error) {
-      console.error('Failed to vote on comment:', error);
+      console.error("Failed to vote on comment:", error);
       throw error;
     }
   };
 
   return (
-    <div className="bg-white rounded-xl mt-4">
-      <div className="pb-4 bg-white">
-        {/* New comment form */}
-        <form onSubmit={handleSubmitComment} className="mb-4">
-          <textarea
-            ref={textareaRef}
-            value={newComment}
-            onChange={handleTextareaInput}
-            placeholder="Add a comment..."
-            className="w-full p-[5px] border border-gray-300 rounded-lg resize-none bg-white text-gray-900 min-h-[2.25rem] text-[15.2px]"
-            rows={1}
-            style={{overflow: 'hidden'}}
-            disabled={isSubmitting}
-          />
-            <div className="flex justify-end mt-2">
-              {newComment.trim().length > 0 && (
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Posting...' : 'Post Comment'}
-                </button>
-              )}
-            </div>
-          </form>
-        {/* Comments section */}
-        <div className="bg-white">
-          {isLoading ? (
-            <div className="text-center py-8 bg-white">
-              <div className="text-gray-500">Loading comments...</div>
-            </div>
-          ) : comments.length === 0 ? (
-            <div className="text-center py-8 bg-white">
-              <div className="text-gray-500">No comments yet. Be the first to comment!</div>
-            </div>
-          ) : (
-            <div className="space-y-4 bg-white">
-              {comments.map((comment) => (
-                <Comment
-                  key={comment.id}
-                  comment={comment}
-                  evidenceId={evidence.id}
-                  currentUserAddress={currentUserAddress}
-                  onReply={handleReply}
-                  onVote={handleVote}
-                />
-              ))}
-            </div>
-          )}
+    <div className="mt-4 flex flex-col gap-6">
+      <form onSubmit={handleSubmitComment} className="flex flex-col gap-2">
+        <label htmlFor="new-comment" className="sr-only">
+          Add a comment
+        </label>
+        <textarea
+          id="new-comment"
+          ref={textareaRef}
+          value={newComment}
+          onChange={handleTextareaInput}
+          placeholder="Add a comment..."
+          className="field-area min-h-[2.75rem]"
+          rows={1}
+          disabled={isSubmitting}
+        />
+        {newComment.trim().length > 0 && (
+          <div className="flex justify-end">
+            <button type="submit" disabled={isSubmitting} className="btn btn-primary btn-sm">
+              {isSubmitting ? "Posting..." : "Post Comment"}
+            </button>
+          </div>
+        )}
+      </form>
+
+      {isLoading ? (
+        <>
+          <p className="sr-only">Loading comments...</p>
+          <SkeletonLines rows={3} />
+        </>
+      ) : comments.length === 0 ? (
+        <p className="text-small text-muted">No comments yet. Be the first to comment!</p>
+      ) : (
+        <div className="flex flex-col">
+          {comments.map((comment) => (
+            <Comment key={comment.id} comment={comment} evidenceId={evidence.id} currentUserAddress={currentUserAddress} onReply={handleReply} onVote={handleVote} />
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 };
 
-export default EvidenceComments; 
+export default EvidenceComments;
