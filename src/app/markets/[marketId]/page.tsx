@@ -12,34 +12,29 @@ import {
   CASH_TOKEN_SCALE_BI,
 } from "../../../../constants/tokenUnits";
 import { bigintWeiToHumanNumber } from "../../../utils/fixedPointAmount";
-import { Tab } from "@headlessui/react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-
-import { formatOddsToCents } from "../../../utils/formatOdds";
 import { submitTrade } from "../../../utils/tradeApi";
 import { calculateSharesFromBetAmount } from "../../../utils/calculateSharesFromBetAmount";
 import { getOutcomePoolBalancesWei } from "../../../utils/poolBalances";
 import { quoteCollateralOutWeiForSellAll, quoteCollateralOutWeiForSellShares } from "../../../utils/fpmmSellQuote";
 import { getMarketById } from "../../../data/markets";
 import { notFound } from "next/navigation";
-import DenariusSymbol from "../../../components/DenariusSymbol";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { usePortfolio } from "../../../contexts/PortfolioContext";
-import ConditionalTokensRedeemShares from "../../../components/ConditionalTokensRedeemShares";
 import { getMarketRedeemDefaults } from "../../../constants/marketRedeemDefaults";
+import { CaretDown } from "@phosphor-icons/react";
+import TradePanel, { type TradePanelProps } from "../../../components/market/TradePanel";
+import OddsChart from "../../../components/market/OddsChart";
+import { AutoHeight } from "../../../components/ui/AutoHeight";
+import ProbabilityBar from "../../../components/market/ProbabilityBar";
+import CaseColumns from "../../../components/market/CaseColumns";
+import EvidenceForm from "../../../components/market/EvidenceForm";
+import TradeSheet from "../../../components/market/TradeSheet";
+import TradeBar from "../../../components/market/TradeBar";
+import { useIsDesktop } from "../../../hooks/useIsDesktop";
+import { SkeletonLines } from "../../../components/ui/Skeleton";
 
 // Backend API base URL - same-origin Next.js API routes
 const API_BASE_URL = '';
-
-// Helper to extract domain from URL
-function getDomain(url: string) {
-  try {
-    const { hostname } = new URL(url);
-    return hostname.replace(/^www\./, '');
-  } catch {
-    return url;
-  }
-}
 
 function txHashFromResult(result: unknown): string | undefined {
   if (!result || typeof result !== "object") return undefined;
@@ -54,13 +49,6 @@ function txHashFromResult(result: unknown): string | undefined {
   }
   return undefined;
 }
-
-// Helper to check if URL is a PDF
-  function isPdfUrl(url: string): boolean {
-    return url.toLowerCase().includes('/uploads/evidence/') || 
-           url.toLowerCase().includes('blob.vercel-storage.com') ||
-           url.toLowerCase().endsWith('.pdf');
-  }
 
 // Define Evidence type
 interface Evidence {
@@ -83,8 +71,19 @@ interface OddsHistoryEntry {
   timestamp: string;
 }
 
-
-
+/** Modal used for the wallet and sign-in prompts (copy and buttons as on the original). */
+function Dialog({ title, body, children }: { title: string; body: string; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={title}>
+      <div aria-hidden className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
+      <div className="panel relative w-full max-w-sm p-5 shadow-[var(--shadow-float)]">
+        <h3 className="text-body font-semibold text-ink">{title}</h3>
+        <p className="mt-1.5 text-small text-muted">{body}</p>
+        <div className="mt-4 flex justify-end gap-2">{children}</div>
+      </div>
+    </div>
+  );
+}
 
 function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }) {
   const resolvedParams = use(params);
@@ -2095,1022 +2094,290 @@ useEffect(() => {
     (selectedOutcome === "yes" && mode === "sell" && buyYesStatus === "pending") ||
     (selectedOutcome === "no" && mode === "sell" && buyNoStatus === "pending");
 
+  // ---- Presentation only below: everything is read from the state and handlers above ----
+
+  // Phones open the trade panel in a sheet from the bottom bar; the sheet is mounted only below lg.
+  const [tradeOpen, setTradeOpen] = useState(false);
+  const [evidenceFormOpen, setEvidenceFormOpen] = useState(false);
+  const tradeInline = useIsDesktop("(min-width: 1024px)");
+  const evidenceSheetRef = useRef<HTMLDivElement>(null);
+
+  // As in the original's Cash line: '$--' signed out, '$0' with no balance, otherwise the formatted balance.
+  const cashText = !account?.address
+    ? '$--'
+    : (() => {
+        if (!userTokenBalance) return '$0';
+        const amount = Number(userTokenBalance) / CASH_TOKEN_SCALE;
+        const formatted =
+          amount % 1 === 0
+            ? amount.toLocaleString(undefined, { maximumFractionDigits: 0 })
+            : amount.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              });
+        return `$${formatted}`;
+      })();
+
+  const yesPct = typeof oddsYes === 'bigint' && typeof oddsNo === 'bigint' ? Math.round(Number(oddsYes) / Math.pow(2, 64) * 100) : null;
+  const noPct = typeof oddsYes === 'bigint' && typeof oddsNo === 'bigint' ? Math.round(Number(oddsNo) / Math.pow(2, 64) * 100) : null;
+  const chartRange =
+    chartData.length > 0
+      ? [chartData[0].timestamp, chartData[chartData.length - 1].timestamp]
+          .map((t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }))
+          .join(" — ")
+      : null;
+
+  const tradePanelProps: TradePanelProps = {
+    showTradingUi: showFpmmTradingUi,
+    oddsLoading: fpmmOddsLoading,
+    devTradingBanner: tradingResolved && forceFpmmDevTrading,
+    mode,
+    onModeChange: (m) => {
+      dismissTradeSuccess();
+      setMode(m);
+      setAmount("");
+      setSelectedOutcome(null);
+    },
+    selectedOutcome,
+    onSelectOutcome: (o) => {
+      dismissTradeSuccess();
+      setSelectedOutcome(o);
+    },
+    amount,
+    onAmountChange: (raw) => {
+      dismissTradeSuccess();
+      setAmount(raw);
+    },
+    oddsYes,
+    oddsNo,
+    cashText,
+    yesSharesText: formatOutcomeSharesCell(isBalanceLoading, outcome1Balance),
+    noSharesText: formatOutcomeSharesCell(isBalanceLoading, outcome2Balance),
+    yesPending: buyYesStatus === 'pending',
+    noPending: buyNoStatus === 'pending',
+    buyEstShares: buyEstSharesDisplay,
+    buyEstLoading: buyEstSharesLoading,
+    sellEstShares: sellEstSharesDisplay,
+    sellEstLoading: sellEstSharesLoading,
+    payoutDisplay,
+    avgPriceDisplay,
+    successMessage,
+    snapshot: postTradeQuoteSnapshot,
+    showAction: showFpmmTradeAction,
+    tradeInProgress,
+    tradePending: tradeStatus === "pending",
+    submitDisabled: fpmmSubmitDisabled,
+    onSubmit: () => {
+      if (!selectedOutcome || !amount || successMessage) return;
+      if (mode === 'buy') {
+        handleFpmmBuy(amount);
+      } else {
+        handleFpmmSell(amount);
+      }
+    },
+    onSellAll: handleSellAllClick,
+    redeem: {
+      conditionalTokensContract,
+      defaults: redeemDefaults,
+      onStart: handleRedeemStart,
+      onSuccess: handleRedeemSuccess,
+      successMessage: redeemSuccessMessage,
+    },
+  };
+
+  const mobileSide: "yes" | "no" = evidenceTabIndex === 1 ? "no" : "yes";
+
   return (
-    <div>
+    <div className="pb-32 lg:pb-0">
       <Navbar variant={isEmbed ? "embed" : "full"} />
-      {/* Wallet Connection Error Popup */}
-      {showWalletError && (
-        <div className="fixed z-50" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
-          <div className="bg-white p-6 mx-4" style={{ maxWidth: '375px' }}>
-            <div className="text-center">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Wallet Required</h3>
-              <p className="text-gray-600 mb-4">Please connect a wallet to begin trading. Click connect button in the top right and sign-in using any account.</p>
-              <button
-                onClick={() => setShowWalletError(false)}
-                className="bg-black text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
-              >
-                OK
+
+      <div className="container-page pb-24 pt-8 md:pt-10">
+        {/* The question, set as a front-page headline */}
+        <h1 id="case-title" className="display text-ink">
+          <span className="line-mask">
+            <span>{market.title}</span>
+          </span>
+        </h1>
+
+        {/* The figure: the two prices on the left, the price history across the rest */}
+        <section aria-labelledby="odds-heading" className="mt-6 border-t-2 border-ink pt-3" data-reveal>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+            <h2 id="odds-heading" className="text-[22px] font-bold text-ink">
+              Market Odds
+            </h2>
+            {chartRange && <span className="num text-small text-muted">{chartRange}</span>}
+          </div>
+          <div className="mt-3.5 grid gap-6 md:grid-cols-[200px_minmax(0,1fr)] md:gap-7 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <ProbabilityBar yesPct={yesPct} noPct={noPct} loading={fpmmOddsLoading} size="lg" className="md:border-r md:border-rule md:pr-6" />
+            <div className="min-w-0">
+              {loadingOdds ? (
+                <div className="skeleton h-[260px] w-full">
+                  <span className="sr-only">Loading chart...</span>
+                </div>
+              ) : (
+                <div data-ui>
+                  <OddsChart data={chartData} height={260} />
+                  <div aria-hidden className="mt-2.5 flex gap-5 text-small text-muted">
+                    <span className="inline-flex items-center gap-1.5">
+                      <i className="inline-block h-[3px] w-[18px] bg-yes" />
+                      Yes
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <i className="inline-block h-[3px] w-[18px] bg-no" />
+                      No
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* The rules, and on desktop the trade as a column of the page beside them */}
+        <div className="mt-7 grid border-t-2 border-ink lg:grid-cols-[minmax(0,1fr)_320px]">
+          <section aria-labelledby="rules-heading" className="min-w-0 pt-4 lg:pr-6">
+            <div data-reveal>
+              <h2 id="rules-heading" className="kicker font-mono">
+                Rules
+              </h2>
+              {/* As on the original: the first sentence while closed, every paragraph when open */}
+              <AutoHeight className="mt-3">
+                <div className="market-rules serif flex flex-col gap-4 text-[17px] leading-[1.55] text-ink-2">
+                  {splitRules(showRules ? rulesFull : firstLine).map((para, i) => (
+                    <p key={i} dangerouslySetInnerHTML={{ __html: para }} />
+                  ))}
+                </div>
+              </AutoHeight>
+              <button type="button" onClick={() => setShowRules((prev) => !prev)} aria-expanded={showRules} className="btn btn-outline btn-sm mt-4 gap-2">
+                {showRules ? "Read Less" : "Read More"}
+                <CaretDown size={14} className={`transition-transform duration-200 ease-out-quart ${showRules ? "rotate-180" : ""}`} aria-hidden />
               </button>
             </div>
-          </div>
-        </div>
-      )}
-      <div className="bg-white w-full">
-        <div className="w-full max-w-6xl px-4 md:px-6 lg:px-8 mx-auto">
-          <div className="w-full flex flex-col lg:flex-row gap-0.5 pt-2.5">
-            {/* Combined Market Odds + Evidence Card */}
-            <div className="bg-white pt-2.5 pr-2.5 pb-2.5 pl-0 w-full lg:w-[calc(100%-300px)] mb-8 lg:mb-0 flex flex-col">
-              {/* Odds History Chart Card */}
-              <h2 className="text-lg font-bold mb-2 text-citizen-ink">{market.title}</h2>
-              <div className="mb-2">
-                <span className="text-sm font-semibold text-citizen-ink">Market Odds</span>
-              </div>
-              {/* Live Yes/No Probabilities Display - now in its own container */}
-              <div className="mb-0 pl-[0px] pr-1 text-sm font-bold text-citizen-ink">
-                {typeof oddsYes === 'bigint' && typeof oddsNo === 'bigint' ? (
-                  <>
-                    <span className="text-green-600">Yes: {Math.round(Number(oddsYes) / Math.pow(2, 64) * 100)}%</span>
-                    <span className="mx-2 text-blue-600">No: {Math.round(Number(oddsNo) / Math.pow(2, 64) * 100)}%</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-green-600">Yes: --%</span>
-                    <span className="mx-2 text-blue-600">No: --%</span>
-                  </>
-                )}
-              </div>
-              {loadingOdds ? (
-                <div className="text-gray-500">Loading chart...</div>
-              ) : (
-                <div className="relative w-full h-[300px]">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={chartData} margin={{ top: 20, right: 0, left: 5, bottom: 0 }}>
-                      <XAxis
-                        dataKey="timestamp"
-                        tick={{ fontSize: 12, dy: 8, fill: chartTickFill }}
-                        height={40}
-                        tickFormatter={(_, index) => {
-                          if (index === 0) {
-                            const [, month, day] = chartData[0].timestamp.split('-');
-                            return `${month}/${day}`;
-                          }
-                          return "";
-                        }}
-                        padding={{ left: 0, right: 0 }}
-                        minTickGap={0}
-                        tickLine={false}
-                      />
-                      <YAxis
-                        domain={[0, 1]}
-                        tickFormatter={v => (typeof v === 'number' ? `${Math.round(v * 100)}%` : v)}
-                        orientation="right"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 12, fill: chartTickFill }}
-                      />
-                      <Tooltip
-                        formatter={v => (typeof v === 'number' ? `${Math.round(v * 100)}%` : v)}
-                        contentStyle={
-                          themeResolved === "dark"
-                            ? {
-                                backgroundColor: "#16191e",
-                                border: "1px solid #2a2f38",
-                                borderRadius: "8px",
-                                color: "#f8fafc",
-                              }
-                            : undefined
-                        }
-                      />
-                      <ReferenceLine y={0.25} stroke={chartGridStroke} strokeDasharray="4 4" />
-                      <ReferenceLine y={0.5} stroke={chartGridStroke} strokeDasharray="4 4" />
-                      <ReferenceLine y={0.75} stroke={chartGridStroke} strokeDasharray="4 4" />
-                      <ReferenceLine y={1} stroke={chartGridStroke} strokeDasharray="4 4" />
-                      <Line type="linear" dataKey="Yes" stroke={chartLineYes} dot={false} name="Yes Probability" />
-                      <Line type="linear" dataKey="No" stroke={chartLineNo} dot={false} name="No Probability" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-              {/* Collapsible Rules section (moved inside chart card) */}
-              <div className="mt-8">
-                <h2 className="text-[16px] font-bold mb-2">Rules</h2>
-                {splitRules(showRules ? rulesFull : firstLine).map((para, i) => (
-                  <p key={i} className="text-gray-600 text-[14px] mb-2" dangerouslySetInnerHTML={{ __html: para }} />
-                ))}
-                <button
-                  className="text-blue-600 text-[14px] font-medium flex items-center gap-1 focus:outline-none mb-2"
-                  onClick={() => setShowRules((prev) => !prev)}
-                >
-                  {showRules ? "Read Less" : "Read More"}
-                  <span className={showRules ? "rotate-180" : ""}>▼</span>
-                </button>
-              </div>
-              {/* On mobile, show Buy/Sell card here, after Rules and before Evidence */}
-              <div ref={fpmmTradingPanelRefMobile} className="block lg:hidden w-full mt-4">
-                {/* Top solid grey border */}
-                <div className="w-full h-px bg-gray-200 mb-7"></div>
-                {/* Betting Card (mobile) */}
-                <div className="bg-white p-0 w-full max-w-[600px]">
-                  {showFpmmTradingUi ? (
-                  <>
-                  {tradingResolved && forceFpmmDevTrading && (
-                    <div className="mb-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-900">
-                      Dev: <code className="font-mono">?fpmmDevTrading=1</code> — buy/sell UI visible for internal testing.
-                    </div>
-                  )}
-                  {/* Buy/Sell Toggle */}
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex gap-2 text-[12px]">
-                      <button
-                        className={`py-1 px-3 rounded-full border ${mode === 'buy' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
-                        onClick={() => {
-                          dismissTradeSuccess();
-                          setMode('buy');
-                          setAmount("");
-                          setSelectedOutcome(null);
-                        }}
-                        type="button"
-                      >
-                        Buy
-                      </button>
-                    <button
-                      className={`py-1 px-3 rounded-full border ${mode === 'sell' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
-                        onClick={() => {
-                          dismissTradeSuccess();
-                          setMode('sell');
-                          setAmount("");
-                          setSelectedOutcome(null);
-                        }}
-                        type="button"
-                      >
-                        Sell
-                      </button>
-                    </div>
-                    {/* Cash/Share Display for Mobile */}
-                    <div className="text-right mr-2">
-                      {mode === 'buy' ? (
-                        <div className="text-sm font-semibold text-green-600">
-                          Cash:{' '}
-                          {!account?.address
-                            ? '$--'
-                            : (() => {
-                                if (!userTokenBalance) return '$0';
-                                const amount = Number(userTokenBalance) / CASH_TOKEN_SCALE;
-                                const formatted =
-                                  amount % 1 === 0
-                                    ? amount.toLocaleString(undefined, { maximumFractionDigits: 0 })
-                                    : amount.toLocaleString(undefined, {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2,
-                                      });
-                                return `$${formatted}`;
-                              })()}
-                        </div>
-                      ) : (
-                        <div className="text-xs font-semibold text-green-600 flex flex-col items-end">
-                          <span className="text-green-600">Yes Shares: {formatOutcomeSharesCell(isBalanceLoading, outcome1Balance)}</span>
-                          <span className="text-blue-600">No Shares: {formatOutcomeSharesCell(isBalanceLoading, outcome2Balance)}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {/* Buy: bet amount. Sell: collateral to receive. */}
-                  <div className="text-sm font-bold mb-2">{mode === 'buy' ? 'Bet Amount' : 'Sell Amount'}</div>
-                  {/* Amount input */}
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="$"
-                      value={amount ? `$${amount}` : ''}
-                      onChange={e => {
-                        const raw = e.target.value.replace(/^\$/, '').replace(/[^0-9.]/g, '');
-                        dismissTradeSuccess();
-                        setAmount(raw);
-                      }}
-                      className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-[16px] mb-4"
-                    />
-                  </div>
-                  {/* Yes/No Cent Price buttons */}
-                  <div className="flex flex-row w-full mb-4 gap-1 text-xs">
-                    <button
-                      type="button"
-                      className={`font-semibold px-0 py-2 rounded-lg border transition disabled:opacity-50 bg-white text-green-700 border-green-300 hover:bg-green-50 w-1/2 whitespace-nowrap ${selectedOutcome === 'yes' ? 'ring-2 ring-black' : ''}`}
-                      onClick={() => {
-                        dismissTradeSuccess();
-                        setSelectedOutcome('yes');
-                    }}
-                    >
-                      {mode === 'buy'
-                        ? (buyYesStatus === 'pending' ? 'Buying...' : `Yes ${formatOddsToCents(oddsYes)}`)
-                        : (buyYesStatus === 'pending' ? 'Selling...' : `Yes ${formatOddsToCents(oddsYes)}`)}
-                    </button>
-                    <button
-                      type="button"
-                      className={`font-semibold px-0 py-2 rounded-lg border transition disabled:opacity-50 bg-white text-blue-700 border-blue-300 hover:bg-blue-50 w-1/2 whitespace-nowrap ${selectedOutcome === 'no' ? 'ring-2 ring-black' : ''}`}
-                      onClick={() => {
-                        dismissTradeSuccess();
-                        setSelectedOutcome('no');
-                    }}
-                    >
-                      {mode === 'buy'
-                        ? (buyNoStatus === 'pending' ? 'Buying...' : `No ${formatOddsToCents(oddsNo)}`)
-                        : (buyNoStatus === 'pending' ? 'Selling...' : `No ${formatOddsToCents(oddsNo)}`)}
-                    </button>
-                  </div>
-                  {/* Sell All (quotes max collateral for ALL owned shares) */}
-                  {mode === "sell" && selectedOutcome && (
-                    <div className="flex justify-start mb-4">
-                      <button
-                        type="button"
-                        className="py-1 px-3 text-[12px] rounded-full border transition-colors bg-white text-black border-gray-300 font-normal hover:bg-gray-50"
-                        onClick={handleSellAllClick}
-                      >
-                        Sell All
-                      </button>
-                    </div>
-                  )}
-                  {/* Only show Max Win/Receive, Avg Price, and Submit Trade if amount and selectedOutcome are set (or success label preserved on Submit) */}
-                  {showFpmmTradeAction && (
-                    <>
-                      {successMessage && postTradeQuoteSnapshot ? (
-                        <>
-                          {postTradeQuoteSnapshot.mode === "buy" && (
-                            <div className="text-[16px] font-medium text-black">
-                              Max. Win:{' '}
-                              <span className="text-green-600 font-bold">
-                                $ {postTradeQuoteSnapshot.maxWinDisplay ?? '--'}
-                              </span>
-                            </div>
-                          )}
-                          {postTradeQuoteSnapshot.mode === "sell" && (
-                            <div className="text-left text-[12px] text-gray-600 mb-2">
-                              Receive{' '}
-                              <span className="ml-2 text-[12px] text-green-600">
-                                $ {postTradeQuoteSnapshot.receiveDisplay ?? '--'}
-                              </span>
-                            </div>
-                          )}
-                          <div className="text-left text-[12px] text-gray-600 mb-4">
-                            Avg. Price
-                            {postTradeQuoteSnapshot.avgPriceDisplay !== '--' && (
-                              <span className="ml-2 text-[12px] text-gray-600">
-                                {postTradeQuoteSnapshot.avgPriceDisplay}
-                              </span>
-                            )}
-                          </div>
-                          {postTradeQuoteSnapshot.mode === "sell" && (
-                            <div className="text-left text-[14px] text-gray-800 mb-4">
-                              {postTradeQuoteSnapshot.outcome === 'yes' ? 'Yes' : 'No'} Shares to sell:{' '}
-                              <span className="ml-1 font-bold text-[16px] text-gray-900">
-                                {postTradeQuoteSnapshot.sellSharesDisplay ?? '--'}
-                              </span>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        !successMessage && (
-                        <>
-                      {/* Max. Win (buy) or Receive (sell) */}
-                      {mode === 'buy' && (
-                        <div className="text-[16px] font-medium text-black">Max. Win: <span className="text-green-600 font-bold">$ {buyEstSharesLoading ? '...' : (buyEstSharesDisplay ?? '--')}</span></div>
-                      )}
-                      {mode === 'sell' && (
-                        <div className="text-left text-[12px] text-gray-600 mb-2">
-                          Receive <span className="ml-2 text-[12px] text-green-600">$ {payoutDisplay}</span>
-                        </div>
-                      )}
-                      {/* Avg. Price display */}
-                      <div className="text-left text-[12px] text-gray-600 mb-4">
-                        Avg. Price
-                        {avgPriceDisplay !== '--' && (
-                          <span className="ml-2 text-[12px] text-gray-600">{avgPriceDisplay}</span>
-                        )}
-                      </div>
-                      {mode === 'sell' && (
-                        <div className="text-left text-[14px] text-gray-800 mb-4">
-                          {selectedOutcome === 'yes' ? 'Yes' : 'No'} Shares to sell:{' '}
-                          <span className="ml-1 font-bold text-[16px] text-gray-900">
-                            {sellEstSharesLoading ? '...' : (sellEstSharesDisplay ?? '--')}
-                          </span>
-                        </div>
-                      )}
-                        </>
-                      )
-                      )}
-                      {/* Trade button */}
-                      <button
-                        type="button"
-                        className={`w-full font-semibold px-4 py-2 rounded-lg shadow transition mb-4 min-h-[44px] flex items-center justify-center gap-2 text-sm ${
-                          successMessage ? "bg-green-700 text-white cursor-default disabled:opacity-100" : "bg-black text-white disabled:opacity-50"
-                        }`}
-                        disabled={fpmmSubmitDisabled}
-                        onClick={() => {
-                          if (!selectedOutcome || !amount || successMessage) return;
-                          if (mode === 'buy') {
-                            handleFpmmBuy(amount);
-                          } else {
-                            handleFpmmSell(amount);
-                          }
-                        }}
-                      >
-                        {successMessage ? (
-                          <>
-                            <svg className="w-4 h-4 flex-shrink-0 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            <span className="leading-tight whitespace-normal text-center">{successMessage}</span>
-                          </>
-                        ) : tradeInProgress || tradeStatus === "pending" ? (
-                          <>
-                            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent shrink-0" aria-hidden />
-                            <span>Completing trade…</span>
-                          </>
-                        ) : (
-                          "Submit Trade"
-                        )}
-                      </button>
-                    </>
-                  )}
-                  {/* Your Balance Section */}
-                  <div className="border-t border-gray-200 pt-4 mt-4 hidden lg:block">
-                    <h3 className="text-sm font-bold text-gray-900 mb-4">Purchased Shares</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="text-center">
-                        <div className="text-xs font-semibold text-green-600 mb-1">Yes Shares</div>
-                        <div className="text-xs font-bold text-gray-800">{formatOutcomeSharesCell(isBalanceLoading, outcome1Balance)}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xs font-semibold text-blue-600 mb-1">No Shares</div>
-                        <div className="text-xs font-bold text-gray-800">{formatOutcomeSharesCell(isBalanceLoading, outcome2Balance)}</div>
-                      </div>
-                    </div>
-                  </div>
-                  </>
-                  ) : (
-                  <>
-                    {redeemSuccessMessage && (
-                      <div className="mb-2 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-xs font-medium text-green-900">
-                        {redeemSuccessMessage}
-                      </div>
-                    )}
-                    <ConditionalTokensRedeemShares
-                      conditionalTokensContract={conditionalTokensContract}
-                      defaultCollateralToken={redeemDefaults?.collateralToken ?? ""}
-                      defaultParentCollectionId={redeemDefaults?.parentCollectionId ?? "0x0000000000000000000000000000000000000000000000000000000000000000"}
-                      defaultConditionId={redeemDefaults?.conditionId ?? ""}
-                      defaultIndexSets={redeemDefaults?.defaultIndexSets ?? "1"}
-                      className="mb-2"
-                      hideParameterFields={!!redeemDefaults}
-                      onRedeemStart={handleRedeemStart}
-                      onRedeemSuccess={handleRedeemSuccess}
-                    />
-                    <div className="mt-2 border-t border-gray-200 pt-4">
-                      <h3 className="text-sm font-bold text-gray-900 mb-1">Your positions</h3>
-                      <p className="mb-3 text-xs text-gray-500">
-                        After a successful redeem, Yes/No shares drop and matching collateral appears in your wallet cash
-                        balance.
-                      </p>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="text-center">
-                          <div className="text-xs font-semibold text-green-600 mb-1">Yes Shares</div>
-                          <div className="text-xs font-bold text-gray-800">{formatOutcomeSharesCell(isBalanceLoading, outcome1Balance)}</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xs font-semibold text-blue-600 mb-1">No Shares</div>
-                          <div className="text-xs font-bold text-gray-800">{formatOutcomeSharesCell(isBalanceLoading, outcome2Balance)}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                  )}
-                  {/* Bottom solid grey border */}
-                <div className="w-full h-px bg-gray-200 mt-6"></div>
-                </div>
-              </div>
-              {/* Evidence Section (always at the bottom of the combined card) */}
-              <div className="w-full mt-8 mb-8">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-[16px] font-bold text-citizen-ink">Evidence</h2>
-                  {/* Voting Power Display */}
-                  <div className="flex items-center space-x-2 text-[14px] font-medium">
-                    <span className="text-green-600 font-semibold">Yes Power: {yesVotingPower}x</span>
-                    <span className="text-gray-400">|</span>
-                    <span className="text-blue-600 font-semibold">No Power: {noVotingPower}x</span>
-                  </div>
-                </div>
-                <Tab.Group selectedIndex={evidenceTabIndex} onChange={setEvidenceTabIndex}>
-                  <Tab.List className="flex w-full mb-6 bg-gray-50 rounded-lg">
-                    <Tab
-                      className={({ selected }: { selected: boolean }) =>
-                        `flex-1 px-6 py-2 rounded-lg font-medium text-[14px] transition focus:outline-none ${selected ? "bg-white text-citizen-ink shadow" : "bg-gray-50 text-gray-500"}`
-                      }
-                    >
-                      {market.outcomes[0]}
-                    </Tab>
-                    <Tab
-                      className={({ selected }: { selected: boolean }) =>
-                        `flex-1 px-6 py-2 rounded-lg font-medium text-[14px] transition focus:outline-none ${selected ? "bg-white text-citizen-ink shadow" : "bg-gray-50 text-gray-500"}`
-                      }
-                    >
-                      {market.outcomes[1]}
-                    </Tab>
-                    <Tab
-                      className={({ selected }: { selected: boolean }) =>
-                        `flex-1 px-6 py-2 rounded-lg font-medium text-[14px] transition focus:outline-none ${selected ? "bg-white text-citizen-ink shadow" : "bg-gray-50 text-gray-500"}`
-                      }
-                    >
-                      Submit Document
-                    </Tab>
-                  </Tab.List>
-                  <Tab.Panels>
-                    {/* Yes Documents Tab */}
-                    <Tab.Panel>
-                      {sortedYesEvidence.length === 0 ? (
-                        <div className="text-gray-500 text-sm">No evidence submitted yet.</div>
-                      ) : (
-                        <>
-                          {yesToShow.map((evidence, idx) => (
-                          <div
-                            key={evidence.id}
-                            className="mb-6 border rounded-lg px-6 pt-6 pb-3 bg-white shadow-sm border-gray-200 text-sm"
-                          >
-                            <div className="flex">
-                              {/* Voting column */}
-                              <div className="flex flex-col items-center mr-4 select-none">
-                                <button
-                                    className={`text-lg p-0 mb-1 transition-all duration-200 ${
-                                      votingEvidenceId === evidence.id ? 'opacity-50 cursor-not-allowed' : ''
-                                    } ${userVotes.has(evidence.id) ? 'bg-green-600 rounded-lg p-1' : ''}`}
-                                    onClick={() => handleVote(evidence.id, 'yes')}
-                                    aria-label={userVotes.has(evidence.id) ? "Remove vote" : "Upvote"}
-                                  type="button"
-                                    disabled={votingEvidenceId === evidence.id}
-                                >
-                                    <svg width="20" height="20" viewBox="0 0 20 20" className={userVotes.has(evidence.id) ? "text-white" : "text-green-600"} fill={userVotes.has(evidence.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                                      <path d="M10 2v16" strokeLinecap="round"/>
-                                      <path d="M5 7l5-5 5 5" strokeLinecap="round"/>
-                                    </svg>
-                                </button>
-                                  <div className="flex flex-col items-center">
-                                    <div className={`bg-black text-white rounded-full px-1.5 py-0.5 text-xs font-semibold mb-1`} style={{minWidth: '1.48rem', textAlign: 'center'}}>
-                                  {evidence.netVotes}
-                                </div>
-                                    <div className="text-green-600 text-xs font-semibold min-h-[1.25rem]" style={{minHeight: '1.25rem'}}>
-                                      {userVotes.has(evidence.id) ? `+${getUserVotingContribution(evidence.id, 'yes')}` : <span className="opacity-0">+0</span>}
-                                    </div>
-                                  </div>
-                              </div>
-                              {/* Evidence content */}
-                              <div className="flex-1">
-                                <div className="flex items-center mb-2">
-                                  <span className="font-semibold mr-2">#{idx + 1}</span>
-                                  <div className="flex-1">
-                                    {evidence.url ? (
-                                      <a
-                                        href={evidence.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="font-bold text-citizen-ink hover:underline text-[95%]"
-                                        onClick={e => e.stopPropagation()} // Prevent expand/collapse when clicking link
-                                      >
-                                        {evidence.title} ({isPdfUrl(evidence.url) ? 'pdf' : getDomain(evidence.url)})
-                                      </a>
-                                    ) : (
-                                      <span className="font-bold text-citizen-ink text-[95%]">{evidence.title}</span>
-                                    )}
-                                    <button
-                                      className="text-xs text-gray-600 mt-2 hover:underline hover:text-blue-800 focus:outline-none block"
-                                      type="button"
-                                      onClick={() => router.push(`/evidence/discussion/${evidence.id}`)}
-                                    >
-                                      View Discussion
-                                    </button>
-                                  </div>
-                                </div>
-                                  {/* Show comments section if expanded */}
-            
-                              </div>
-                            </div>
-                          </div>
-                          ))}
-                          {sortedYesEvidence.length > 5 && (
-                            <div className="flex justify-center mt-4">
-                              <button
-                                className="px-4 py-2 rounded bg-gray-100 text-black font-medium hover:bg-gray-200 text-sm"
-                                onClick={() => setShowAllYes(v => !v)}
-                              >
-                                {showAllYes ? 'View Less' : 'View More'}
-                              </button>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </Tab.Panel>
-                    {/* No Documents Tab */}
-                    <Tab.Panel>
-                      {sortedNoEvidence.length === 0 ? (
-                        <div className="text-gray-500 text-sm">No evidence submitted yet.</div>
-                      ) : (
-                        <>
-                          {sortedNoEvidence.map((evidence, idx) => (
-                          <div
-                            key={evidence.id}
-                            className="mb-6 border rounded-lg px-6 pt-6 pb-3 bg-white shadow-sm border-gray-200 text-sm"
-                          >
-                            <div className="flex">
-                              {/* Voting column */}
-                              <div className="flex flex-col items-center mr-4 select-none">
-                                <button
-                                    className={`text-lg p-0 mb-1 transition-all duration-200 ${
-                                      votingEvidenceId === evidence.id ? 'opacity-50 cursor-not-allowed' : ''
-                                    } ${userVotes.has(evidence.id) ? 'bg-green-600 rounded-lg p-1' : ''}`}
-                                    onClick={() => handleVote(evidence.id, 'no')}
-                                    aria-label={userVotes.has(evidence.id) ? "Remove vote" : "Upvote"}
-                                  type="button"
-                                    disabled={votingEvidenceId === evidence.id}
-                                >
-                                    <svg width="20" height="20" viewBox="0 0 20 20" className={userVotes.has(evidence.id) ? "text-white" : "text-green-600"} fill={userVotes.has(evidence.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                                      <path d="M10 2v16" strokeLinecap="round"/>
-                                      <path d="M5 7l5-5 5 5" strokeLinecap="round"/>
-                                    </svg>
-                                </button>
-                                  <div className="flex flex-col items-center">
-                                    <div className={`bg-black text-white rounded-full px-1.5 py-0.5 text-xs font-semibold mb-1`} style={{minWidth: '1.48rem', textAlign: 'center'}}>
-                                  {evidence.netVotes}
-                                </div>
-                                    <div className="text-green-600 text-xs font-semibold min-h-[1.25rem]" style={{minHeight: '1.25rem'}}>
-                                      {userVotes.has(evidence.id) ? `+${getUserVotingContribution(evidence.id, 'no')}` : <span className="opacity-0">+0</span>}
-                                    </div>
-                                  </div>
-                              </div>
-                              {/* Evidence content */}
-                              <div className="flex-1">
-                                <div className="flex items-center mb-2">
-                                  <span className="font-semibold mr-2">#{idx + 1}</span>
-                                  <div className="flex-1">
-                                    {evidence.url ? (
-                                      <a
-                                        href={evidence.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="font-bold text-citizen-ink hover:underline text-[95%]"
-                                        onClick={e => e.stopPropagation()} // Prevent expand/collapse when clicking link
-                                      >
-                                        {evidence.title} ({isPdfUrl(evidence.url) ? 'pdf' : getDomain(evidence.url)})
-                                      </a>
-                                    ) : (
-                                      <span className="font-bold text-citizen-ink text-[95%]">{evidence.title}</span>
-                                    )}
-                                    <button
-                                      className="text-xs text-gray-600 mt-2 hover:underline hover:text-blue-800 focus:outline-none block"
-                                      type="button"
-                                      onClick={() => router.push(`/evidence/discussion/${evidence.id}`)}
-                                    >
-                                      View Discussion
-                                    </button>
-                                  </div>
-                                </div>
-                                  {/* Show comments section if expanded */}
-   
-                              </div>
-                            </div>
-                          </div>
-                          ))}
-                          {sortedNoEvidence.length > 5 && (
-                            <div className="flex justify-center mt-4">
-                              <button
-                                className="px-4 py-2 rounded bg-gray-100 text-black font-medium hover:bg-gray-200 text-sm"
-                                onClick={() => setShowAllNo(v => !v)}
-                              >
-                                {showAllNo ? 'View Less' : 'View More'}
-                              </button>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </Tab.Panel>
-                    {/* Submit Document Tab */}
-                    <Tab.Panel>
-                      <form className="space-y-6 max-w-4xl" onSubmit={handleSubmitDocument}>
-                        <div>
-                          <label className="block font-medium text-gray-700 mb-2 text-[95%]">Evidence Type</label>
-                          <div className="flex items-center gap-6">
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="radio"
-                                name="evidenceType"
-                                value="yes"
-                                checked={evidenceType === 'yes'}
-                                onChange={() => setEvidenceType('yes')}
-                                className="accent-blue-600"
-                              />
-                              <span>Yes Evidence</span>
-                            </label>
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="radio"
-                                name="evidenceType"
-                                value="no"
-                                checked={evidenceType === 'no'}
-                                onChange={() => setEvidenceType('no')}
-                                className="accent-blue-600"
-                              />
-                              <span>No Evidence</span>
-                            </label>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block font-medium text-gray-700 mb-2 text-[95%]">Title</label>
-                          <input
-                            type="text"
-                            placeholder="e.g., CIA Memo dated Sept 1963"
-                            value={title}
-                            onChange={e => setTitle(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 text-base"
-                          />
-                        </div>
-                        <div>
-                          <label className="block font-medium text-gray-700 mb-2 text-[95%]">Description (Optional)</label>
-                          <textarea
-                            placeholder="Provide additional context or details about this evidence..."
-                            value={description}
-                            onChange={e => setDescription(e.target.value)}
-                            rows={3}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 text-base resize-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block font-medium text-gray-700 mb-2 text-[95%]">Document Source</label>
-                          <div className="flex items-center gap-6 mb-3">
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="radio"
-                                name="uploadType"
-                                value="url"
-                                checked={uploadType === 'url'}
-                                onChange={() => {
-                                  setUploadType('url');
-                                  setSelectedFile(null);
-                                }}
-                                className="accent-blue-600"
-                              />
-                              <span>URL Link</span>
-                            </label>
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="radio"
-                                name="uploadType"
-                                value="pdf"
-                                checked={uploadType === 'pdf'}
-                                onChange={() => {
-                                  setUploadType('pdf');
-                                  setUrl('');
-                                }}
-                                className="accent-blue-600"
-                              />
-                              <span>PDF Upload</span>
-                            </label>
-                          </div>
-                          {uploadType === 'url' ? (
-                            <input
-                              type="text"
-                              placeholder="Enter the URL of the document..."
-                              value={url}
-                              onChange={e => setUrl(e.target.value)}
-                              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 text-base"
-                            />
-                          ) : (
-                            <div>
-                              <input
-                                type="file"
-                                accept=".pdf"
-                                onChange={handleFileChange}
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 text-base file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                              />
-                              <p className="mt-1 text-xs text-gray-500">
-                                Maximum file size: 10MB
-                              </p>
-                              {selectedFile && (
-                                <p className="mt-2 text-sm text-green-600">
-                                  ✓ Selected: {selectedFile.name} ({(selectedFile.size / (1024 * 1024)).toFixed(1)}MB)
-                                </p>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        {evidenceSuccessMessage && (
-                          <div className="text-black font-semibold text-center mb-2">{evidenceSuccessMessage}</div>
-                        )}
-                        <button
-                          type="submit"
-                          disabled={isUploading}
-                          className="w-full bg-[#171A22] text-white font-semibold py-3 rounded-lg text-lg hover:bg-[#232635] transition disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isUploading ? 'Uploading...' : 'Submit Document'}
-                        </button>
-                      </form>
-                    </Tab.Panel>
-                  </Tab.Panels>
-                </Tab.Group>
-              </div>
+          </section>
+
+          {/* Desktop vs phone is decided by CSS so the first paint already has the right layout */}
+          <aside className="hidden border-l border-rule pl-6 pt-4 lg:block" aria-label="Trade">
+            <div ref={fpmmTradingPanelRefDesktop} className="sticky top-16">
+              <TradePanel {...tradePanelProps} />
             </div>
-            {/* Betting Card (desktop) */}
-            <div ref={fpmmTradingPanelRefDesktop} className="hidden lg:block bg-white shadow p-4 sm:max-w-4xl sm:mx-auto lg:pl-4 lg:pr-4 lg:py-6 lg:w-[270px] lg:self-start lg:ml-auto">
-              {showFpmmTradingUi ? (
-              <>
-              {tradingResolved && forceFpmmDevTrading && (
-                <div className="mb-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-900">
-                  Dev: <code className="font-mono">?fpmmDevTrading=1</code> — buy/sell UI visible for internal testing.
-                </div>
-              )}
-              {/* Buy/Sell Toggle */}
-              <div className="flex items-center mb-2">
-                <div className="flex gap-2 text-[12px]">
-                  <button
-                    className={`py-1 px-3 rounded-full border ${mode === 'buy' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
-                    onClick={() => {
-                      dismissTradeSuccess();
-                      setMode('buy');
-                      setAmount("");
-                      setSelectedOutcome(null);
-                    }}
-                    type="button"
-                  >
-                    Buy
-                  </button>
-                  <button
-                    className={`py-1 px-3 rounded-full border ${mode === 'sell' ? 'bg-gray-100 text-green-600 border-gray-300 font-bold' : 'bg-white text-black border-gray-300 font-normal'}`}
-                    onClick={() => {
-                      dismissTradeSuccess();
-                      setMode('sell');
-                      setAmount("");
-                      setSelectedOutcome(null);
-                    }}
-                    type="button"
-                  >
-                    Sell
-                  </button>
-                </div>
-              </div>
-              {/* Buy: bet amount. Sell: collateral to receive. */}
-              <div className="text-sm font-bold mb-2">{mode === 'buy' ? 'Bet Amount' : 'Sell Amount'}</div>
-              {/* Amount input */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="$"
-                  value={amount ? `$${amount}` : ''}
-                  onChange={e => {
-                    const raw = e.target.value.replace(/^\$/, '').replace(/[^0-9.]/g, '');
-                    dismissTradeSuccess();
-                    setAmount(raw);
-                  }}
-                  className="w-full pl-3 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-[16px] mb-4"
-                />
-              </div>
-              {/* Yes/No Cent Price buttons (desktop) */}
-              <div className="flex flex-row w-full mb-4 gap-1 text-xs">
-                <button
-                  type="button"
-                  className={`font-semibold px-0 py-2 rounded-lg border transition disabled:opacity-50 bg-white text-green-700 border-green-300 hover:bg-green-50 w-1/2 whitespace-nowrap ${selectedOutcome === 'yes' ? 'ring-2 ring-black' : ''}`}
-                                        onClick={() => {
-                        dismissTradeSuccess();
-                        setSelectedOutcome('yes');
-                      }}
-                >
-                  {mode === 'buy'
-                    ? (buyYesStatus === 'pending' ? 'Buying...' : `Yes ${formatOddsToCents(oddsYes)}`)
-                    : (buyYesStatus === 'pending' ? 'Selling...' : `Yes ${formatOddsToCents(oddsYes)}`)}
-                </button>
-                <button
-                  type="button"
-                  className={`font-semibold px-0 py-2 rounded-lg border transition disabled:opacity-50 bg-white text-blue-700 border-blue-300 hover:bg-blue-50 w-1/2 whitespace-nowrap ${selectedOutcome === 'no' ? 'ring-2 ring-black' : ''}`}
-                                        onClick={() => {
-                        dismissTradeSuccess();
-                        setSelectedOutcome('no');
-                      }}
-                >
-                  {mode === 'buy'
-                    ? (buyNoStatus === 'pending' ? 'Buying...' : `No ${formatOddsToCents(oddsNo)}`)
-                    : (buyNoStatus === 'pending' ? 'Selling...' : `No ${formatOddsToCents(oddsNo)}`)}
-                </button>
-              </div>
-              {/* Sell All (quotes max collateral for ALL owned shares) */}
-              {mode === "sell" && selectedOutcome && (
-                <div className="flex justify-start mb-4">
-                  <button
-                    type="button"
-                    className="py-1 px-3 text-[12px] rounded-full border transition-colors bg-white text-black border-gray-300 font-normal hover:bg-gray-50"
-                    onClick={handleSellAllClick}
-                  >
-                    Sell All
-                  </button>
-                </div>
-              )}
-              {/* Only show Max Win/Receive, Avg Price, and Submit Trade if amount and selectedOutcome are set (or success label preserved on Submit) */}
-              {showFpmmTradeAction && (
-                <>
-                      {successMessage && postTradeQuoteSnapshot ? (
-                        <>
-                          {postTradeQuoteSnapshot.mode === "buy" && (
-                            <div className="text-[16px] font-medium text-black">
-                              Max. Win:{' '}
-                              <span className="text-green-600 font-bold">
-                                $ {postTradeQuoteSnapshot.maxWinDisplay ?? '--'}
-                              </span>
-                            </div>
-                          )}
-                          {postTradeQuoteSnapshot.mode === "sell" && (
-                            <div className="text-left text-[12px] text-gray-600 mb-2">
-                              Receive{' '}
-                              <span className="ml-2 text-[12px] text-green-600">
-                                $ {postTradeQuoteSnapshot.receiveDisplay ?? '--'}
-                              </span>
-                            </div>
-                          )}
-                          <div className="text-left text-[12px] text-gray-600 mb-4">
-                            Avg. Price
-                            {postTradeQuoteSnapshot.avgPriceDisplay !== '--' && (
-                              <span className="ml-2 text-[12px] text-gray-600">
-                                {postTradeQuoteSnapshot.avgPriceDisplay}
-                              </span>
-                            )}
-                          </div>
-                          {postTradeQuoteSnapshot.mode === "sell" && (
-                            <div className="text-left text-[14px] text-gray-800 mb-4">
-                              {postTradeQuoteSnapshot.outcome === 'yes' ? 'Yes' : 'No'} Shares to sell:{' '}
-                              <span className="ml-1 font-bold text-[16px] text-gray-900">
-                                {postTradeQuoteSnapshot.sellSharesDisplay ?? '--'}
-                              </span>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        !successMessage && (
-                        <>
-                  {/* Max. Win (buy) or Receive (sell) */}
-                  {mode === 'buy' && (
-                    <div className="text-[16px] font-medium text-black">Max. Win: <span className="text-green-600 font-bold">$ {buyEstSharesLoading ? '...' : (buyEstSharesDisplay ?? '--')}</span></div>
-                  )}
-                  {mode === 'sell' && (
-                    <div className="text-left text-[12px] text-gray-600 mb-2">
-                      Receive <span className="ml-2 text-[12px] text-green-600">$ {payoutDisplay}</span>
-                    </div>
-                  )}
-                  {/* Avg. Price display */}
-                  <div className="text-left text-[12px] text-gray-600 mb-4">
-                    Avg. Price
-                    {avgPriceDisplay !== '--' && (
-                      <span className="ml-2 text-[12px] text-gray-600">{avgPriceDisplay}</span>
-                    )}
-                  </div>
-                  {mode === 'sell' && (
-                    <div className="text-left text-[14px] text-gray-800 mb-4">
-                      {selectedOutcome === 'yes' ? 'Yes' : 'No'} Shares to sell:{' '}
-                      <span className="ml-1 font-bold text-[16px] text-gray-900">
-                        {sellEstSharesLoading ? '...' : (sellEstSharesDisplay ?? '--')}
-                      </span>
-                    </div>
-                  )}
-                        </>
-                      )
-                      )}
-                  {/* Trade button */}
-                  <button
-                    type="button"
-                    className={`w-full font-semibold px-4 py-2 rounded-lg shadow transition mb-4 min-h-[44px] flex items-center justify-center gap-2 text-sm ${
-                      successMessage ? "bg-green-700 text-white cursor-default disabled:opacity-100" : "bg-black text-white disabled:opacity-50"
-                    }`}
-                    disabled={fpmmSubmitDisabled}
-                    onClick={() => {
-                      if (!selectedOutcome || !amount || successMessage) return;
-                      if (mode === 'buy') {
-                        handleFpmmBuy(amount);
-                      } else {
-                        handleFpmmSell(amount);
-                      }
-                    }}
-                  >
-                    {successMessage ? (
-                      <>
-                        <svg className="w-4 h-4 flex-shrink-0 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span className="leading-tight whitespace-normal text-center">{successMessage}</span>
-                      </>
-                    ) : tradeInProgress || tradeStatus === "pending" ? (
-                      <>
-                        <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent shrink-0" aria-hidden />
-                        <span>Completing trade…</span>
-                      </>
-                    ) : (
-                      "Submit Trade"
-                    )}
-                  </button>
-                </>
-              )}
-              {/* Your Balance Section */}
-              <div className="border-t border-gray-200 pt-4 mt-4 hidden lg:block">
-              <h3 className="text-sm font-bold text-gray-900 mb-4">Purchased Shares</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center">
-                    <div className="text-xs font-semibold text-green-600 mb-1">Yes Shares</div>
-                    <div className="text-xs font-bold text-gray-800">{formatOutcomeSharesCell(isBalanceLoading, outcome1Balance)}</div>
-                  </div>
-                      <div className="text-center">
-                        <div className="text-xs font-semibold text-blue-600 mb-1">No Shares</div>
-                        <div className="text-xs font-bold text-gray-800">{formatOutcomeSharesCell(isBalanceLoading, outcome2Balance)}</div>
-                      </div>
-                </div>
-              </div>
-              </>
-              ) : (
-              <>
-                {redeemSuccessMessage && (
-                  <div className="mb-2 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-xs font-medium text-green-900">
-                    {redeemSuccessMessage}
-                  </div>
-                )}
-                <ConditionalTokensRedeemShares
-                  conditionalTokensContract={conditionalTokensContract}
-                  defaultCollateralToken={redeemDefaults?.collateralToken ?? ""}
-                  defaultParentCollectionId={redeemDefaults?.parentCollectionId ?? "0x0000000000000000000000000000000000000000000000000000000000000000"}
-                  defaultConditionId={redeemDefaults?.conditionId ?? ""}
-                  defaultIndexSets={redeemDefaults?.defaultIndexSets ?? "1"}
-                  className="mb-2"
-                  hideParameterFields={!!redeemDefaults}
-                  onRedeemStart={handleRedeemStart}
-                  onRedeemSuccess={handleRedeemSuccess}
-                />
-                <div className="mt-2 border-t border-gray-200 pt-4">
-                  <h3 className="text-sm font-bold text-gray-900 mb-1">Your positions</h3>
-                  <p className="mb-3 text-xs text-gray-500">
-                    After a successful redeem, Yes/No shares drop and matching collateral appears in your wallet cash
-                    balance.
-                  </p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center">
-                      <div className="text-xs font-semibold text-green-600 mb-1">Yes Shares</div>
-                      <div className="text-xs font-bold text-gray-800">{formatOutcomeSharesCell(isBalanceLoading, outcome1Balance)}</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xs font-semibold text-blue-600 mb-1">No Shares</div>
-                      <div className="text-xs font-bold text-gray-800">{formatOutcomeSharesCell(isBalanceLoading, outcome2Balance)}</div>
-                    </div>
-                  </div>
-                </div>
-              </>
-              )}
-            </div>
-          </div>
+          </aside>
         </div>
-      </div>
-      
-      {/* Sign-in Modal */}
-      {showSignInModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-2xl border border-gray-200 pointer-events-auto">
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
-                <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Sign In Required</h3>
-              <p className="text-sm text-gray-500 mb-6">
-                Please sign in to upvote or downvote information
+
+        {/* Evidence: the two sides as columns, under a double rule */}
+        <section aria-labelledby="evidence-heading" className="rule-double mt-10 pt-4">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3" data-reveal>
+            <div>
+              <h2 id="evidence-heading" className="text-[22px] font-bold text-ink">
+                Evidence
+              </h2>
+              <p className="num mt-1 text-small text-muted">
+                Yes Power: {yesVotingPower}x | No Power: {noVotingPower}x
               </p>
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowSignInModal(false)}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-400 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setShowSignInModal(false);
-                    // Scroll to and focus the ConnectButton in the Navbar
-                    setTimeout(() => {
-                      const connectButton = document.querySelector('[data-testid="connect-button"], button[class*="bg-black"]') as HTMLElement;
-                      if (connectButton) {
-                        connectButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        connectButton.focus();
-                        // Trigger click after a short delay to ensure it's visible
-                        setTimeout(() => {
-                          connectButton.click();
-                        }, 500);
-                      }
-                    }, 100);
-                  }}
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
-                >
-                  Sign In
-                </button>
-              </div>
             </div>
+            <button type="button" onClick={() => setEvidenceFormOpen(true)} className="btn btn-outline btn-sm">
+              Submit Document
+            </button>
           </div>
-        </div>
+          <CaseColumns
+            labels={market.outcomes}
+            yesItems={sortedYesEvidence}
+            noItems={sortedNoEvidence}
+            showAllYes={showAllYes}
+            onToggleYes={() => setShowAllYes(v => !v)}
+            showAllNo={showAllNo}
+            onToggleNo={() => setShowAllNo(v => !v)}
+            userVotes={userVotes}
+            votingId={votingEvidenceId}
+            contribution={getUserVotingContribution}
+            onVote={handleVote}
+            mobileSide={mobileSide}
+            onMobileSideChange={(s) => setEvidenceTabIndex(s === "no" ? 1 : 0)}
+          />
+        </section>
+      </div>
+
+      <TradeBar
+        oddsYes={oddsYes}
+        oddsNo={oddsNo}
+        oddsLoading={fpmmOddsLoading}
+        onPick={(side) => {
+          dismissTradeSuccess();
+          setSelectedOutcome(side);
+          setTradeOpen(true);
+        }}
+      />
+      {!tradeInline && (
+        <TradeSheet open={tradeOpen} onClose={() => setTradeOpen(false)} title={market.title} panelRef={fpmmTradingPanelRefMobile}>
+          <TradePanel {...tradePanelProps} />
+        </TradeSheet>
+      )}
+
+      <TradeSheet open={evidenceFormOpen} onClose={() => setEvidenceFormOpen(false)} title="Submit Document" panelRef={evidenceSheetRef}>
+        <EvidenceForm
+          side={evidenceType}
+          onSideChange={setEvidenceType}
+          title={title}
+          onTitleChange={setTitle}
+          description={description}
+          onDescriptionChange={setDescription}
+          url={url}
+          onUrlChange={setUrl}
+          uploadType={uploadType}
+          onUploadTypeChange={(t) => {
+            if (t === 'url') {
+              setUploadType('url');
+              setSelectedFile(null);
+            } else {
+              setUploadType('pdf');
+              setUrl('');
+            }
+          }}
+          selectedFile={selectedFile}
+          onFileChange={handleFileChange}
+          isUploading={isUploading}
+          message={evidenceSuccessMessage}
+          onSubmit={handleSubmitDocument}
+        />
+      </TradeSheet>
+
+      {showWalletError && (
+        <Dialog
+          title="Wallet Required"
+          body="Please connect a wallet to begin trading. Click connect button in the top right and sign-in using any account."
+        >
+          <button type="button" className="btn btn-primary btn-sm" onClick={() => setShowWalletError(false)}>
+            OK
+          </button>
+        </Dialog>
+      )}
+
+      {showSignInModal && (
+        <Dialog title="Sign In Required" body="Please sign in to upvote or downvote information">
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowSignInModal(false)}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={() => {
+              setShowSignInModal(false);
+              // Scroll to and focus the ConnectButton in the Navbar
+              setTimeout(() => {
+                const connectButton = document.querySelector('[data-testid="connect-button"], button[class*="bg-black"]') as HTMLElement;
+                if (connectButton) {
+                  connectButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  connectButton.focus();
+                  // Trigger click after a short delay to ensure it's visible
+                  setTimeout(() => {
+                    connectButton.click();
+                  }, 500);
+                }
+              }, 100);
+            }}
+          >
+            Sign In
+          </button>
+        </Dialog>
       )}
     </div>
   );
@@ -3120,8 +2387,8 @@ export default function MarketPage(props: { params: Promise<{ marketId: string }
   return (
     <Suspense
       fallback={
-        <div className="min-h-[240px] flex items-center justify-center text-gray-500 text-sm">
-          Loading market…
+        <div className="container-page py-10">
+          <SkeletonLines rows={3} />
         </div>
       }
     >
@@ -3129,4 +2396,3 @@ export default function MarketPage(props: { params: Promise<{ marketId: string }
     </Suspense>
   );
 }
-

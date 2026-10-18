@@ -139,9 +139,9 @@ export default function ConditionalTokensRedeemShares({
   };
 
   return (
-    <div className={`rounded-lg border border-gray-200 bg-white p-4 text-sm ${className}`}>
-      <h3 className="mb-2 text-base font-bold text-gray-900">Redeem positions</h3>
-      <p className="mb-3 text-xs text-gray-600">
+    <div className={`border-t-2 border-ink pt-3 text-small ${className}`}>
+      <h3 className="serif mb-2 text-lead font-bold text-ink">Redeem positions</h3>
+      <p className="mb-3 text-small text-muted">
         {hideParameterFields
           ? "Redeem your winning position for this market. Your wallet will be asked to confirm one transaction; collateral is paid to your cash balance."
           : "After resolution, redeem winning collateral from the conditional tokens contract. Verify all fields match your condition; wrong values will revert."}
@@ -149,35 +149,35 @@ export default function ConditionalTokensRedeemShares({
 
       {!hideParameterFields && (
         <>
-      <label className="mb-1 block text-xs font-semibold text-gray-700">Collateral token (address)</label>
+      <label className="mb-1 block text-small text-muted">Collateral token (address)</label>
       <input
-        className="mb-2 w-full rounded border border-gray-300 px-2 py-1.5 font-mono text-xs"
+        className="mb-2 w-full border-0 border-b border-rule-2 bg-transparent px-0 py-1.5 text-small text-ink focus:border-ink focus:outline-none"
         value={collateralToken}
         onChange={(e) => setCollateralToken(e.target.value)}
         placeholder="0x..."
         spellCheck={false}
       />
 
-      <label className="mb-1 block text-xs font-semibold text-gray-700">Parent collection id (bytes32)</label>
+      <label className="mb-1 block text-small text-muted">Parent collection id (bytes32)</label>
       <input
-        className="mb-2 w-full rounded border border-gray-300 px-2 py-1.5 font-mono text-xs"
+        className="mb-2 w-full border-0 border-b border-rule-2 bg-transparent px-0 py-1.5 text-small text-ink focus:border-ink focus:outline-none"
         value={parentCollectionId}
         onChange={(e) => setParentCollectionId(e.target.value)}
         spellCheck={false}
       />
 
-      <label className="mb-1 block text-xs font-semibold text-gray-700">Condition id (bytes32)</label>
+      <label className="mb-1 block text-small text-muted">Condition id (bytes32)</label>
       <input
-        className="mb-2 w-full rounded border border-gray-300 px-2 py-1.5 font-mono text-xs"
+        className="mb-2 w-full border-0 border-b border-rule-2 bg-transparent px-0 py-1.5 text-small text-ink focus:border-ink focus:outline-none"
         value={conditionId}
         onChange={(e) => setConditionId(e.target.value)}
         placeholder="0x..."
         spellCheck={false}
       />
 
-      <label className="mb-1 block text-xs font-semibold text-gray-700">Index sets (comma-separated, e.g. 1 or 1,2)</label>
+      <label className="mb-1 block text-small text-muted">Index sets (comma-separated, e.g. 1 or 1,2)</label>
       <input
-        className="mb-3 w-full rounded border border-gray-300 px-2 py-1.5 font-mono text-xs"
+        className="mb-3 w-full border-0 border-b border-rule-2 bg-transparent px-0 py-1.5 text-small text-ink focus:border-ink focus:outline-none"
         value={indexSetsInput}
         onChange={(e) => setIndexSetsInput(e.target.value)}
         spellCheck={false}
@@ -185,7 +185,7 @@ export default function ConditionalTokensRedeemShares({
         </>
       )}
 
-      {error && <div className="mb-2 text-xs text-red-600">{error}</div>}
+      {error && <div className="mb-2 text-small text-danger">{error}</div>}
 
       <button
         type="button"
@@ -195,7 +195,7 @@ export default function ConditionalTokensRedeemShares({
             (!defaultCollateralToken?.trim() || !defaultConditionId?.trim()))
         }
         onClick={onRedeem}
-        className="w-full rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
+        className="btn btn-primary w-full disabled:opacity-50"
       >
         {isPending ? "Confirm in wallet…" : "Redeem shares"}
       </button>
