@@ -1,280 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { getAllMarkets, Market } from "../src/data/markets";
-import { useTheme } from "../src/contexts/ThemeContext";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import {
-  fetchFpmmProbsForMarket,
-  ODDS_HISTORY_FIXED_POINT,
-} from "../src/lib/fpmmMarketOdds";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { getAllMarkets, type Market } from "../src/data/markets";
+import { fetchFpmmProbsForMarket } from "../src/lib/fpmmMarketOdds";
+import { FeaturedMarket, MarketRow } from "../src/components/market/MarketCard";
+import { SkeletonLines } from "../src/components/ui/Skeleton";
 
-// Backend API base URL - same-origin Next.js API routes
 const API_BASE_URL = "";
 
-// Large featured banner market at top of homepage
-const FeaturedMarket = ({ market, probs }: { market: Market; probs: { yes: number; no: number } | null }) => {
-  const router = useRouter();
-  const { resolved: themeResolved } = useTheme();
-  const yes = probs?.yes ?? 0;
-  const no = probs?.no ?? 0;
-  const chartGridStroke = themeResolved === "dark" ? "#52525b" : "#e5e7eb";
-  const chartLineYes = themeResolved === "dark" ? "#00e889" : "#22c55e";
-  const chartLineNo = themeResolved === "dark" ? "#3b82f6" : "#2563eb";
+type TopEvidence = { marketId: string; title: string; netVotes: number; url?: string };
+type EvidenceApiItem = { netVotes?: number; title?: unknown; url?: unknown };
 
-  // Mini odds history chart data for featured market
-  const [featuredHistory, setFeaturedHistory] = useState<
-    { timestamp: string; Yes: number; No: number }[]
-  >([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const fetchHistory = async () => {
-      try {
-        const res = await fetch(
-          `${API_BASE_URL}/api/odds-history?marketId=${market.id}`
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!Array.isArray(data)) return;
-        const sliced = data.slice(-40);
-        const chart = sliced.map(
-          (
-            entry: {
-              timestamp: string | number | Date;
-              yesProbability?: number;
-              noProbability?: number;
-            }
-          ) => ({
-          timestamp: new Date(entry.timestamp).toISOString().slice(5, 10), // MM-DD
-          Yes:
-            typeof entry.yesProbability === "number"
-              ? entry.yesProbability / ODDS_HISTORY_FIXED_POINT
-              : 0,
-          No:
-            typeof entry.noProbability === "number"
-              ? entry.noProbability / ODDS_HISTORY_FIXED_POINT
-              : 0,
-          })
-        );
-        if (!cancelled) setFeaturedHistory(chart);
-      } catch (e) {
-        console.error("Featured odds history error:", e);
-      }
-    };
-    fetchHistory();
-    return () => {
-      cancelled = true;
-    };
-  }, [market.id]);
-  const yesPct = yes > 0 ? Math.round(yes * 100) : null;
-  const noPct = no > 0 ? Math.round(no * 100) : null;
-  const yesOdds = yes > 0 ? (1 / yes).toFixed(2) : null;
-  const noOdds = no > 0 ? (1 / no).toFixed(2) : null;
-
-  return (
-    <div
-      className="bg-white rounded-2xl shadow border border-gray-200 p-5 md:p-6 lg:p-7 cursor-pointer hover:shadow-xl transition"
-      onClick={() => router.push(`/markets/${market.id}`)}
-      role="button"
-      tabIndex={0}
-      onKeyPress={(e) => {
-        if (e.key === "Enter") router.push(`/markets/${market.id}`);
-      }}
-    >
-      <div className="flex flex-col lg:flex-row gap-5">
-        {market.id !== "jfk" && market.id !== "covid19" && (
-          <div className="lg:w-2/5">
-            <Image
-              src={market.image}
-              alt={market.title}
-              width={640}
-              height={360}
-              className="w-full h-52 md:h-64 lg:h-60 rounded-xl object-cover object-top"
-            />
-          </div>
-        )}
-        <div className="flex-1 flex flex-col justify-between">
-          <div>
-            <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
-              {market.title}
-            </h2>
-            <p className="text-xs md:text-sm text-gray-600 mb-4 line-clamp-3">
-              {market.description}
-            </p>
-            {/* Yes / No rows: fixed gap from bars to odds (match market card spacing) */}
-            <div className="mt-3 space-y-2">
-              <div className="flex items-center text-xs gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-800 font-medium">Yes</span>
-                  <span className="h-[2px] w-20 bg-green-400 rounded-full" />
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] text-gray-500">
-                    {yesOdds ? `${yesOdds}x` : "--"}
-                  </span>
-                  <span className="px-3 py-1 rounded-full border border-green-300 text-green-700 text-xs font-semibold min-w-[3rem] text-center">
-                    {yesPct !== null ? `${yesPct}%` : "--"}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center text-xs gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-800 font-medium">No</span>
-                  <span className="h-[2px] w-20 bg-blue-500 rounded-full" />
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] text-gray-500">
-                    {noOdds ? `${noOdds}x` : "--"}
-                  </span>
-                  <span className="px-3 py-1 rounded-full border border-blue-300 text-blue-700 text-xs font-semibold min-w-[3rem] text-center">
-                    {noPct !== null ? `${noPct}%` : "--"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-          {featuredHistory.length > 0 && (
-            <div className="mt-4 h-24 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={featuredHistory}
-                  margin={{ top: 4, right: 4, left: -12, bottom: 0 }}
-                >
-                  <XAxis dataKey="timestamp" hide />
-                  <YAxis domain={[0, 1]} hide />
-                  <Tooltip
-                    formatter={(v) =>
-                      typeof v === "number" ? `${Math.round(v * 100)}%` : v
-                    }
-                    contentStyle={
-                      themeResolved === "dark"
-                        ? {
-                            backgroundColor: "#16191e",
-                            border: "1px solid #2a2f38",
-                            borderRadius: "8px",
-                            color: "#f8fafc",
-                          }
-                        : undefined
-                    }
-                  />
-                  <ReferenceLine y={0.2} stroke={chartGridStroke} strokeDasharray="4 4" />
-                  <ReferenceLine y={0.4} stroke={chartGridStroke} strokeDasharray="4 4" />
-                  <ReferenceLine y={0.6} stroke={chartGridStroke} strokeDasharray="4 4" />
-                  <ReferenceLine y={0.8} stroke={chartGridStroke} strokeDasharray="4 4" />
-                  <ReferenceLine y={1} stroke={chartGridStroke} strokeDasharray="4 4" />
-                  <Line
-                    type="monotone"
-                    dataKey="Yes"
-                    stroke={chartLineYes}
-                    strokeWidth={2}
-                    dot={false}
-                    name="Yes"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="No"
-                    stroke={chartLineNo}
-                    strokeWidth={2}
-                    dot={false}
-                    name="No"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Compact binary market card used in the lower grid
-const MarketCard = ({ market, probs }: { market: Market; probs: { yes: number; no: number } | null }) => {
-  const router = useRouter();
-  const yes = probs?.yes ?? 0;
-  const no = probs?.no ?? 0;
-
-  const yesPct = yes > 0 ? Math.round(yes * 100) : null;
-  const noPct = no > 0 ? Math.round(no * 100) : null;
-  const yesOdds = yes > 0 ? (1 / yes).toFixed(2) : null;
-  const noOdds = no > 0 ? (1 / no).toFixed(2) : null;
-
-  return (
-    <div
-      className="bg-white rounded-xl shadow border border-gray-200 p-4 cursor-pointer hover:shadow-md transition"
-      onClick={() => router.push(`/markets/${market.id}`)}
-      role="button"
-      tabIndex={0}
-      onKeyPress={(e) => {
-        if (e.key === "Enter") router.push(`/markets/${market.id}`);
-      }}
-    >
-      <div className="flex">
-        <div className="flex-1 flex flex-col justify-between">
-          {/* Header */}
-          <div className="mb-2">
-            <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">
-              {market.title}
-            </h3>
-          </div>
-
-          {/* Yes / No rows */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span className="text-gray-800 font-medium">Yes</span>
-                <span className="h-[2px] w-16 bg-green-400 rounded-full" />
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[11px] text-gray-500">
-                  {yesOdds ? `${yesOdds}x` : "--"}
-                </span>
-                <span className="px-3 py-1 rounded-full border border-green-300 text-green-700 text-xs font-semibold min-w-[3rem] text-center">
-                  {yesPct !== null ? `${yesPct}%` : "--"}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span className="text-gray-800 font-medium">No</span>
-                <span className="h-[2px] w-16 bg-blue-500 rounded-full" />
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[11px] text-gray-500">
-                  {noOdds ? `${noOdds}x` : "--"}
-                </span>
-                <span className="px-3 py-1 rounded-full border border-blue-300 text-blue-700 text-xs font-semibold min-w-[3rem] text-center">
-                  {noPct !== null ? `${noPct}%` : "--"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Trending list on the right side
-type TopEvidence = {
-  marketId: string;
-  title: string;
-  netVotes: number;
-  url?: string;
-};
-
-type EvidenceApiItem = {
-  netVotes?: number;
-  title?: unknown;
-  url?: unknown;
-};
-
-const TrendingList = ({ markets }: { markets: Market[] }) => {
+/** Ranked across every listed market; the number is the rank. */
+const TrendingEvidence = ({ markets }: { markets: Market[] }) => {
   const [topEvidence, setTopEvidence] = useState<TopEvidence[]>([]);
 
   useEffect(() => {
@@ -282,9 +21,7 @@ const TrendingList = ({ markets }: { markets: Market[] }) => {
       try {
         const entries: TopEvidence[] = [];
         for (const market of markets) {
-          const res = await fetch(
-            `${API_BASE_URL}/api/evidence?marketId=${market.id}`
-          );
+          const res = await fetch(`${API_BASE_URL}/api/evidence?marketId=${market.id}`);
           if (!res.ok) continue;
           const data = await res.json();
           if (!Array.isArray(data) || data.length === 0) continue;
@@ -323,82 +60,50 @@ const TrendingList = ({ markets }: { markets: Market[] }) => {
   }, [markets]);
 
   return (
-    <div className="space-y-3">
-      <aside className="bg-white rounded-2xl p-4 md:p-5 w-full lg:w-80">
-          <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-900">Trending Evidence</h3>
-        </div>
-        <div className="flex flex-col">
-          {topEvidence.map((entry, idx) => (
-            <div key={`${entry.marketId || "placeholder"}-${idx}`}>
-              {idx > 0 ? (
-                <div
-                  className="h-px w-full bg-gray-200 dark:bg-border shrink-0"
-                  aria-hidden
-                />
-              ) : null}
-              <TrendingRow index={idx + 1} entry={entry} />
-            </div>
-          ))}
-        </div>
-      </aside>
-      <div className="border-t border-gray-200 w-[80%] mx-auto" />
-      <NewMarketPanel />
-    </div>
+    <section aria-labelledby="trending-heading">
+      <h2 id="trending-heading" className="kicker font-mono">
+        Trending Evidence
+      </h2>
+      <ol className="mt-1">
+        {topEvidence.map((e, i) => {
+          const cls = "group grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-2 border-b border-dotted border-rule py-3 transition-colors duration-150 hover:bg-ground-2";
+          const inner = (
+            <>
+              <span className="serif num text-[20px] font-extrabold leading-none text-muted">{i + 1}</span>
+              <span className={`serif line-clamp-3 text-[15px] font-semibold leading-snug ${e.marketId ? "text-ink" : "text-muted"}`}>{e.title}</span>
+            </>
+          );
+          return (
+            <li key={`${e.marketId || "placeholder"}-${i}`}>
+              {/* Placeholder rows (no marketId) are not clickable */}
+              {!e.marketId ? (
+                <div className={cls}>{inner}</div>
+              ) : e.url ? (
+                <a href={e.url} target="_blank" rel="noopener noreferrer" className={cls}>
+                  {inner}
+                </a>
+              ) : (
+                <Link href={`/markets/${e.marketId}`} className={cls}>
+                  {inner}
+                </Link>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 };
 
-const TrendingRow = ({
-  index,
-  entry,
-}: {
-  index: number;
-  entry: TopEvidence;
-}) => {
-  const router = useRouter();
-
-  const handleClick = () => {
-    // Placeholder rows (no marketId) are not clickable
-    if (!entry.marketId) return;
-
-    if (entry.url) {
-      // Open evidence URL (PDF or web page) in a new tab
-      if (typeof window !== "undefined") {
-        window.open(entry.url, "_blank", "noopener,noreferrer");
-      }
-    } else {
-      // Fallback: go to the market page
-      router.push(`/markets/${entry.marketId}`);
-    }
-  };
-
-  return (
-    <button
-      type="button"
-      className="w-full py-2.5 flex items-start gap-3 text-left hover:bg-gray-50 dark:hover:bg-white/5 rounded-none"
-      onClick={handleClick}
-    >
-      <span className="w-5 shrink-0 text-xs font-semibold text-gray-500 mt-0.5">
-        {index}
-      </span>
-      <span className="text-xs font-semibold text-gray-900 line-clamp-2 min-w-0">
-        {entry.title}
-      </span>
-    </button>
-  );
-};
-
-// New Market panel – top proposed markets from Market Ideas page
 interface MarketIdeaSummary {
   id: number;
   title: string;
   netVotes: number;
 }
 
-const NewMarketPanel = () => {
+const TopProposedMarkets = () => {
   const [ideas, setIdeas] = useState<MarketIdeaSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     const fetchIdeas = async () => {
@@ -433,51 +138,40 @@ const NewMarketPanel = () => {
   }, []);
 
   return (
-<aside className="bg-white rounded-2xl p-4 md:p-5 w-full lg:w-80">
-        <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-900">Top Proposed Markets</h3>
-      </div>
+    <section aria-labelledby="proposed-heading">
+      <h2 id="proposed-heading" className="kicker font-mono">
+        Top Proposed Markets
+      </h2>
       {loading ? (
-        <div className="text-[11px] text-gray-500">Loading ideas...</div>
+        <div className="mt-4">
+          <span className="sr-only">Loading ideas...</span>
+          <SkeletonLines rows={4} />
+        </div>
       ) : ideas.length === 0 ? (
-        <div className="text-[11px] text-gray-500">
-          No proposed markets yet. Visit the Market Ideas page to suggest one.
-        </div>
+        <p className="mt-3 text-small text-muted">No proposed markets yet. Visit the Market Ideas page to suggest one.</p>
       ) : (
-        <div className="flex flex-col">
-          {ideas.map((idea, idx) => (
-            <div key={idea.id}>
-              {idx > 0 ? (
-                <div
-                  className="h-px w-full bg-gray-200 dark:bg-border shrink-0"
-                  aria-hidden
-                />
-              ) : null}
-              <button
-                type="button"
-                onClick={() => router.push("/market-ideas")}
-                className="w-full py-2.5 flex items-start gap-3 text-left hover:bg-gray-50 dark:hover:bg-white/5 rounded-none"
-              >
-                <span className="w-5 shrink-0 text-xs font-semibold text-gray-500 mt-0.5">
-                  {idx + 1}
-                </span>
-                <span className="text-xs font-semibold text-gray-900 line-clamp-2 min-w-0">
-                  {idea.title}
-                </span>
-              </button>
-            </div>
+        <ol className="mt-1">
+          {ideas.map((idea) => (
+            <li key={idea.id}>
+              <Link href="/market-ideas" className="group grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 border-b border-dotted border-rule py-3 transition-colors duration-150 hover:bg-ground-2">
+                <span className="serif line-clamp-3 text-[15px] font-semibold leading-snug text-ink">{idea.title}</span>
+                <span className="num text-small text-muted">{idea.netVotes}</span>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ol>
       )}
-    </aside>
+    </section>
   );
 };
 
+/**
+ * The front page: the featured market as the lead story with trending evidence and proposals
+ * in the side column, then every listed market as a row in one index.
+ */
 const Homepage = () => {
   const markets = getAllMarkets();
-  const [featured, ...rest] = markets;
-  const secondaryMarkets = rest;
-
+  const [featured] = markets;
   // Single fetch of odds for all markets once on mount (same idea as markets/[id] page).
   const [marketOdds, setMarketOdds] = useState<Record<string, { yes: number; no: number }>>({});
 
@@ -500,34 +194,27 @@ const Homepage = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fetch once on mount; markets from getAllMarkets() is static
 
   return (
-    <div className="w-full max-w-6xl px-4 md:px-6 lg:px-8 mx-auto pt-2 pb-8">
-      {featured && (
-        <div className="mt-2 flex flex-col lg:flex-row gap-6">
-          <div className="flex-1 flex flex-col gap-6">
-            <FeaturedMarket market={featured} probs={marketOdds[featured.id] ?? null} />
-            {secondaryMarkets.length > 0 && (
-              <section>
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-base md:text-lg font-semibold text-gray-900">
-                    Markets
-                  </h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                  {secondaryMarkets.map((m) => (
-                    <MarketCard key={m.id} market={m} probs={marketOdds[m.id] ?? null} />
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
-          {/* Right column: Trending Evidence + New Market panels */}
-          <div className="w-full lg:w-80">
-            <TrendingList markets={markets} />
-          </div>
-        </div>
-      )}
+    <div className="container-page pb-24 pt-8 md:pt-10">
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-0">
+        <div className="min-w-0 lg:pr-10">{featured && <FeaturedMarket market={featured} probs={marketOdds[featured.id] ?? null} />}</div>
+        <aside className="flex flex-col gap-10 lg:border-l lg:border-rule lg:pl-8">
+          <TrendingEvidence markets={markets} />
+          <TopProposedMarkets />
+        </aside>
+      </div>
+
+      <section aria-labelledby="markets-heading" className="mt-16">
+        <h1 id="markets-heading" className="serif border-b border-ink pb-2 text-[clamp(26px,2.4vw,34px)] font-extrabold tracking-[-0.02em] text-ink">
+          Markets
+        </h1>
+        <ul>
+          {markets.map((m) => (
+            <MarketRow key={m.id} market={m} probs={marketOdds[m.id] ?? null} />
+          ))}
+        </ul>
+      </section>
     </div>
   );
 };
 
-export default Homepage; 
+export default Homepage;
