@@ -2363,7 +2363,9 @@ useEffect(() => {
               setShowSignInModal(false);
               // Scroll to and focus the ConnectButton in the Navbar
               setTimeout(() => {
-                const connectButton = document.querySelector('[data-testid="connect-button"], button[class*="bg-black"]') as HTMLElement;
+                // main matched the masthead button by its black background class; the restyled button
+                // is also matched by thirdweb's own data-test attribute.
+                const connectButton = document.querySelector('[data-testid="connect-button"], button[class*="bg-black"], [data-test="connect-wallet-button"]') as HTMLElement;
                 if (connectButton) {
                   connectButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   connectButton.focus();
