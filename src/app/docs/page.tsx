@@ -1,5 +1,6 @@
 'use client';
 
+import { SkeletonLines } from "../../components/ui/Skeleton";
 import Navbar from '../../../components/Navbar';
 import { BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
@@ -25,86 +26,54 @@ function DocsContent() {
   return (
     <div>
       <Navbar />
-      <main className="min-h-screen bg-white">
-        <div className="max-w-3xl mx-auto px-4 py-8">
-          <div className="flex gap-4 mb-6 border-b border-gray-200">
+      <div className="container-page pb-24 pt-10 md:pt-14">
+        <div className="doc-prose">
+          <div role="tablist" aria-label="Documentation" className="tabs mb-8 overflow-x-auto">
             <button
               onClick={() => setActiveTab('flf-docs')}
-              className={`pb-2 px-1 font-sans text-[0.956rem] font-semibold transition-colors ${
-                activeTab === 'flf-docs'
-                  ? 'text-black border-b-2 border-black'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className="tab shrink-0" data-selected={activeTab === 'flf-docs'}
             >
               Documentation
             </button>
             <button
               onClick={() => setActiveTab('superforecaster-methodology')}
-              className={`pb-2 px-1 font-sans text-[0.956rem] font-semibold transition-colors ${
-                activeTab === 'superforecaster-methodology'
-                  ? 'text-black border-b-2 border-black'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className="tab shrink-0" data-selected={activeTab === 'superforecaster-methodology'}
             >
               Superforecasters
             </button>
             <button
               onClick={() => setActiveTab('how-derps-work')}
-              className={`pb-2 px-1 font-sans text-[0.956rem] font-semibold transition-colors ${
-                activeTab === 'how-derps-work'
-                  ? 'text-black border-b-2 border-black'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className="tab shrink-0" data-selected={activeTab === 'how-derps-work'}
             >
               Market Making
             </button>
             <button
               onClick={() => setActiveTab('relegation-system')}
-              className={`pb-2 px-1 font-sans text-[0.956rem] font-semibold transition-colors ${
-                activeTab === 'relegation-system'
-                  ? 'text-black border-b-2 border-black'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className="tab shrink-0" data-selected={activeTab === 'relegation-system'}
             >
               Idea Futures
             </button>
             <button
               onClick={() => setActiveTab('quarterly-trial-procedure')}
-              className={`pb-2 px-1 font-sans text-[0.956rem] font-semibold transition-colors ${
-                activeTab === 'quarterly-trial-procedure'
-                  ? 'text-black border-b-2 border-black'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className="tab shrink-0" data-selected={activeTab === 'quarterly-trial-procedure'}
             >
               Trial Procedure
             </button>
             <button
               onClick={() => setActiveTab('economics')}
-              className={`hidden pb-2 px-1 font-sans text-lg font-semibold transition-colors ${
-                activeTab === 'economics'
-                  ? 'text-black border-b-2 border-black'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className="tab shrink-0 hidden" data-selected={activeTab === 'economics'}
             >
               Economics
             </button>
             <button
               onClick={() => setActiveTab('idea-futures')}
-              className={`hidden pb-2 px-1 font-sans text-lg font-semibold transition-colors ${
-                activeTab === 'idea-futures'
-                  ? 'text-black border-b-2 border-black'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className="tab shrink-0 hidden" data-selected={activeTab === 'idea-futures'}
             >
               Idea Futures
             </button>
             <button
               onClick={() => setActiveTab('review-boards')}
-              className={`hidden pb-2 px-1 font-sans text-lg font-semibold transition-colors ${
-                activeTab === 'review-boards'
-                  ? 'text-black border-b-2 border-black'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className="tab shrink-0 hidden" data-selected={activeTab === 'review-boards'}
             >
               Review Boards
             </button>
@@ -112,9 +81,9 @@ function DocsContent() {
 
           {activeTab === 'flf-docs' && (
             <div>
-              <div className="relative w-full mb-6 mt-10" style={{ paddingBottom: '56.25%' }}>
+              <div className="relative w-full overflow-hidden rounded-panel" style={{ paddingBottom: '56.25%' }}>
                 <iframe
-                  className="absolute top-0 left-0 w-full h-full rounded-lg"
+                  className="absolute inset-0 h-full w-full"
                   src="https://www.youtube.com/embed/8AGufGYTa-M"
                   title="Walkthrough"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -122,20 +91,20 @@ function DocsContent() {
                 />
               </div>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Introduction</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Introduction</h2>
+              <p>
                 The Citizen is a futures market platform designed to surface truth about disputed historical and scientific claims through financial incentives and adversarial adjudication. The world&apos;s top forecasters are contracted to continuously provide probability estimates on contested claims that lack a clear resolution event, such as &quot;Was COVID-19 a lab leak?&quot; A futures market is then listed against the Superforecaster probability estimate, enabling market participants to trade positions, like &quot;Yes, COVID-19 was a lab leak.&quot; The result is that long-horizon truth becomes a tradeable asset, giving participants a direct financial incentive to surface evidence that uncovers the truth about the underlying question.
               </p>
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Design</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Design</h2>
+              <p>
                 The other tabs provide more information about the Citizen&apos;s design choices. Below is a summary of each tab:
               </p>
-              <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+              <ul>
                 <li>
                   <button
                     type="button"
                     onClick={() => setActiveTab('superforecaster-methodology')}
-                    className="font-semibold text-blue-600 underline hover:text-blue-800"
+                    className="link font-medium"
                   >
                     Superforecasters
                   </button>
@@ -145,7 +114,7 @@ function DocsContent() {
                   <button
                     type="button"
                     onClick={() => setActiveTab('how-derps-work')}
-                    className="font-semibold text-blue-600 underline hover:text-blue-800"
+                    className="link font-medium"
                   >
                     Market Making
                   </button>
@@ -155,7 +124,7 @@ function DocsContent() {
                   <button
                     type="button"
                     onClick={() => setActiveTab('relegation-system')}
-                    className="font-semibold text-blue-600 underline hover:text-blue-800"
+                    className="link font-medium"
                   >
                     Idea Futures
                   </button>
@@ -165,7 +134,7 @@ function DocsContent() {
                   <button
                     type="button"
                     onClick={() => setActiveTab('quarterly-trial-procedure')}
-                    className="font-semibold text-blue-600 underline hover:text-blue-800"
+                    className="link font-medium"
                   >
                     Trial Procedure
                   </button>
@@ -177,58 +146,58 @@ function DocsContent() {
 
           {activeTab === 'superforecaster-methodology' && (
             <div>
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Who Are Superforecasters?</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Who Are Superforecasters?</h2>
+              <p>
                 &quot;Superforecaster&quot; is a term coined by psychologist Philip Tetlock and Barbara Mellers. It grew out of the Good Judgment Project. The Good Judgment Project was the winning entry in IARPA&apos;s Aggregative Contingent Estimation tournament, a multi-year competition run by the US intelligence community to find the most accurate forecasting method available. Superforecasters emerged as the clear winner. They are qualified by proven performance, not by title. Every forecast they make is scored against a real-world outcome. Their edge is not opinion. It is measured, repeated, and public.
               </p>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">A Track Record That Consistently Beats the Competition</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>A Track Record That Consistently Beats the Competition</h2>
+              <p>
                 Superforecasters do not just forecast well. They consistently outperform every other established method of intelligence gathering.
               </p>
-              <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+              <ul>
                 <li><strong>They beat classified intelligence.</strong> In the original IARPA tournament, superforecasters were found to be 30% more accurate than intelligence analysts working with access to classified information. The finding rocked conventional wisdom across the intelligence community.</li>
                 <li><strong>They beat AI.</strong> In July 2026, the Financial Times tested a leading AI forecasting model against the market on Federal Reserve rate decisions. The AI model matched the market but never beat it. It could not reproduce the judgment that sets superforecasters apart: knowing when to step away from the crowd. When Silicon Valley Bank failed in 2023 and markets swung sharply toward a Fed policy pivot, superforecasters saw no real signal and barely moved their forecast. They were right. The market corrected its overreaction later.</li>
               </ul>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 This makes superforecasters uniquely suited to power a price oracle. They carry a demonstrated record of outperforming classified intelligence and now AI, across decades of real-world tests.
               </p>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Why They&apos;re Qualified</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Why They&apos;re Qualified</h2>
+              <p>
                 Forecast accuracy is measured with the Brier score. It captures the gap between a forecaster&apos;s stated probability and the actual outcome. A score of 0 is perfect. A score of 2 is the worst possible result. Superforecasters posted an average Brier score of roughly 0.166 across tournament seasons. The broader forecaster pool averaged about 0.259. That gap holds across hundreds of real-world geopolitical and economic questions. It is the foundation of their qualification: demonstrated calibration rather than credentials alone.
               </p>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">How They&apos;re Vetted</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>How They&apos;re Vetted</h2>
+              <p>
                 Good Judgment&apos;s vetting process is rigorous, and the SBI panel draws on the same standard.
               </p>
-              <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+              <ul>
                 <li><strong>Minimum sample size.</strong> A forecaster must answer at least 50 questions within a tournament season before becoming eligible. This rules out a lucky streak.</li>
                 <li><strong>Accuracy threshold.</strong> Superforecaster status goes to roughly the top 2% of forecasters by average accuracy score within that season.</li>
                 <li><strong>Qualitative review.</strong> Good Judgment also reviews comment quality and collegiality. Reasoning matters as much as the number itself. Superforecasters work in small teams, and their rationale is delivered to clients alongside every probability.</li>
                 <li><strong>Re-qualification.</strong> Status is not permanent. Track record is re-evaluated every season. Underperformance can cost a forecaster their status. The SBI panel applies this same relegation logic internally.</li>
               </ul>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">How Many Superforecasters Are Used</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>How Many Superforecasters Are Used</h2>
+              <p>
                 Good Judgment Inc. maintains an active pool of roughly 180 professional superforecasters. They are drawn from a base of over 100,000 forecasters who have taken part in the original tournament and its successor, Good Judgment Open.
               </p>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Good Judgment&apos;s Aggregation Methodology</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Good Judgment&apos;s Aggregation Methodology</h2>
+              <p>
                 Good Judgment does not average forecasts naively. Its method is often called elitist aggregation, and it combines two steps.
               </p>
-              <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+              <ul>
                 <li><strong>Weighting.</strong> Each forecaster&apos;s input is weighted by track record and by recency. A better track record earns more weight. A recently updated forecast earns more weight than a stale one.</li>
                 <li><strong>Extremizing.</strong> The weighted average is then pushed further toward 0 or 1 than a simple average would suggest. This corrects a known bias: forecasters&apos; private information overlaps only partially, so a plain average tends to land closer to 50% than the group&apos;s true collective knowledge supports. The larger and more diverse the forecaster pool, the further the aggregate can safely be pushed toward certainty.</li>
               </ul>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 This weighted and extremized approach beat simple averaging, unweighted medians, and in several tournament years, live prediction markets, inside IARPA&apos;s tournament. The SBI methodology follows the same model. Individual superforecaster estimates are weighted by track record and recency, then extremized, to produce the published index value.
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 Learn more about Good Judgment&apos;s research and services at{' '}
-                <a href="https://goodjudgment.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                <a href="https://goodjudgment.com/" target="_blank" rel="noopener noreferrer">
                   goodjudgment.com
                 </a>.
               </p>
@@ -237,94 +206,94 @@ function DocsContent() {
 
           {activeTab === 'relegation-system' && (
             <div>
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">What Are Idea Futures?</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>What Are Idea Futures?</h2>
+              <p>
                 Idea futures are long-dated prediction markets. Unlike short-horizon markets that resolve when a near-term event occurs, an idea future stays open until a claim can be settled by a committee in the future, based on the evidence available at that time. Traders take positions on whether a contested fact or story is true or false, and the market price reflects the collective probability assigned to that claim over time.
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 On The Citizen, each idea futures market is run internally among Superforecasters. They compete in a market-based competition: by trading against one another, they continuously update each market so that its price reflects the true probability that the underlying event occurred or did not occur, as new evidence arrives.
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 We will begin by contracting a basic probability estimate from Superforecasters. Over time, we will switch to a full idea futures model, where Superforecasters trade against one another and the market price itself becomes the published probability.
               </p>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Idea Futures Relegation</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Idea Futures Relegation</h2>
+              <p>
                 Superforecasters on the price oracle are ranked annually by unlevered profit and loss (P&amp;L) across every market they trade. At year-end, the bottom quartile by P&amp;L is removed from the price oracle and replaced by qualified challenger forecasters carrying the strongest P&amp;L track records. It functions like a promotion/relegation system: a seat on the price oracle is earned and re-earned every year, so the panel continuously selects for the traders who price uncertainty most accurately and update fastest on new evidence. Over time, this continuous selection process means the price oracle comes to represent the market consensus of the best people in the world at anticipating which facts or stories are true or false.
               </p>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Worked Example: &quot;Did Mark Kill Peter?&quot;</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Worked Example: &quot;Did Mark Kill Peter?&quot;</h2>
+              <p>
                 Consider a contested-claims market: Did Mark kill Peter? The YES contract opens trading at 5¢ (a 5% implied probability), reflecting thin initial evidence.
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 Investigators later disclose that a rag stained with Peter&apos;s blood was found in the trunk of Mark&apos;s car. The market reacts immediately, and YES rises from 5¢ to 90¢ as calibrated forecasters update toward Mark&apos;s guilt.
               </p>
 
-              <h3 className="text-xl font-bold text-black font-sans mb-3 mt-6">Three Traders</h3>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h3>Three Traders</h3>
+              <p>
                 Three Superforecasters each trade the market with $1,000 in unlevered capital:
               </p>
-              <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+              <ul>
                 <li><strong>Trader A (&quot;The Skeptic&quot;)</strong>: buys NO early at 95¢/share.</li>
                 <li><strong>Trader B (&quot;The Sharp&quot;)</strong>: buys YES early at 5¢/share, before the evidence breaks.</li>
                 <li><strong>Trader C (&quot;The Second Mover&quot;)</strong>: buys YES mid-move at 50¢/share, after rumors surface but before the rag is confirmed.</li>
               </ul>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 When the market settles near 90¢ YES (10¢ NO), the results diverge sharply:
               </p>
 
-              <div className="overflow-x-auto mb-6">
-                <table className="w-full text-sm text-gray-800 border border-gray-200">
+              <div className="table-wrap">
+                <table>
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left font-semibold px-3 py-2">Trader</th>
-                      <th className="text-left font-semibold px-3 py-2">Position</th>
-                      <th className="text-left font-semibold px-3 py-2">Entry Price</th>
-                      <th className="text-left font-semibold px-3 py-2">Capital</th>
-                      <th className="text-left font-semibold px-3 py-2">Shares</th>
-                      <th className="text-left font-semibold px-3 py-2">Value after Rag</th>
-                      <th className="text-left font-semibold px-3 py-2">P&amp;L ($)</th>
-                      <th className="text-left font-semibold px-3 py-2">P&amp;L (%)</th>
+                    <tr>
+                      <th>Trader</th>
+                      <th>Position</th>
+                      <th>Entry Price</th>
+                      <th>Capital</th>
+                      <th>Shares</th>
+                      <th>Value after Rag</th>
+                      <th>P&amp;L ($)</th>
+                      <th>P&amp;L (%)</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-b border-gray-200">
-                      <td className="px-3 py-2">A</td>
-                      <td className="px-3 py-2">NO</td>
-                      <td className="px-3 py-2">$0.95</td>
-                      <td className="px-3 py-2">$1,000</td>
-                      <td className="px-3 py-2">1,053</td>
-                      <td className="px-3 py-2">$105 (at $0.10)</td>
-                      <td className="px-3 py-2">−$895</td>
-                      <td className="px-3 py-2">−89.5%</td>
-                    </tr>
-                    <tr className="border-b border-gray-200">
-                      <td className="px-3 py-2">B</td>
-                      <td className="px-3 py-2">YES</td>
-                      <td className="px-3 py-2">$0.05</td>
-                      <td className="px-3 py-2">$1,000</td>
-                      <td className="px-3 py-2">20,000</td>
-                      <td className="px-3 py-2">$18,000 (at $0.90)</td>
-                      <td className="px-3 py-2">+$17,000</td>
-                      <td className="px-3 py-2">+1,700%</td>
+                    <tr>
+                      <td>A</td>
+                      <td>NO</td>
+                      <td>$0.95</td>
+                      <td>$1,000</td>
+                      <td>1,053</td>
+                      <td>$105 (at $0.10)</td>
+                      <td>−$895</td>
+                      <td>−89.5%</td>
                     </tr>
                     <tr>
-                      <td className="px-3 py-2">C</td>
-                      <td className="px-3 py-2">YES</td>
-                      <td className="px-3 py-2">$0.50</td>
-                      <td className="px-3 py-2">$1,000</td>
-                      <td className="px-3 py-2">2,000</td>
-                      <td className="px-3 py-2">$1,800 (at $0.90)</td>
-                      <td className="px-3 py-2">+$800</td>
-                      <td className="px-3 py-2">+80%</td>
+                      <td>B</td>
+                      <td>YES</td>
+                      <td>$0.05</td>
+                      <td>$1,000</td>
+                      <td>20,000</td>
+                      <td>$18,000 (at $0.90)</td>
+                      <td>+$17,000</td>
+                      <td>+1,700%</td>
+                    </tr>
+                    <tr>
+                      <td>C</td>
+                      <td>YES</td>
+                      <td>$0.50</td>
+                      <td>$1,000</td>
+                      <td>2,000</td>
+                      <td>$1,800 (at $0.90)</td>
+                      <td>+$800</td>
+                      <td>+80%</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Relegation</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Relegation</h2>
+              <p>
                 At year-end, the three traders are ranked by P&amp;L. Trader A backed the wrong side of a real-world outcome and posted the panel&apos;s worst P&amp;L. Trader A falls into the bottom quartile and is relegated, removed from the price oracle and replaced by a new forecaster with a proven record of positive unlevered P&amp;L. Traders B and C, having correctly priced and moved with the evidence, keep their seats and re-enter the following year&apos;s price oracle. Over time, this continuous selection process means The Citizen&apos;s price oracle will select for market participants who are best able to price uncertainty and discover truth as quickly as possible.
               </p>
             </div>
@@ -332,37 +301,37 @@ function DocsContent() {
 
           {activeTab === 'how-derps-work' && (
             <div>
-              <p className="text-gray-800 leading-7 mb-4 mt-10">
+              <p>
                 The Citizen&apos;s futures markets are powered by{' '}
-                <a href="https://derp.trade" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                <a href="https://derp.trade" target="_blank" rel="noopener noreferrer">
                   derp.trade
                 </a>
                 , which handles all market making and trade execution. The overview below explains how DERPs work in plain language. For formulas, code, and the full technical specification, see the{' '}
-                <a href="https://docs.derp.trade/docs/protocol/overview" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                <a href="https://docs.derp.trade/docs/protocol/overview" target="_blank" rel="noopener noreferrer">
                   derp.trade protocol docs
                 </a>.
               </p>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">The Basics</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>The Basics</h2>
+              <p>
                 A derivative is a financial contract whose value is based on the price of something else. On derp.trade, that &quot;something else&quot; is a token, such as SOL, WIF, or any other Solana token. On The Citizen, the underlying is the probability of a contested claim resolving one way or the other.
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 When you trade on The Citizen, you are not buying or selling the underlying claim directly. Instead, you are opening a position that tracks the market&apos;s implied probability:
               </p>
-              <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+              <ul>
                 <li><strong>Long</strong>: you profit if the price goes up.</li>
                 <li><strong>Short</strong>: you profit if the price goes down.</li>
               </ul>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 You can use leverage to amplify your position. For example, 10x leverage means a 1% price move gives you a 10% gain (or loss). All positions are denominated in USDT. You deposit USDT as collateral and receive your profits in USDT.
               </p>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">How Trading Works</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>How Trading Works</h2>
+              <p>
                 Here is the flow of a typical trade on The Citizen:
               </p>
-              <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+              <ol>
                 <li><strong>Pick a market</strong>: browse the available contested-claims markets on The Citizen.</li>
                 <li><strong>Choose long or short</strong>: decide whether you think the implied probability will go up or down.</li>
                 <li><strong>Set your position size and leverage</strong>: enter the amount of USDT you want to put up as collateral and choose your leverage multiplier.</li>
@@ -371,73 +340,73 @@ function DocsContent() {
                 <li><strong>Close when you are ready</strong>, or get liquidated if your collateral runs out.</li>
               </ol>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">The AMM: Your Trading Partner</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>The AMM: Your Trading Partner</h2>
+              <p>
                 On traditional exchanges, you need another person on the other side of your trade. On derp.trade, an automated market maker (AMM) fills that role. The AMM is a smart contract that is always willing to trade with you.
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 Because the AMM is always available, markets can exist for tokens with low trading volume. There is no minimum liquidity requirement; the AMM handles everything.
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 The AMM earns trading fees and funding payments, which build up its liquidity over time. The more a market is traded, the deeper its liquidity becomes.
               </p>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Funding Rates</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Funding Rates</h2>
+              <p>
                 To keep markets balanced, derp.trade uses funding rates. If many more traders are long than short (or vice versa), the majority side pays a small fee to the minority side. This encourages traders to take the less popular side and keeps the market healthy.
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 Funding is charged continuously, every 15 seconds in small amounts. You can see the current funding rate for any market on the trading page before you open a position.
               </p>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Leverage and Liquidation</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Leverage and Liquidation</h2>
+              <p>
                 Leverage lets you control a larger position with less collateral. For example, with 10x leverage and 10 USDT of collateral, you control a 100 USDT position.
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 The tradeoff is risk. Higher leverage means your position gets liquidated more easily. Liquidation happens when your losses eat through your collateral. At that point, the protocol closes your position and you lose your deposited collateral.
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 Before opening any trade, check your liquidation price, the price at which your position would be liquidated. The trading UI shows this clearly.
               </p>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">DERPs vs. Traditional Perps</h2>
-              <div className="overflow-x-auto mb-6">
-                <table className="w-full text-sm text-gray-800 border border-gray-200">
+              <h2>DERPs vs. Traditional Perps</h2>
+              <div className="table-wrap">
+                <table>
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left font-semibold px-3 py-2"></th>
-                      <th className="text-left font-semibold px-3 py-2">Traditional perps</th>
-                      <th className="text-left font-semibold px-3 py-2">DERPs</th>
+                    <tr>
+                      <th></th>
+                      <th>Traditional perps</th>
+                      <th>DERPs</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-b border-gray-200">
+                    <tr>
                       <td className="px-3 py-2 font-semibold">Liquidity</td>
-                      <td className="px-3 py-2">Order book: needs many buyers and sellers</td>
-                      <td className="px-3 py-2">AMM: always available</td>
+                      <td>Order book: needs many buyers and sellers</td>
+                      <td>AMM: always available</td>
                     </tr>
-                    <tr className="border-b border-gray-200">
+                    <tr>
                       <td className="px-3 py-2 font-semibold">Supported assets</td>
-                      <td className="px-3 py-2">Major tokens only (BTC, ETH, SOL)</td>
-                      <td className="px-3 py-2">Any token on Solana</td>
+                      <td>Major tokens only (BTC, ETH, SOL)</td>
+                      <td>Any token on Solana</td>
                     </tr>
-                    <tr className="border-b border-gray-200">
+                    <tr>
                       <td className="px-3 py-2 font-semibold">Market creation</td>
-                      <td className="px-3 py-2">Requires exchange approval and liquidity</td>
-                      <td className="px-3 py-2">Permissionless and free</td>
+                      <td>Requires exchange approval and liquidity</td>
+                      <td>Permissionless and free</td>
                     </tr>
-                    <tr className="border-b border-gray-200">
+                    <tr>
                       <td className="px-3 py-2 font-semibold">Margin type</td>
-                      <td className="px-3 py-2">Cross or isolated</td>
-                      <td className="px-3 py-2">Isolated only</td>
+                      <td>Cross or isolated</td>
+                      <td>Isolated only</td>
                     </tr>
                     <tr>
                       <td className="px-3 py-2 font-semibold">Unique risk</td>
-                      <td className="px-3 py-2">Counterparty and exchange risk</td>
-                      <td className="px-3 py-2">
+                      <td>Counterparty and exchange risk</td>
+                      <td>
                         AMM payout risk (
-                        <a href="https://docs.derp.trade/docs/risk/risk-overview" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                        <a href="https://docs.derp.trade/docs/risk/risk-overview" target="_blank" rel="noopener noreferrer">
                           learn more
                         </a>
                         )
@@ -447,33 +416,33 @@ function DocsContent() {
                 </table>
               </div>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Further Reading</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Further Reading</h2>
+              <p>
                 Market making on The Citizen is handled entirely by derp.trade. For step-by-step guides and the complete documentation, visit the derp.trade docs:
               </p>
-              <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+              <ul>
                 <li>
-                  <a href="https://docs.derp.trade/docs/welcome/how-derps-work" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                  <a href="https://docs.derp.trade/docs/welcome/how-derps-work" target="_blank" rel="noopener noreferrer">
                     How DERPs work
                   </a>
                 </li>
                 <li>
-                  <a href="https://docs.derp.trade/docs/getting-started/setting-up-your-wallet" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                  <a href="https://docs.derp.trade/docs/getting-started/setting-up-your-wallet" target="_blank" rel="noopener noreferrer">
                     Setting up your wallet
                   </a>
                 </li>
                 <li>
-                  <a href="https://docs.derp.trade/docs/getting-started/your-first-trade" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                  <a href="https://docs.derp.trade/docs/getting-started/your-first-trade" target="_blank" rel="noopener noreferrer">
                     Your first trade
                   </a>
                 </li>
                 <li>
-                  <a href="https://docs.derp.trade/docs/protocol/overview" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                  <a href="https://docs.derp.trade/docs/protocol/overview" target="_blank" rel="noopener noreferrer">
                     Protocol overview
                   </a>
                 </li>
                 <li>
-                  <a href="https://docs.derp.trade/docs/risk/risk-overview" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                  <a href="https://docs.derp.trade/docs/risk/risk-overview" target="_blank" rel="noopener noreferrer">
                     Risk overview
                   </a>
                 </li>
@@ -483,30 +452,30 @@ function DocsContent() {
 
           {activeTab === 'quarterly-trial-procedure' && (
             <div>
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">The Science Court Proposal</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>The Science Court Proposal</h2>
+              <p>
                 Physicist Arthur Kantrowitz first proposed a &quot;Science Court&quot; in 1967. His model separated questions of scientific fact from questions of policy or value. Two case managers, one for each side of a contested issue, would submit statements of fact. A panel of judges, senior scientists with no stake in the outcome, would test each statement through adversarial questioning until it was either accepted or set aside as unresolved. A federal task force reviewed the proposal in 1976, and the idea has since been revived in practice.
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 Ellad Tadmor at the University of Minnesota runs a modern version called SciCourt, which carries contested public-policy topics through the same structure: pretrial evidence agreement, adversarial presentation, and neutral judgment aimed at building consensus rather than declaring a winner.
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 We adapt this same structure to give the SBI panel a formal, recurring check on the claims embedded in its markets.
               </p>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">The Quarterly Trial Procedure</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>The Quarterly Trial Procedure</h2>
+              <p>
                 Once per quarter, a subset of superforecasters is convened as judges for a given market or cluster of related markets.
               </p>
 
-              <h3 className="text-xl font-bold text-black font-sans mb-3 mt-6">Roles</h3>
-              <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+              <h3>Roles</h3>
+              <ul>
                 <li><strong>Judges.</strong> Drawn from the superforecaster panel. To remain neutral, judges may not hold an open position in the market under review and may not have a recent trading history on it.</li>
                 <li><strong>Case Managers.</strong> Other superforecasters, assigned as advocates to opposing sides of the contested claim. Each case manager compiles supporting evidence and drafts a prioritized list of the factual statements they want the judges to accept.</li>
               </ul>
 
-              <h3 className="text-xl font-bold text-black font-sans mb-3 mt-6">Process</h3>
-              <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+              <h3>Process</h3>
+              <ol>
                 <li><strong>Evidence submission.</strong> Case managers submit their supporting material to the evidence section, along with a prioritized list of the individual factual statements they wish to establish.</li>
                 <li><strong>Adversarial questioning.</strong> Judges question each statement directly against the opposing case manager, so weak or unsupported claims are exposed and can be met with counter-evidence.</li>
                 <li><strong>Resolution.</strong> Questioning continues until every statement is either accepted as stated, mediated into wording both sides can endorse, or set aside as unresolved. Nothing is silently dropped.</li>
@@ -514,13 +483,13 @@ function DocsContent() {
                 <li><strong>Cruxes and new questions.</strong> Alongside the accepted statements, judges identify the cruxes: the specific points where the two sides still disagree and where new evidence would most change the market&apos;s probability. These are published back to the broader panel as new sub-questions that market participants can trade on and use to update their forecasts.</li>
               </ol>
 
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Why This Matters</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Why This Matters</h2>
+              <p>
                 A single probability number can hide which underlying arguments still hold up under scrutiny. The Quarterly Trial forces that disagreement onto the table on a fixed schedule. It converts vague suspicion into named cruxes, and it gives market participants a fresh, testable set of questions instead of requiring them to sift through raw evidence themselves. Over time, this should sharpen the calibration of the underlying market by directing new evidence-gathering toward exactly the claims most likely to move the price.
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 Learn more about the modern SciCourt revival at{' '}
-                <a href="https://scicourt.umn.edu/introduction-science-court" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                <a href="https://scicourt.umn.edu/introduction-science-court" target="_blank" rel="noopener noreferrer">
                   scicourt.umn.edu
                 </a>.
               </p>
@@ -529,73 +498,73 @@ function DocsContent() {
 
           {activeTab === 'economics' && (
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-black font-sans mb-4">Economics</h1>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h1>Economics</h1>
+              <p>
                 Data is not valuable, the truth is. The Citizen is a fact finding and verification platform that crowdsources claims and uses prediction markets to confirm their authenticity.
               </p>
               
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Market Resolution</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Market Resolution</h2>
+              <p>
                 The markets will be resolved by a panel of three neutral judges that have domain expertise. The Citizen that will draft three judges that meet the following criteria:
               </p>
-              <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+              <ul>
                 <li>Born in the United States</li>
                 <li>Phd. or Phd. candidate in relevant field</li>
                 <li>Self-proclaimed neutral and undecided on the particular question at hand</li>
               </ul>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 To preserve the integrity of the panel, the identity of the judges will never be revealed. This will ensure that the panel is free to make any judgement without fear of backlash. Extraordinary measures will be taken to never reveal the identity of the judges. Judging anonymity may increase the honesty of the traders since they will not be able to guess the biases of the judges based on public information, instead they can only rely on the evidence presented. 
               </p>
               
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Judging Incentives</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Judging Incentives</h2>
+              <p>
                 The Judges will be paid using two different methods.
               </p>
-              <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+              <ol>
                 <li>Each judge will receive a 1% vig on all bets wagered on the market.</li>
                 <li>Each judge will collect a $1 royalty on the case summary that will be published at the end of the market. The caveat is that the the royalty payments will stop if their decision is overturned in a later appeals market.</li>
               </ol>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 The vig is collected on all trades. If a market does $100,000 in volume, each judge will earn $1,000 from the vig.
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 If the case summary sells 1,000 copies at $6 dollar per, each judge will earn $1,000. However if their decision is overturned in an appeals market, then the overturning panel will publish a new paper and the old judges from the overturned decision will not receive any proceeds from the new paper.
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 Judges are incentivized to make a truthful decision that can withstand scrutiny to preserve their future royalty payments. If the decision succeeds in telling the truth and avoiding appeals courts, the judges can collect royalty payments for eternity. If a paper sells 200,000 copies over its life-time, each judge will earn $200,000. 
               </p>
               
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Appeals Markets</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Appeals Markets</h2>
+              <p>
                 Each month, the market decision with the highest number of weighted trader votes will be restarted with the evidence section cleared and the market odds set back to 50-50. After the market expires, a new paper will be published by the new set of judges and replace the old case summary. 
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 If the previous decision is upheld, the previous judges and the new judges will split the royalties at $1 per sale and The Citizen will stop receiving royalty payments. If the new judges overturn the previous decision, the previous judges will stop receiving the royalties and the royalties will be split between The Citizen and the new judges.
               </p>
               
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Citizen Economics</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Citizen Economics</h2>
+              <p>
                 The Citizen will lose money on market making. For the initial markets, The Citizen will lose $6,931 on providing initial liquidity and the vig collected from the market will be split amongst the judges. However, The Citizen will take 50% of the royalties from the case summaries. At $6 per case summary, this means that the Citizen needs to sell 2,310 case summaries to break even on the market making. Any case studies sold after the 2,310th will result in the venture being profitable. The Citizen eventually expects to pivot to a subscription model where subscribers will pay $10 per month, but the initial payment model will be based on individual case summaries.
               </p>
               
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Judging Criteria</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Judging Criteria</h2>
+              <p>
                 Each judge will categorize their final opinion in one of the following buckets:
               </p>
-              <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+              <ol>
                 <li>No - beyond a reasonable doubt (estimated confidence of 95%)</li>
                 <li>No - clear and convincing evidence (estimated confidence of 70%)</li>
                 <li>No - inconclusive for both sides (estimated confidence of less than 70%)</li>
                 <li>Yes - clear and convincing evidence (estimated confidence of 70%)</li>
                 <li>Yes - beyond a reasonable doubt (estimated confidence of 95%)</li>
               </ol>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 Only when the judges unanimously conclude, &quot;Yes - beyond a reasonable doubt&quot; will the market resolve Yes. The Citizen is also considering using an override system where if two judges agree on a category and the third disagrees, that the agreeing two judges can override the third judge&apos;s opinion to reach a final opinion.
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 In an appeals market, only when a market resolution is overturned from Yes to No or No to Yes, will the previous judges lose their royalty payments. 
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 The Case Summary will review at least the top 10 pieces of evidence promoted in the evidence section for both positions and comment on the authenticity and truthfulness of each document.
               </p>
             </div>
@@ -603,11 +572,11 @@ function DocsContent() {
 
           {activeTab === 'idea-futures' && (
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-black font-sans mb-4">Ideas Futures</h1>
+              <h1>Ideas Futures</h1>
           
-          <div className="font-bold text-black font-sans text-lg mb-4">OUTLINE</div>
+          <div>OUTLINE</div>
           
-          <div className="font-mono text-sm text-gray-900 space-y-1 leading-relaxed">
+          <div className="num text-small text-ink-2 space-y-1">
             <div className="pl-0"><strong>1. Introduction</strong></div>
             <div className="pl-0"><strong>2. Single Manipulator</strong></div>
             <div className="pl-4">1. Dynamic Vig</div>
@@ -621,15 +590,15 @@ function DocsContent() {
           </div>
 
           <section className="mt-10">
-            <h2 className="text-2xl font-bold text-black font-sans mb-3">Introduction</h2>
-            <p className="text-gray-800 leading-7 mb-4">
+            <h2>Introduction</h2>
+            <p>
               Idea futures align incentives to surface, evaluate, and fund research on questions that have remained unresolved for decades. By pricing hypotheses and rewarding updates toward truth,
               these markets coordinate attention and capital toward questions that matter. 
               Idea futures markets have two periods during their lifecycle:
             </p>
             
             <div className="mb-6">
-              <p className="text-gray-800 leading-7 mb-3">
+              <p>
                 The discovery period is the first phase of an idea futures market that runs for a select period of time.
                 To start, the discovery period will be 5 months and during this period traders are able to buy/sell shares
                 and share information in the evidence section. During the discovery period, the market collects
@@ -638,7 +607,7 @@ function DocsContent() {
             </div>
 
             <div className="mb-6">
-              <p className="text-gray-800 leading-7 mb-3">
+              <p>
                 The settlement period begins immediately after the discovery period and runs for 
                 one month. Like the discovery period, the market remains fully open to buying, 
                 selling, and sharing information. The only difference is that during the settlement
@@ -649,7 +618,7 @@ function DocsContent() {
             </div>
 
             <div className="mb-6">
-              <p className="text-gray-800 leading-7 mb-3">
+              <p>
                 The primary problem with idea futures markets is exploitation. This paper will outline how 
                 manipulators can attack the market and how the installed protocols can protect against these attacks.
               </p>
@@ -657,19 +626,19 @@ function DocsContent() {
           </section>        
 
           <section className="mt-10">
-            <h2 className="text-2xl font-bold text-black font-sans mb-3">Single Manipulator</h2>
-            <p className="text-gray-800 leading-7 mb-4">
+            <h2>Single Manipulator</h2>
+            <p>
               A single manipulator attack is conducted by one trader who attempts to distort the
               market price to their advantage. This attack can occur during both the discovery
               and settlement period. However, it is unprofitable for the manipulator to sell their position
               prior to settlement since they would experience normal price slippage. 
             </p>
-            <p className="text-gray-800 leading-7 mb-4">
+            <p>
               The primary strategy for a manipulator is to buy a large number of shares to increase the median price
               during the settlement period. Once the settlement period ends, the manipulator can redeem their shares at 
               a higher price per share than their average cost per share if they succeed in increasing the median price.
             </p>
-            <div className="text-gray-800 leading-7">
+            <div>
               The section below introduces the formulas used to calculate manipulator profits and explain the assumptions made in the simulated markets.
               After the introduction to manipulation, the paper will outline the possible mitigations that can be installed to mitigate these attacks.
             </div>
@@ -678,24 +647,24 @@ function DocsContent() {
           <section className="mt-10">
             
             <div className="mb-6">
-              <h3 className="text-xl font-bold text-black font-sans mb-4">Formulas</h3>
-              <p className="text-gray-800 leading-7 mb-4 text-lg">
+              <h3>Formulas</h3>
+              <p>
                 Profit = Payout - Cost
               </p>
               
-              <div className="my-4 text-xl md:text-2xl" style={{ textAlign: 'left', width: '100%' }}>
+              <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
                 <BlockMath>{String.raw`\text{Profit} = \big(X \cdot \text{med}(x) \cdot (1 - v)\big) - \big( C(\mathbf{q}') - C(\mathbf{q}) \big)`}</BlockMath>
               </div>
               
-              <div className="my-4 text-lg md:text-xl" style={{ textAlign: 'left', width: '100%' }}>
+              <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
                 <BlockMath>{String.raw`\text{Profit} = \left( x \cdot \left( \frac{ e^{\frac{q_1 + x}{b}} }{ e^{\frac{q_1 + x}{b}} + e^{\frac{q_2}{b}} } \right) \cdot (1 - v) \right)
                 - \left( \; b\,\ln\!\left( e^{\frac{q_1 + x}{b}} + e^{\frac{q_2}{b}} \right) \; - \; b\,\ln\!\left( e^{\frac{q_1}{b}} + e^{\frac{q_2}{b}} \right) \right)`}</BlockMath>
               </div>
             </div>
 
             <div className="mb-6">
-              <h3 className="text-xl font-bold text-black font-sans mb-4">Variables</h3>
-              <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7">
+              <h3>Variables</h3>
+              <ul>
                 <li>X = Yes shares purchased by manipulator</li>
                 <li>q₁ = Number of Yes shares purchased by other traders</li>
                 <li>q₂ = Number of No shares purchased by other traders</li>
@@ -706,19 +675,19 @@ function DocsContent() {
           </section>
 
           <section className="mt-10">
-            <h3 className="text-xl font-bold text-black font-sans mb-4">Assumptions</h3>
-            <ol className="list-decimal pl-6 space-y-3 text-gray-800 leading-7 text-base">
+            <h3>Assumptions</h3>
+            <ol>
               <li>Two outcomes in the market.</li>
               <li>The profit-maximizing manipulator will buy one side of the market since buying the other side would damage their potential self-generated profits from the conflicting price movements.</li>
               <li>
                 The maximum that an individual manipulator can affect the final median settlement price from their own price movement is the normal pricing function. In an idealized environment for a manipulator, there are no active traders during the settlement period so the manipulator will have complete control over median settlement price. As a result, the median settlement price, represented by med(x) in the payout formula, is the normal pricing function since only the manipulator can affect a price change in the idealized environment:
-                <div className="mt-3 mb-3">
+                <div>
                   <img 
                     src="/Pricing.png" 
                     alt="Pricing Function" 
                     width="400" 
                     height="200" 
-                    className="w-full max-w-md h-auto"
+                    className="max-w-md"
                   />
                 </div>
               </li>
@@ -728,17 +697,17 @@ function DocsContent() {
           </section>
 
           <section className="mt-10">
-            <h3 className="text-xl font-bold text-black font-sans mb-4">How Manipulators Profit</h3>
-            <p className="text-gray-800 leading-7 mb-4 text-base">
+            <h3>How Manipulators Profit</h3>
+            <p>
               To simulate how a manipulator can profit in an unprotected market, let&apos;s set the following market parameters:
             </p>
-            <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 text-base mb-4">
+            <ol>
               <li>b = 10000 (market seed cost = $6931)</li>
               <li>q₁ = 0</li>
               <li>q₂ = 0</li>
               <li>vig = 3%</li>
             </ol>
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               The manipulator is going to buy shares to increase the median price during the settlement period. Since it is an idealized environment,
               there are no other traders in the market so the manipulator will have complete control over the median price. Let&apos;s graph the manipulator&apos;s profits 
               as they buy more shares from the neutral market postions of q₁ & q₂ = 0.
@@ -750,10 +719,10 @@ function DocsContent() {
               <img 
                 src="/ManipPro.png" 
                 alt="Manipulator Profit Graph" 
-                className="w-full max-w-full h-auto"
+                className="max-w-full"
               />
             </div>
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               When Q₁ and Q₂ are zero, the manipulator will profit any time they buy more than 1279 shares. 
               The manipulator can yield a profit of $5,040 after buying 50,995 shares which means they will drive the Yes market odds from 50% to 99.39%. 
               In an unprotected market, the market is vulnerable to manipulators and the market odds will likely not reflect the geniune beliefs of the traders.
@@ -761,11 +730,11 @@ function DocsContent() {
           </section>
 
           <section className="mt-10">
-            <h2 className="text-2xl font-bold text-black font-sans mb-3">Preventing Manipulation</h2>
-            <p className="text-gray-800 leading-7 mb-4 text-base">
+            <h2>Preventing Manipulation</h2>
+            <p>
               The following mitigations can be implemented to prevent profitable manipulation:
             </p>
-            <ol className="list-decimal pl-6 space-y-3 text-gray-800 leading-7 text-base">
+            <ol>
               <li>
                 <strong>Dynamic Vig:</strong> On any profitable manipulation trade, increase the vig so that the manipulator&apos;s payout is discounted to prevent profits. At redemption, the vig needs to be calculated and applied separately for each trade.
               </li>
@@ -776,31 +745,31 @@ function DocsContent() {
           </section>
 
           <section className="mt-10">
-            <h2 className="text-2xl font-bold text-black font-sans mb-3">Dynamic Vig</h2>
-            <p className="text-gray-800 leading-7 mb-4 text-base">
+            <h2>Dynamic Vig</h2>
+            <p>
               A Dynamic Vig needs to adjust to discount manipulator payouts to prevent profits from self-generated price movements.
               The updated payout formula is the normal payout formula only with a Dynamic Vig:
             </p>
 
-            <div className="my-4 text-xl md:text-2xl" style={{ textAlign: 'left', width: '100%' }}>
+            <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
               <BlockMath>{String.raw`\text{Payout} = X \cdot \left( \frac{ e^{\frac{q_1 + x}{b}} }{ e^{\frac{q_1 + x}{b}} + e^{\frac{q_2}{b}} } \right) \cdot \big( 1 - \text{Dynamic Vig} \big)`}</BlockMath>
             </div>
 
-            <div className="my-6 text-lg md:text-xl" style={{ textAlign: 'left', width: '100%' }}>
+            <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
               <BlockMath>{String.raw`\text{Dynamic Vig} = \frac{1}{\; \dfrac{\; b\,\ln\!\left( e^{\frac{q_1 + x}{b}} + e^{\frac{q_2}{b}} \right)\; -\; b\,\ln\!\left( e^{\frac{q_1}{b}} + e^{\frac{q_2}{b}} \right)\;}{\; X \cdot \left( \dfrac{ e^{\frac{q_1 + x}{b}} }{ e^{\frac{q_1 + x}{b}} + e^{\frac{q_2}{b}} } \right)\; }} `}</BlockMath>
             </div>
 
-            <p className="text-gray-800 leading-7 mb-4 text-base">
+            <p>
               Assume the market is at the neutral market position:
             </p>
-            <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 text-base mb-6">
+            <ol>
               <li>b = 10000 (market seed cost = $6,931)</li>
               <li>q₁ = 0</li>
               <li>q₂ = 0</li>
               <li>vig = 3%</li>
             </ol>
 
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               Below is a graph of the how the dynamic vig increases as the manipulator purchases more shares to prevent self-generated profitable price movements:
             </p>
 
@@ -808,31 +777,31 @@ function DocsContent() {
               <img
                 src="/sha.png"
                 alt="Dynamic vig schedule versus shares purchased"
-                className="w-full max-w-full h-auto"
+                className="max-w-full"
               />
             </div>
           </section>
 
           <section className="mt-6">
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               When the manipulator purchases 20,000 yes shares, the Dynamic Vig will increase to 18.6% to prevent the manipulator from profiting from the price movement caused by their trade. Below are the calculations demonstrating how the dynamic vig is applied:
             </p>
 
             <div className="space-y-4">
-              <div className="my-4 text-lg md:text-xl" style={{ textAlign: 'left', width: '100%' }}>
+              <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
                 <BlockMath>{String.raw`P(20000,0) = \frac{e^{\frac{20000}{10000}}}{e^{\frac{20000}{10000}} + e^{0}}`}</BlockMath>
               </div>
-              <div className="my-4 text-lg md:text-xl" style={{ textAlign: 'left', width: '100%' }}>
+              <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
                 <BlockMath>{String.raw`\text{Profit} = \left(X \cdot P(20000,0) \cdot (1 - \text{Dynamic Vig})\right) - \left(\left(10000 \cdot \ln\left(e^{\frac{20000}{10000}} + e^{0}\right)\right) - \left(10000 \cdot \ln(2)\right)\right)`}</BlockMath>
               </div>
-              <div className="my-4 text-lg md:text-xl" style={{ textAlign: 'left', width: '100%' }}>
+              <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
                 <BlockMath>{String.raw`\text{Profit} = \left(20000 \cdot 0.8808 \cdot (1 - 0.186)\right) - \left(\left(10000 \cdot \ln\left(e^{\frac{20000}{10000}} + e^{0}\right)\right) - \left(10000 \cdot \ln(2)\right)\right)`}</BlockMath>
               </div>
-              <div className="text-gray-900 font-serif text-xl mb-4" style={{ textAlign: 'left', width: '100%' }}>
+              <div style={{ textAlign: 'left', width: '100%' }}>
                 <BlockMath>{String.raw`\text{Profit} = \$0.00`}</BlockMath>
               </div>
-              <h5 className="text-xl font-bold text-black font-sans mb-3">Notes on Dynamic Vig</h5>
-              <p className="text-gray-800 leading-7 text-base">
+              <h5>Notes on Dynamic Vig</h5>
+              <p>
             The dynamic vig is applied when the trader is redeeming their shares. It works like a discount that the market maker applies to the trader&apos;s shares upon redemption. 
             To calculate the dynamic vig, the market maker needs to save the exact market state before and after each trade which cannot be saved on chain. 
             </p>
@@ -844,8 +813,8 @@ function DocsContent() {
           {/* Removed Altered Median Settlement section */}
           
           <section className="mt-10">
-            <h2 className="text-xl font-bold text-black font-sans mb-3">Altered Median Redemption Function</h2>
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <h2>Altered Median Redemption Function</h2>
+            <p>
               The altered median redemption function prevents manipulators from profiting from their own self-generated price movements by simulating the price slippage that occurs when a trader sells their shares on the open market.
               The altered median redemption function works like the normal sale function but the cost before term is the median settlement state:  
             </p>
@@ -861,33 +830,33 @@ function DocsContent() {
             <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
               <BlockMath>{String.raw`\text{Refund} = \left(10000 \cdot \ln\left(e^{\frac{\text{set}(q_1)}{b}} + e^{\frac{\text{set}(q_2)}{b}}\right)\right) - \left(10000 \cdot \ln\left(e^{\frac{\text{set}(q_1) - x_1}{b}} + e^{\frac{\text{set}(q_2)}{b}}\right)\right)`}</BlockMath>
             </div>
-            <ul className="list-none pl-0 text-gray-800 leading-7 text-base space-y-2 mb-4">
+            <ul>
               <li>set(q₁) = median settlement quantity for yes shares</li>
               <li>set(q₂) = median settlement quantity for no shares</li>
               <li>X₁ = yes shares purchased</li>
             </ul>
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               Traders can redeem their shares for the exact amount that they could have sold them on the open market. The advantage for waiting until redemption is that the vig is not applied and this provides a small incentive for traders not to sell prior to settlement. 
             </p>
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               Let&apos;s walk through a small example of how a manipulator cannot profit even with full control over the settlement price:
               
             </p>
-            <p className="text-gray-800 leading-7 mb-4 text-base">
+            <p>
               Assume the market is at the neutral market position:
             </p>
-            <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 text-base mb-6">
+            <ol>
               <li>b = 10000 (market seed cost = $6,931)</li>
               <li>q₁ = 0</li>
               <li>q₂ = 0</li>
               <li>vig = 3%</li>
             </ol>
           </section>
-          <p className="text-gray-800 leading-7 text-base mb-4">
+          <p>
               The manipulator pays $23,025 to buy 29,444 yes shares and drives the yes market price to 95%. In a normal median market, the manipulator can yield a profit of $4,946 after redeeming their shares at the median price of 95 cents ($27,970 - $23,025 = $4,946). 
           </p>
 
-          <p className="text-gray-800 leading-7 text-base mb-4">
+          <p>
               However in an altered median redemption market, the manipulator will not be able to profit as shown in the calculations below: 
           </p>
 
@@ -910,12 +879,12 @@ function DocsContent() {
             <BlockMath>{String.raw`\text{Profit} = 0`}</BlockMath>
           </div>
 
-          <p className="text-gray-800 leading-7 text-base mb-4">
+          <p>
               In the altered median redemption market, the manipulator does not profit because the price effect of their trades does not increase the redemption payout.
           </p>
           <section className="mt-10">
-            <h3 className="text-xl font-bold text-black font-sans mb-3">Notes on Altered Median Redemption</h3>
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <h3>Notes on Altered Median Redemption</h3>
+            <p>
               The altered median redemption market is solvent since for every value in purchasing space, the payouts are less than the normal median redemption function due to altered median redemption function penalizing for self-generated price movements. 
             </p>
             <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
@@ -938,11 +907,11 @@ function DocsContent() {
               <BlockMath math="x \cdot \frac{e^{\frac{q_1}{b}}}{e^{\frac{q_1}{b}} + e^{\frac{q_2}{b}}} > \left( 10000 \cdot \ln\left(e^{\frac{q_1}{b}} + e^{\frac{q_2}{b}}\right) \right) - \left( 10000 \cdot \ln\left(e^{\frac{q_1 - x_1}{b}} + e^{\frac{q_2}{b}}\right) \right)" />
             </div>
 
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               The inequality above can be proved for all positive values of q1, q2, and x1. Intutively, it makes sense that the normal redemption function is greater than the altered median redemption function since the altered
               median redemption function deducts price slippage, while the normal redemption function redeems the user at the median price during settlement. 
             </p>
-            <p className="text-gray-800 leading-7 text-base">
+            <p>
               A possible problem with the altered median redemption function is how is the median settlement state determined? 
               At expiration, the market will have a certain purchase state, but traders will redeem their shares based on the median settlement state which is not the same as the purchase state at expiration. 
               As a result, the market maker faces additional potential losses in redemption since the median market state may require more payouts to traders than the purchase state at expiration. This topic will be handled in another paper. 
@@ -950,80 +919,80 @@ function DocsContent() {
           </section>
 
           <section className="mt-10">
-          <h3 className="text-xl font-bold text-black font-sans mb-3">Conclusion on Preventing Single Trader Manipulation</h3>
-          <p className="text-gray-800 leading-7 text-base">
+          <h3>Conclusion on Preventing Single Trader Manipulation</h3>
+          <p>
               Altered median redemption is the best way to settle the market to prevent manipulators from profiting from their own price movements because it is easier to implement than the dynamic vig and easier to understand since it is the same function as the normal sale function used during the open market period.  
           </p>
           </section>
 
           <section className="mt-10">
-            <h2 className="text-2xl font-bold text-black font-sans mb-3">Multiple Manipulators</h2>
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <h2>Multiple Manipulators</h2>
+            <p>
               A multiple manipulator attack occurs when two or more actors coordinate to move the market price in the same direction. Compared with a single trader attack, multiple manipulators can distribute purchases across identities to evade penalties from an altered median redemption market. 
               Since single trader manipulation trades result in zero profit in an altered median redemption market, multiple manipulators can profitably coordinate since the deduction applied due to the price movement is split between them. Below is an example of how multiple manipulators can profit: 
             </p>
 
-            <p className="text-gray-800 leading-7 mb-4 text-base">
+            <p>
               Assume the market is at the neutral market position in an altered median redemption market:
             </p>
-            <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 text-base mb-6">
+            <ol>
               <li>b = 10000 (market seed cost = $6,931)</li>
               <li>q₁ = 0</li>
               <li>q₂ = 0</li>
               <li>vig = 3%</li>
             </ol>
 
-            <p className="text-gray-800 leading-7 mb-4 text-base">
+            <p>
               The manipulators will push the market price to 94% for Yes by buying between 28,000 shares in total. The first manipulator buys 14,000 shares from the neutral market state for the following price: 
             </p>
-            <div className="my-4 text-base md:text-lg" style={{ textAlign: 'left', width: '100%' }}>
+            <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
               <BlockMath>{String.raw`\text{Cost Trader 1} = \left(10000 \cdot \ln\left(e^{\frac{14000}{10000}} + e^{0}\right)\right) - \left(10000 \cdot \ln(2)\right)`}</BlockMath>
             </div>
-            <div className="my-4 text-base md:text-lg" style={{ textAlign: 'left', width: '100%' }}>
+            <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
               <BlockMath>{String.raw`\text{Cost Trader 1} = \$9{,}272`}</BlockMath>
             </div>
-            <p className="text-gray-800 leading-7 mb-4 text-base">
+            <p>
               The second trader buys another 14,000 shares this time with q1 being 14,000 shares due to their partner&apos;s purchase. The cost of the second trader&apos;s purchase is below: 
             </p>
-            <div className="my-4 text-base md:text-lg" style={{ textAlign: 'left', width: '100%' }}>
+            <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
               <BlockMath>{String.raw`\text{Cost Trader 2} = \left(10000 \cdot \ln\left(e^{\frac{28000}{10000}} + e^{0}\right)\right) - \left(10000 \cdot \ln\left(e^{\frac{14000}{10000}}\right)\right)`}</BlockMath>
             </div>
-            <div className="my-4 text-base md:text-lg" style={{ textAlign: 'left', width: '100%' }}>
+            <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
               <BlockMath>{String.raw`\text{Cost Trader 2} = \$14{,}590`}</BlockMath>
             </div>
-            <p className="text-gray-800 leading-7 mb-4 text-base">
+            <p>
               The traders successfully pushed the market price to 94% for Yes by spending $23,862 in total. There are no other active traders in this market and 
               94% for Yes is the median settlement price. The altered median redemption payout for each trader is below: 
             </p>
-            <div className="my-4 text-base md:text-lg" style={{ textAlign: 'left', width: '100%' }}>
+            <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
               <BlockMath>{String.raw`\text{Payout Trader 1 \& 2} = \left(10000 \cdot \ln\left(e^{\frac{28000}{10000}} + e^{0}\right)\right) - \left(10000 \cdot \ln\left(e^{\frac{14000}{10000}} + e^{0}\right)\right)`}</BlockMath>
             </div>
-            <div className="my-4 text-base md:text-lg" style={{ textAlign: 'left', width: '100%' }}>
+            <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
               <BlockMath>{String.raw`\text{Payout Trader 1 \& 2} = \$12{,}386`}</BlockMath>
             </div>
-            <div className="my-4 text-base md:text-lg" style={{ textAlign: 'left', width: '100%' }}>
+            <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
               <BlockMath>{String.raw`\text{Total Manipulator Payout} = \$12{,}836 \times 2`}</BlockMath>
             </div>
-            <div className="my-4 text-base md:text-lg" style={{ textAlign: 'left', width: '100%' }}>
+            <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
               <BlockMath>{String.raw`\text{Total Manipulator Payout} = \$24{,}772`}</BlockMath>
             </div>
-            <p className="text-gray-800 leading-7 mb-4 text-base">
+            <p>
               Below is the Profit Calculation for the manipulators:  
             </p>
-            <div className="my-4 text-base md:text-lg" style={{ textAlign: 'left', width: '100%' }}>
+            <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
               <BlockMath>{String.raw`\text{Profit Trader 1 \& 2} = \$24{,}772 - (\$9{,}272 + \$14{,}590)`}</BlockMath>
             </div>
-            <div className="my-4 text-base md:text-lg" style={{ textAlign: 'left', width: '100%' }}>
+            <div className="my-4" style={{ textAlign: 'left', width: '100%' }}>
               <BlockMath>{String.raw`\text{Profit Trader 1 \& 2} = \$910`}</BlockMath>
             </div>
-            <p className="text-gray-800 leading-7 mb-4 text-base">
+            <p>
               As demonstrated above, multiple manipulators can profitably coordinate in an altered median redemption market by splitting the deduction applied due to the price movement.   
             </p>
-            <h3 className="text-xl font-bold text-black font-sans mb-3 mt-6">Preventing Multiple Manipulator Attacks</h3>
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <h3>Preventing Multiple Manipulator Attacks</h3>
+            <p>
                 There are several mitigations that can be implemented to prevent multiple manipulator attacks:
             </p>
-            <ol className="list-decimal pl-6 space-y-4 text-gray-800 leading-7 text-base mb-4">
+            <ol>
               <li>
                 <strong>Max Purchase Limits:</strong> A single trader is only allowed to move the market 10%. The cumulative price impact of their trades will be tracked and no account&apos;s trades can produce a cumulative price impact greater than 10%. This can easily be enforced on the front-end and results in manipulators needing to coordinate with other real identities to carry out attacks. 
               </li>
@@ -1041,27 +1010,27 @@ function DocsContent() {
                 <strong>Threat of Fund Seizure:</strong> The possibility of losing funds for coordinated manipulation creates significant deterrent risk. By maintaining the authority to seize or freeze funds associated with suspicious trading patterns, the market creates asymmetric risk for manipulators, who risk losing not just their manipulation profits but their entire capital. This threat, especially when combined with KYC identity verification, makes coordinated attacks financially hazardous beyond just their execution costs.
               </li>
             </ol>
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               Together, these five measures create friction that makes multiple manipulator attacks significantly more difficult. Coalitions must coordinate real identities, spread purchases across time and accounts, extend attacks over multiple days, and overcome settlement mechanics that average out spiky activity all while facing the threat of fund seizure.
             </p>
           </section>
 
           <section className="mt-10">
-            <h2 className="text-2xl font-bold text-black font-sans mb-3">Median Payout Dynamics</h2>
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <h2>Median Payout Dynamics</h2>
+            <p>
               The market maker is exposed to additional losses when using the median settlement price since the median settlement price may be higher than the final market odds at expiration. If the median settlement price is greater than the final market odds at expiration, then the total payouts to traders is higher since the dominant side of the market is redeemed at a higher price per share. Below is an example of how median settlement markets can lead to additional losses for the market maker. 
             </p>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               Let&apos;s assume the following market parameters at closure:
             </p>
-            <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 text-base mb-4">
+            <ol>
               <li>b = 10000 (market seed cost = $6,931)</li>
               <li>q₁ = 17346</li>
               <li>q₂ = 0</li>
             </ol>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               At the purchasing state described above, the market odds for the yes position are 85% and 15% for the no position. 
               If we use the final purchasing state for payouts, the market maker incurs the following losses:
             </p>
@@ -1078,7 +1047,7 @@ function DocsContent() {
               <BlockMath>{String.raw`\text{Market Maker Loss} = 2704.38092754`}</BlockMath>
             </div>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               For the sake of creating a median settlement price higher than the final market odds, let&apos;s say there is a large yes share owner that sells a large position prior to market close. They held their position for the majority of the settlement period and effectively pushed the median price to 95 cents and then sold prior to settlement, causing the final market odds to drop to 85 cents. Due to the higher median settlement price, the market maker is exposed to additional losses as shown below, even though the purchasing state is the exact same at market close:
             </p>
             
@@ -1090,11 +1059,11 @@ function DocsContent() {
               <BlockMath>{String.raw`\text{Market Maker Loss} = 4438.98092754`}</BlockMath>
             </div>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               As demonstrated above, the market maker can be exposed to additional losses as a result of using a median settlement market. Conversely, market maker losses can be mitigated as a result of using a median market when the median settlement price is below the final market odds on the dominant side of the market:
             </p>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               Let&apos;s say there is a last minute yes shares buyer who pushed the market odds to 85 cents right before the market close but the median price over the settlement period was 75 cents. The market maker would incur the following losses:
             </p>
             
@@ -1106,7 +1075,7 @@ function DocsContent() {
               <BlockMath>{String.raw`\text{Market Maker Loss} = 969.780927539`}</BlockMath>
             </div>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               In a median settlement price market, the potential losses faced by the market maker are not bounded by b · ln(2). The maximum loss function for the market maker is unbounded and becomes the total market payout function shown below:
             </p>
             
@@ -1114,19 +1083,19 @@ function DocsContent() {
               <BlockMath>{String.raw`\text{Market Maker Loss} = ((\text{Yes} \cdot \text{Set(Yes)}) + (\text{No} \cdot \text{Set(No)})) - ((b \cdot \ln(e^{\frac{yes}{b}} + e^{\frac{no}{b}})) - (b \cdot \ln(2)))`}</BlockMath>
             </div>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               In sum, median settlement markets expose market makers to additional losses. However, the market maker losses can be the same or less than the market maker losses in a final market odds market when the median settlement price is at or below the final market odds.
             </p>
             
-            <h3 className="text-xl font-bold text-black font-sans mb-3 mt-8">Threat of Settlement</h3>
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <h3>Threat of Settlement</h3>
+            <p>
               A mitigation against multiple manipulators is to threaten that the market can be fully settled given either claim can be proven beyond a reasonable doubt. This increases the chance that their manipulation attack investment goes to zero. Consider the following market: 
             </p>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               Let&apos;s assume the following market parameters at closure:
             </p>
-            <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 text-base mb-4">
+            <ol>
               <li>b = 10000 (market seed cost = $6,931)</li>
               <li>q₁ = 0</li>
               <li>q₂ = 29444</li>
@@ -1136,7 +1105,7 @@ function DocsContent() {
               <li>Each trader is only allowed to move the odds by 10%, due to max purchase limits</li>
             </ol>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               The manipulators want to move the market price for the yes odds from 5% to 95%, and a cabal of 9 manipulators plan on coming together to accomplish this. Each manipulator will buy the max number of shares to move the market 10% and collectively move the yes odds from 5% to 95%. The manipulators collective profit function in an altered redemption function market is the following, given they have total control of the redemption price:
             </p>
             
@@ -1152,7 +1121,7 @@ function DocsContent() {
               <BlockMath>{String.raw`\text{Manip Exp Profits} = 24026.3`}</BlockMath>
             </div>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               After spending $29,444, the manipulators would expect to profit $24,026.3 and $2,669 on a per manipulator basis. Now let&apos;s see what the perceived threat of settlement would need to be to prevent them from executing the manipulation trades:
             </p>
             
@@ -1168,16 +1137,16 @@ function DocsContent() {
               <BlockMath>{String.raw`P = 0.449336076304`}</BlockMath>
             </div>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               If the manipulators believed there was more than a 44.9% chance that the market would be settled, then they would not execute the manipulation trades since their expected profits would be negative.
             </p>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               Teams of manipulators can lose money because either the market was resolved in the opposite direction or their manipulation trades were liquidated and the wagered money was seized by the market maker. The effective threat of either of those events happening needs to be around 50% in order to effectively dissuade teams of manipulators at all market positions.
             </p>
             
-            <h3 className="text-xl font-bold text-black font-sans mb-3 mt-8">Market Maker Profit & Loss Function</h3>
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <h3>Market Maker Profit & Loss Function</h3>
+            <p>
               The market maker profits or losses will be determined by whether the payouts to traders are greater than the total cost that traders paid to purchase their shares. Payouts to traders are reduced during the open market with the 3% standard market vig. Payouts to traders are reduced in redemption since the altered redemption formula deducts price slippage from payouts. The market maker fee functions are shown below:
             </p>
             
@@ -1193,7 +1162,7 @@ function DocsContent() {
               <BlockMath>{String.raw`\text{Redemption Market Maker Fees For No Share Purchases} = \sum_{i=1}^{n} (y_i \cdot p(y)) - ((b \cdot \ln(e^{\frac{q_1}{b}} + e^{\frac{q_2}{b}})) - (10000 \cdot \ln(e^{\frac{q_1}{b}} + e^{\frac{q_2-y_i}{b}})))`}</BlockMath>
             </div>
             
-            <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 text-base mb-4">
+            <ul>
               <li>q₁ = amount of yes shares purchased</li>
               <li>q₂ = amount of no shares purchased</li>
               <li>xᵢ = shares purchased by an individual trader</li>
@@ -1202,10 +1171,10 @@ function DocsContent() {
               <li>p(y) = price of no shares</li>
             </ul>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               To demonstrate how the fee functions work, let&apos;s assume the following market parameters:
             </p>
-            <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 text-base mb-4">
+            <ul>
               <li>B = 10000</li>
               <li>Q₁ = 10000</li>
               <li>Q₂ = 0</li>
@@ -1213,7 +1182,7 @@ function DocsContent() {
               <li>X₁ = 5000</li>
             </ul>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               Trader One(X₁) bought 5000 out of the 10000 yes shares in the market. If the trader decided to sell them in the open market, the market maker would apply the vig to the sale price and yield the following fees:
             </p>
             
@@ -1233,11 +1202,11 @@ function DocsContent() {
               <BlockMath>{String.raw`\text{Open Market Maker Fees} = \$101.75`}</BlockMath>
             </div>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               The market maker will gain $101.75 dollars after the trader sells their shares on the open market due to the vig. Please note that while the market maker made money on this transaction, they still face potential losses down the line due to uneven market action in redemption.
             </p>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               If the trader waits until the market is settled to redeem their shares, below is the calculation for market making fees given that there is no further purchasing activity:
             </p>
             
@@ -1257,14 +1226,14 @@ function DocsContent() {
               <BlockMath>{String.raw`\text{Redemption Market Maker Fees on } X_1 = \$263.45`}</BlockMath>
             </div>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               The market maker will yield $263.45 in fees given that the trader waits until settlement to redeem their shares. The market maker losses are bounded by b · ln(2) and since the liquidity parameter is 10000, the maximum market maker loss is $6,931. The total Market Maker Profit or Loss is the loss at the final payout state less the fees collected over the course of the market.
             </p>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               Let&apos;s simulate a market where the market maker profits:
             </p>
-            <ul className="list-disc pl-6 space-y-2 text-gray-800 leading-7 text-base mb-4">
+            <ul>
               <li>Q₁ = 40000</li>
               <li>Q₂ = 20000</li>
               <li>Vig = 3%</li>
@@ -1273,11 +1242,11 @@ function DocsContent() {
               <li>Trader 2 (Y₁) holds 10,000 no shares into the settlement period</li>
             </ul>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               Now let&apos;s calculate the market maker fees given the information above.
             </p>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               First, the vig proceeds from the $20,000 in open market sales are as follows:
             </p>
             
@@ -1289,7 +1258,7 @@ function DocsContent() {
               <BlockMath>{String.raw`\text{Open Market Maker Fees} = \$600`}</BlockMath>
             </div>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               Now, let&apos;s calculate the market maker fees generated from the Trader 1 (X₁) holding 20,000 yes shares into redemption:
             </p>
             
@@ -1301,7 +1270,7 @@ function DocsContent() {
               <BlockMath>{String.raw`\text{Redemption Market Maker Fees on } X_1 = \$3{,}278`}</BlockMath>
             </div>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               Now let&apos;s calculate the market maker fees generated from Trader 2 (Y₁) holding 10,000 no shares into redemption:
             </p>
             
@@ -1313,7 +1282,7 @@ function DocsContent() {
               <BlockMath>{String.raw`\text{Redemption Market Maker Fees on } Y_1 = \$408.62`}</BlockMath>
             </div>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               Now let&apos;s calculate the losses that the market faces when paying out all the traders before fees are applied:
             </p>
             
@@ -1329,7 +1298,7 @@ function DocsContent() {
               <BlockMath>{String.raw`\text{Redemption Loss} = \$3{,}278`}</BlockMath>
             </div>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               Finally let&apos;s calculate the Market Maker Profit & Loss Function given the fees collected on trader 1, trader 2, and the open market sales:
             </p>
             
@@ -1345,7 +1314,7 @@ function DocsContent() {
               <BlockMath>{String.raw`\text{P\&L} = \$1{,}008.62`}</BlockMath>
             </div>
             
-            <p className="text-gray-800 leading-7 text-base mb-4">
+            <p>
               The market maker makes $1,008.62 given the market parameters described above. Market making profitably depends entirely on market values but anytime the collected market fees are greater than the redemption loss, the market maker will profit. The smaller the average size of the share holder, the closer the market maker loss will be to the maximum bounded loss in redemption. The market maker profits in redemption from whales since it means that a large percentage of shares are redeemed below market odds.  
             </p>
           </section>
@@ -1354,83 +1323,83 @@ function DocsContent() {
 
           {activeTab === 'review-boards' && (
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-black font-sans mb-4">Review Boards</h1>
+              <h1>Review Boards</h1>
               
-              <h2 className="text-2xl font-bold text-black font-sans mb-3 mt-10">Judging Criteria</h2>
-              <p className="text-gray-800 leading-7 mb-4">
+              <h2>Judging Criteria</h2>
+              <p>
                 Each judge will categorize their final opinion in one of the following buckets:
               </p>
-              <ol className="list-decimal pl-6 space-y-2 text-gray-800 leading-7 mb-4">
+              <ol>
                 <li>No - beyond a reasonable doubt (estimated confidence of 95%)</li>
                 <li>No - clear and convincing evidence (estimated confidence of 70%)</li>
                 <li>No - inconclusive for both sides (estimated confidence of less than 70%)</li>
                 <li>Yes - clear and convincing evidence (estimated confidence of 70%)</li>
                 <li>Yes - beyond a reasonable doubt (estimated confidence of 95%)</li>
               </ol>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 For the market to resolve &quot;Yes,&quot; two out of three judges need to rule in favor of the &quot;Yes&quot; position, meaning two out of three judges rule either &quot;Yes - clear and convincing evidence&quot; or &quot;Yes - beyond a reasonable doubt.&quot; Any time less than two judges rules in favor of the &quot;Yes&quot; position, then the market will resolve &quot;No.&quot;
               </p>
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 After making their decision, the judges will author a case summary where they will review at least the top ten pieces of evidence promoted in the evidence section for each position. They will comment on the authenticity and truthfulness of each document.
               </p>
 
-              <h2 className="text-lg md:text-xl font-bold text-black font-sans mb-3 mt-10">WSJ History Review Board</h2>
+              <h2>WSJ History Review Board</h2>
               
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 The Wall Street Journal appoints the members of review board based on each candidate&apos;s experience in the field and a demonstrated history of telling the truth despite potential consequences.
               </p>
               
               <div className="mb-6">
-                <h3 className="text-xl font-bold text-black font-sans mb-2">Dr. Robert Chen</h3>
-                <p className="text-gray-800 leading-7 mb-4">
+                <h3>Dr. Robert Chen</h3>
+                <p>
                   Dr. Chen is a Professor of American History at Stanford University, specializing in 20th-century political history and intelligence operations. With over 30 years of academic research and teaching experience, he has published extensively on Cold War era events and government institutions. Dr. Chen commits to evaluating all evidence presented in the markets with rigorous historical methodology and impartial analysis, ensuring that market resolutions reflect the most accurate interpretation of available evidence.
                 </p>
               </div>
 
               <div className="mb-6">
-                <h3 className="text-xl font-bold text-black font-sans mb-2">Dr. James Mitchell</h3>
-                <p className="text-gray-800 leading-7 mb-4">
+                <h3>Dr. James Mitchell</h3>
+                <p>
                   Dr. Mitchell is a Distinguished Professor of Modern History at Columbia University, with a focus on presidential history and political scandals. Having dedicated over 30 years to historical research, he has served as a consultant for numerous historical documentaries and publications. Dr. Mitchell pledges to apply the highest standards of historical scholarship in his market evaluations, carefully weighing all evidence and testimony to reach conclusions that honor the integrity of historical truth.
                 </p>
               </div>
 
               <div className="mb-6">
-                <h3 className="text-xl font-bold text-black font-sans mb-2">Dr. Michael Thompson</h3>
-                <p className="text-gray-800 leading-7 mb-4">
+                <h3>Dr. Michael Thompson</h3>
+                <p>
                   Dr. Thompson is a Professor Emeritus of History at Harvard University, with expertise in space history and 20th-century technological achievements. With more than 30 years of academic service, he has authored multiple award-winning books on the space race and American technological innovation. Dr. Thompson commits to conducting thorough, unbiased reviews of all market evidence, applying decades of historical research experience to ensure that market resolutions accurately reflect the weight of historical evidence.
                 </p>
               </div>
 
-              <h2 className="text-lg md:text-xl font-bold text-black font-sans mb-3 mt-10">WSJ Scientific Review Board</h2>
+              <h2>WSJ Scientific Review Board</h2>
               
-              <p className="text-gray-800 leading-7 mb-4">
+              <p>
                 The Wall Street Journal appoints the members of review board based on each candidate&apos;s experience in the field and a demonstrated history of telling the truth despite potential consequences.
               </p>
               
               <div className="mb-6">
-                <h3 className="text-xl font-bold text-black font-sans mb-2">Dr. David Anderson</h3>
-                <p className="text-gray-800 leading-7 mb-4">
+                <h3>Dr. David Anderson</h3>
+                <p>
                   Dr. Anderson is a Professor of Public Health and Epidemiology at Johns Hopkins University, with over 30 years of experience researching population health outcomes and environmental health factors. He has published over 200 peer-reviewed articles on public health interventions and their effects on community health metrics. Dr. Anderson commits to applying rigorous scientific methodology and evidence-based analysis to all market evaluations, ensuring that resolutions are grounded in the highest standards of scientific inquiry and peer-reviewed research.
                 </p>
               </div>
 
               <div className="mb-6">
-                <h3 className="text-xl font-bold text-black font-sans mb-2">Dr. Richard Martinez</h3>
-                <p className="text-gray-800 leading-7 mb-4">
+                <h3>Dr. Richard Martinez</h3>
+                <p>
                   Dr. Martinez is a Professor of Immunology and Vaccine Research at the University of California, San Francisco, with more than 30 years of experience in vaccine development and safety research. He has led numerous clinical trials and served on advisory boards for major health organizations. Dr. Martinez pledges to evaluate all market evidence with the same scientific rigor he applies to his research, carefully analyzing data quality, methodology, and statistical significance to ensure market resolutions reflect the most accurate scientific consensus.
                 </p>
               </div>
 
               <div className="mb-6">
-                <h3 className="text-xl font-bold text-black font-sans mb-2">Dr. Thomas Wilson</h3>
-                <p className="text-gray-800 leading-7 mb-4">
+                <h3>Dr. Thomas Wilson</h3>
+                <p>
                   Dr. Wilson is a Professor of Oncology and Molecular Biology at the Mayo Clinic, specializing in cancer epidemiology and the long-term health effects of medical interventions. With over 30 years of clinical and research experience, he has published extensively on cancer risk factors and treatment outcomes. Dr. Wilson commits to conducting comprehensive, objective reviews of all scientific evidence presented in markets, applying his extensive expertise to ensure that resolutions accurately represent the current state of scientific knowledge and research findings.
                 </p>
               </div>
             </div>
           )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }
@@ -1440,14 +1409,18 @@ export default function DocsPage() {
     <Suspense fallback={
       <div>
         <Navbar />
-        <main className="min-h-screen bg-white">
-          <div className="max-w-3xl mx-auto px-4 py-8">
-            <div className="text-sm text-gray-400 font-sans mb-2">Research</div>
-            <div className="flex gap-4 mb-6 border-b border-gray-200">
-              <div className="pb-2 px-1 font-sans text-lg font-semibold text-gray-500">Loading...</div>
+        <div className="container-page pb-24 pt-10 md:pt-14">
+          <div className="doc-prose">
+            <div className="mb-2 text-small text-muted">Research</div>
+            <div role="tablist" aria-label="Documentation" className="tabs mb-8 overflow-x-auto">
+              <div className="tab">
+                <span className="sr-only">Loading...</span>
+                <span aria-hidden className="skeleton inline-block h-3.5 w-24" />
+              </div>
             </div>
+            <SkeletonLines rows={8} />
           </div>
-        </main>
+        </div>
       </div>
     }>
       <DocsContent />

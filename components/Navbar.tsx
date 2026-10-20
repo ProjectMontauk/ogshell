@@ -1,42 +1,41 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { ConnectButton, useActiveAccount, useReadContract } from "thirdweb/react";
-import { client } from "../src/client";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { List, X } from "@phosphor-icons/react";
+import dynamic from "next/dynamic";
+import { useActiveAccount, useReadContract } from "thirdweb/react";
 import { tokenContract } from "../constants/contracts";
 import { CASH_TOKEN_SCALE } from "../constants/tokenUnits";
-import { inAppWallet, createWallet} from "thirdweb/wallets";
-import { base } from "thirdweb/chains";
 import { usePortfolio } from "../src/contexts/PortfolioContext";
 import { getTotalBetValueUsd } from "../src/utils/portfolioTotals";
 
-// TODO: Replace this with the actual ThirdWeb inAppWallet import
-// import { InAppWalletButton } from "thirdweb-package-path";
 
-// Add Trade type based on schema.prisma
-/*
-interface Trade {
-  id: number;
-  walletAddress: string;
-  marketTitle: string;
-  marketId: string;
-  outcome: string;
-  shares: number;
-  avgPrice: number;
-  betAmount: number;
-  toWin: number;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
+// Loaded after first paint: the wallet picker would otherwise ship with every page.
+const WalletButton = dynamic(() => import("./WalletButton"), {
+  ssr: false,
+  loading: () => <span aria-hidden className="skeleton inline-block h-8 w-[72px]" />,
+});
+
+/** The same sign-in the masthead uses, for pages that ask for it in their own content. */
+export function SignInButton() {
+  return <WalletButton large />;
 }
-*/
+
+const NAV_LINKS = [
+  { href: "/markets", label: "Markets" },
+  { href: "/market-ideas", label: "New" },
+  { href: "/portfolio", label: "Portfolio" },
+  { href: "/deposit", label: "Deposit" },
+  { href: "/docs", label: "Docs" },
+];
 
 function formatBalance(balance: bigint | undefined): string {
   if (!balance) return "0";
-  // Divide by 10^18 and show decimal places only when needed
   const amount = Number(balance) / CASH_TOKEN_SCALE;
-  return amount % 1 === 0 
+  return amount % 1 === 0
     ? amount.toLocaleString(undefined, { maximumFractionDigits: 0 })
     : amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -44,21 +43,27 @@ function formatBalance(balance: bigint | undefined): string {
 export type NavbarVariant = "full" | "embed";
 
 type NavbarProps = {
-  /** `embed`: partner iframe (?embed=1) — Portfolio + Cash + wallet; no site title / nav links */
+  /** `embed`: partner iframe (?embed=1). Balance and wallet only. */
   variant?: NavbarVariant;
 };
 
+
+
 const Navbar = ({ variant = "full" }: NavbarProps) => {
-  const router = useRouter();
+  const pathname = usePathname();
   const isEmbed = variant === "embed";
+  const reduce = useReducedMotion();
   const account = useActiveAccount();
-  const {
-    portfolioValue,
-    setPortfolioValue,
-    cashRefreshNonce,
-    lastPortfolioHydrateKey,
-    setLastPortfolioHydrateKey,
-  } = usePortfolio();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  const { portfolioValue, setPortfolioValue, cashRefreshNonce, lastPortfolioHydrateKey, setLastPortfolioHydrateKey } = usePortfolio();
   const [portfolioLoading, setPortfolioLoading] = useState(false);
   const { data: balance, isPending, refetch } = useReadContract({
     contract: tokenContract,
@@ -66,44 +71,7 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
     params: [account?.address ?? "0x0000000000000000000000000000000000000000"],
   });
 
-  const isDevelopment = process.env.NODE_ENV !== 'production';
-
-  const wallets = isDevelopment
-    ? [
-        inAppWallet({
-          auth: {
-            options: ["google", "apple", "email", "phone", "passkey"] as const,
-          },
-          smartAccount: {
-            chain: base,
-            sponsorGas: true,
-          },
-        }),
-        createWallet("io.metamask"),
-        createWallet("com.coinbase.wallet"),
-        createWallet("me.rainbow"),
-        createWallet("io.rabby"),
-        createWallet("io.zerion.wallet"),
-      ]
-    : [
-        inAppWallet({
-          auth: {
-            options: ["google", "apple", "email", "phone", "passkey"] as const,
-          },
-          smartAccount: {
-            chain: base,
-            sponsorGas: true,
-          },
-        }),
-        createWallet("io.metamask"),
-        createWallet("com.coinbase.wallet"),
-        createWallet("me.rainbow"),
-        createWallet("io.rabby"),
-        createWallet("io.zerion.wallet"),
-      ];
-
-  // Hydrate Navbar "Portfolio" chip: cash + bet value (mark-to-market shares), matching Portfolio page.
-  // Deduped by wallet + cashRefreshNonce so remounting Navbar on route change does not re-RPC every market.
+  // Portfolio figure: cash + mark-to-market shares, deduped by wallet + refresh nonce.
   useEffect(() => {
     const addr = account?.address;
     if (!addr) {
@@ -112,202 +80,205 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
       setLastPortfolioHydrateKey(null);
       return;
     }
-
     const hydrateKey = `${addr}::${cashRefreshNonce}`;
-
     if (lastPortfolioHydrateKey === hydrateKey) {
       void refetch();
       setPortfolioLoading(false);
       return;
     }
-
     let cancelled = false;
     setPortfolioLoading(true);
-
     void (async () => {
       try {
         const refResult = await refetch();
         if (cancelled) return;
-
         const data = refResult.data as bigint | undefined;
         const cashUsd = data !== undefined ? Number(data) / CASH_TOKEN_SCALE : 0;
-
         let betUsd = 0;
         try {
           betUsd = await getTotalBetValueUsd(addr as `0x${string}`);
         } catch (e) {
           console.error("[Navbar] bet value totals failed:", e);
         }
-
         if (cancelled) return;
         setPortfolioValue((cashUsd + betUsd).toFixed(2));
         setLastPortfolioHydrateKey(hydrateKey);
       } catch (e) {
         console.error("[Navbar] portfolio total hydrate failed:", e);
-        if (!cancelled) {
-          setPortfolioValue("--");
-        }
+        if (!cancelled) setPortfolioValue("--");
       } finally {
-        if (!cancelled) {
-          setPortfolioLoading(false);
-        }
+        if (!cancelled) setPortfolioLoading(false);
       }
     })();
-
     return () => {
       cancelled = true;
     };
-  }, [
-    account?.address,
-    cashRefreshNonce,
-    refetch,
-    setPortfolioValue,
-    setLastPortfolioHydrateKey,
-    lastPortfolioHydrateKey,
-  ]);
+  }, [account?.address, cashRefreshNonce, refetch, setPortfolioValue, setLastPortfolioHydrateKey, lastPortfolioHydrateKey]);
 
-  const rightControls = (
-    <div className="flex items-center gap-1">
-      <button
-        className="hidden md:flex flex-col items-center justify-center bg-card px-2 py-1 rounded transition-colors duration-200 cursor-pointer focus:outline-none hover:bg-gray-100 dark:hover:bg-white/10"
-        style={{ boxShadow: "none", minWidth: 0 }}
-        onClick={() => router.push("/portfolio")}
-        type="button"
-      >
-        <span className="text-citizen-ink font-medium text-xs">Portfolio</span>
-        <span className="text-green-600 font-semibold text-xs">
-          {portfolioLoading || portfolioValue === "--" ? (
-            <>$--</>
-          ) : (
-            <>${Number(portfolioValue).toLocaleString(undefined, { maximumFractionDigits: 2 })}</>
-          )}
-        </span>
-      </button>
-      <button
-        className="hidden md:flex flex-col items-center justify-center bg-card px-2 py-1 pr-4 m-0 p-0 rounded transition-colors duration-200 cursor-pointer focus:outline-none hover:bg-gray-100 dark:hover:bg-white/10 text-center"
-        style={{ boxShadow: "none", minWidth: 0, margin: 0 }}
-        onClick={() => router.push("/portfolio")}
-        type="button"
-      >
-        <span className="text-citizen-ink font-medium text-xs">Cash</span>
-        <span className="text-green-600 font-semibold text-xs">
-          {!account?.address || isPending ? <>$--</> : <>${formatBalance(balance)}</>}
-        </span>
-      </button>
-      <div className="flex scale-75 origin-left">
-        <ConnectButton
-          client={client}
-          wallets={wallets}
-          connectButton={{
-            label: "Sign In",
-            className:
-              "bg-black text-white px-4 py-2 rounded transition-colors duration-200 focus:outline-none hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 text-[10px] font-semibold m-0",
-          }}
-        />
-      </div>
+  // Close the menu on navigation
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
+  const cashDisplay = !account?.address || isPending ? "--" : formatBalance(balance);
+  const portfolioDisplay =
+    portfolioLoading || portfolioValue === "--" ? "--" : Number(portfolioValue).toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+  // As on main: both figures always show ("$--" when signed out); Cash links to /deposit in the embed.
+  const balanceLinks = (cashHref: string, className: string) => (
+    <div className={`items-baseline gap-4 text-small ${className}`}>
+      <Link href="/portfolio" className="text-muted transition-colors hover:text-ink">
+        Portfolio <span className="num text-ink">${portfolioDisplay}</span>
+      </Link>
+      <Link href={cashHref} className="text-muted transition-colors hover:text-ink">
+        Cash <span className="num text-ink">${cashDisplay}</span>
+      </Link>
     </div>
   );
+  const balances = balanceLinks("/portfolio", "hidden md:flex");
+
+  const connect = <WalletButton />;
 
   if (isEmbed) {
     return (
-      <nav className="w-full border-b border-border bg-background shrink-0">
-        <div className="max-w-6xl mx-auto w-full flex items-center justify-end px-4 md:px-6 lg:px-8 py-2 gap-2">
-          <div className="flex items-center gap-1 flex-wrap justify-end">
-            <button
-              className="flex flex-col items-center justify-center bg-card px-2 py-1 rounded transition-colors duration-200 cursor-pointer focus:outline-none hover:bg-gray-100 dark:hover:bg-white/10"
-              style={{ boxShadow: "none", minWidth: 0 }}
-              onClick={() => router.push("/portfolio")}
-              type="button"
-            >
-              <span className="text-citizen-ink font-medium text-xs">Portfolio</span>
-              <span className="text-green-600 font-semibold text-xs">
-                {portfolioLoading || portfolioValue === "--" ? (
-                  <>$--</>
-                ) : (
-                  <>${Number(portfolioValue).toLocaleString(undefined, { maximumFractionDigits: 2 })}</>
-                )}
-              </span>
-            </button>
-            <button
-              className="flex flex-col items-center justify-center bg-card px-2 py-1 pr-2 md:pr-4 rounded transition-colors duration-200 cursor-pointer focus:outline-none hover:bg-gray-100 dark:hover:bg-white/10 text-center"
-              style={{ boxShadow: "none", minWidth: 0, margin: 0 }}
-              onClick={() => router.push("/deposit")}
-              type="button"
-            >
-              <span className="text-citizen-ink font-medium text-xs">Cash</span>
-              <span className="text-green-600 font-semibold text-xs">
-                {!account?.address || isPending ? <>$--</> : <>${formatBalance(balance)}</>}
-              </span>
-            </button>
-            <div className="flex scale-90 origin-right">
-              <ConnectButton
-                client={client}
-                wallets={wallets}
-                connectButton={{
-                  label: "Sign In",
-                  className:
-                    "bg-black text-white px-4 py-2 rounded transition-colors duration-200 focus:outline-none hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 text-[10px] font-semibold m-0",
-                }}
-              />
-            </div>
-          </div>
+      <nav className="w-full bg-ground">
+        <div className="container-page flex h-14 items-center justify-end gap-4">
+          {balanceLinks("/deposit", "flex flex-wrap justify-end")}
+          {connect}
         </div>
       </nav>
     );
   }
 
-  return (
-    <nav className="w-full border-b border-border bg-background">
-      <div className="max-w-6xl mx-auto w-full flex items-center justify-between px-4 md:px-6 lg:px-8 py-1">
-        <div className="ml-0 flex flex-col items-start">
-          <h1 className="text-2xl font-bold text-citizen-ink mt-2">The Citizen</h1>
-          <div className="flex gap-0 md:gap-0 mt-1 -ml-2">
-            <button
-              className="py-1 px-1 md:px-2 bg-transparent text-citizen-ink rounded-md text-[8px] md:text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10 transition border-none shadow-none text-left whitespace-nowrap"
-              style={{ minWidth: 0 }}
-              onClick={() => router.push("/markets")}
-              type="button"
-            >
-              Markets
-            </button>
+  // The front page is the markets index, so "Markets" is the current section there too.
+  const isActive = (href: string) => pathname === href || pathname?.startsWith(href + "/") || (href === "/markets" && pathname === "/");
 
-            <button
-              className="py-1 px-1 md:px-2 bg-transparent text-citizen-ink rounded-md text-[8px] md:text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10 transition border-none shadow-none text-left whitespace-nowrap"
-              style={{ minWidth: 0 }}
-              onClick={() => router.push("/market-ideas")}
-              type="button"
+  return (
+    <>
+      {/* Masthead: the motto, the name, and on the right the reader's balances. Scrolls away. */}
+      <header className="container-page hidden grid-cols-[1fr_auto_1fr] items-end pb-2 pt-6 md:grid">
+        <span className="text-small text-muted">Time Discovers Truth</span>
+        <Link href="/" className="serif text-[46px] font-extrabold leading-none tracking-[-0.025em] text-ink" aria-label="The Citizen, home">
+          The Citizen
+        </Link>
+        <div className="flex justify-end">{balances}</div>
+      </header>
+
+      {/* Section nav: sticks to the top, turns translucent with a blur once the page scrolls under it.
+          The small name and the wallet live here so they stay in reach after the masthead is gone. */}
+      <nav
+        className={`sticky top-0 z-30 w-full transition-[background-color] duration-200 ${
+          scrolled ? "bg-ground/80 backdrop-blur-md backdrop-saturate-150" : "bg-ground"
+        }`}
+      >
+        <div className="container-page">
+          <div className="flex h-14 items-center justify-between gap-6 md:grid md:h-12 md:grid-cols-[1fr_auto_1fr] md:border-b-4 md:border-double md:border-ink">
+            <Link
+              href="/"
+              aria-label="The Citizen, home"
+              className={`serif whitespace-nowrap text-[26px] font-extrabold leading-none tracking-[-0.02em] text-ink transition-opacity duration-200 md:text-[20px] ${
+                scrolled ? "md:opacity-100" : "md:pointer-events-none md:opacity-0"
+              }`}
             >
-              New
-            </button>
-            <button
-              className="py-1 px-1 md:px-2 bg-transparent text-citizen-ink rounded-md text-[8px] md:text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10 transition border-none shadow-none text-left whitespace-nowrap"
-              style={{ minWidth: 0 }}
-              onClick={() => router.push("/portfolio")}
-              type="button"
-            >
-              Portfolio
-            </button>
-            <button
-              className="py-1 px-1 md:px-2 bg-transparent text-citizen-ink rounded-md text-[8px] md:text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10 transition border-none shadow-none text-left whitespace-nowrap"
-              style={{ minWidth: 0 }}
-              onClick={() => router.push("/deposit")}
-              type="button"
-            >
-              Deposit
-            </button>
-            <button
-              className="py-1 px-1 md:px-2 bg-transparent text-citizen-ink rounded-md text-[8px] md:text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10 transition border-none shadow-none text-left whitespace-nowrap"
-              style={{ minWidth: 0 }}
-              onClick={() => router.push("/docs")}
-              type="button"
-            >
-              Docs
-            </button>
+              The Citizen
+            </Link>
+
+            <ul className="hidden items-center gap-7 md:flex">
+              {NAV_LINKS.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    aria-current={isActive(item.href) ? "page" : undefined}
+                    className={`text-body transition-colors duration-200 ${
+                      isActive(item.href) ? "font-semibold text-ink shadow-[inset_0_-2px_0_var(--ink)]" : "text-muted hover:text-ink"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex items-center justify-end gap-3">
+              <div className="hidden md:block">{connect}</div>
+              <button
+                type="button"
+                onClick={() => setMenuOpen(true)}
+                className="btn btn-outline h-10 w-10 px-0 md:hidden"
+                aria-label="Open menu"
+                aria-expanded={menuOpen}
+              >
+                <List size={18} aria-hidden />
+              </button>
+            </div>
           </div>
         </div>
-        {rightControls}
-      </div>
-    </nav>
+        <div className={`h-px bg-rule transition-opacity duration-200 md:hidden ${scrolled ? "opacity-100" : "opacity-0"}`} />
+      </nav>
+
+      {/* Phones: full-screen menu */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            className="fixed inset-0 z-40 flex flex-col bg-ground md:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduce ? 0 : 0.2 }}
+          >
+            <div className="container-page flex h-14 items-center justify-between">
+              <span className="serif text-[26px] font-extrabold leading-none tracking-[-0.02em] text-ink">The Citizen</span>
+              <button type="button" onClick={() => setMenuOpen(false)} className="btn btn-outline h-11 w-11 px-0" aria-label="Close menu">
+                <X size={18} aria-hidden />
+              </button>
+            </div>
+            <ul className="container-page mt-6 flex flex-col">
+              {NAV_LINKS.map((item, i) => (
+                <motion.li
+                  key={item.href}
+                  initial={reduce ? false : { opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: reduce ? 0 : 0.05 + i * 0.05, ease: [0.22, 1, 0.36, 1] }}
+                  className=""
+                >
+                  <Link href={item.href} className={`serif block border-b border-rule py-4 text-heading font-bold ${isActive(item.href) ? "text-ink" : "text-muted"}`}>
+                    {item.label}
+                  </Link>
+                </motion.li>
+              ))}
+            </ul>
+            <div className="container-page mt-auto flex flex-col gap-4 pb-8">
+              {account?.address && (
+                <div className="flex gap-6 text-small text-muted">
+                  <span>
+                    Portfolio <span className="num text-ink">${portfolioDisplay}</span>
+                  </span>
+                  <span>
+                    Cash <span className="num text-ink">${cashDisplay}</span>
+                  </span>
+                </div>
+              )}
+              <div>{connect}</div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 

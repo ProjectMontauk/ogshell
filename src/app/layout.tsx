@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Script from "next/script";
-import { Geist, Geist_Mono } from "next/font/google";
+import { IBM_Plex_Mono, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import Providers from "../components/Providers";
 import RpcLogger from "../components/RpcLogger";
@@ -10,14 +10,18 @@ import { ThemeProvider } from "../contexts/ThemeContext";
 import ConditionalFooter from "../../components/ConditionalFooter";
 import { THEME_INIT_SCRIPT } from "../lib/theme";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Source Serif for headlines, figures and reading text; IBM Plex Mono for the interface.
+const serif = Source_Serif_4({
+  variable: "--font-display",
+  weight: ["400", "600", "700", "800"],
   subsets: ["latin"],
+  display: "swap",
 });
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const mono = IBM_Plex_Mono({
+  variable: "--font-text",
+  weight: ["400", "500", "600"],
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -32,12 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Google tag (gtag.js) */}
-        <Script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-GDH6QS9TC1"
-          strategy="afterInteractive"
-        />
+        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-GDH6QS9TC1" strategy="afterInteractive" />
         <Script id="google-gtag" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
@@ -47,15 +46,16 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden bg-background text-foreground`}
-      >
+      <body className={`${serif.variable} ${mono.variable} overflow-x-hidden`}>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <a href="#main" className="skip-link">
+          Skip to content
+        </a>
         <PortfolioProvider>
           <ThemeProvider>
             <Providers>
               <RpcLogger />
-              <main className="min-h-screen bg-background text-foreground">
+              <main id="main" className="min-h-[100dvh]">
                 {children}
               </main>
               <Suspense fallback={null}>
