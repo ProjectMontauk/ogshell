@@ -37,8 +37,8 @@ function CaseSide(p: SideProps) {
 
   return (
     <section className="flex min-w-0 flex-col" aria-labelledby={`case-${p.side}`}>
-      {/* The side's head: a mono kicker in the side's colour over an ink hairline */}
-      <h3 id={`case-${p.side}`} className={`kicker hidden font-mono md:flex ${p.side === "yes" ? "text-yes" : "text-no"}`}>
+      {/* The side's head: a mono label in the side's colour over a rule of the same colour */}
+      <h3 id={`case-${p.side}`} className={`kicker hidden border-b-2 border-current font-mono text-[12px] font-medium md:flex ${p.side === "yes" ? "text-yes" : "text-no"}`}>
         {p.label}
       </h3>
 

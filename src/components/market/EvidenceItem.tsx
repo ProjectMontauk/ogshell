@@ -82,10 +82,10 @@ export default function EvidenceItem({ evidence, rank, voted, contribution, voti
   // A ledger line: rank, the title in the serif with the discussion link under it, the vote on the right.
   // The lead document also carries its description.
   return (
-    <li data-ui className="row-hover grid grid-cols-[2rem_minmax(0,1fr)_auto] gap-x-3 border-b border-dotted border-rule py-3">
+    <li data-ui className="row-hover grid grid-cols-[2rem_minmax(0,1fr)_auto] gap-x-3 border-b border-rule py-3">
       <span className="num pt-0.5 text-small text-muted">#{rank}</span>
       <div className="min-w-0">
-        <div className={`serif font-semibold leading-snug text-ink ${lead ? "text-[18px]" : "text-[16px]"}`}>{titleEl}</div>
+        <div className={`serif font-medium leading-snug text-ink ${lead ? "text-[18px]" : "text-[16px]"}`}>{titleEl}</div>
         {lead && evidence.description && <p className="serif mt-1.5 max-w-[60ch] text-[15px] leading-relaxed text-ink-2">{evidence.description}</p>}
         <button
           type="button"

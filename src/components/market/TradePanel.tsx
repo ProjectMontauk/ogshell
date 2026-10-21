@@ -70,10 +70,10 @@ export type TradePanelProps = {
   };
 };
 
-/** A ledger line: label on the left, figure on the right, dotted rule underneath. */
+/** A ledger line: label on the left, figure on the right, a hairline underneath. */
 function Row({ label, value, strong = false }: { label: string; value: React.ReactNode; strong?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-dotted border-rule py-2 text-small">
+    <div className="flex items-baseline justify-between gap-3 border-b border-ink/15 py-2 text-small">
       <span className="text-ink-2">{label}</span>
       <span className={`num ${strong ? "font-semibold text-ink" : "text-ink"}`}>{value}</span>
     </div>
@@ -203,7 +203,7 @@ export default function TradePanel(p: TradePanelProps) {
             placeholder="$"
             value={p.amount ? `$${p.amount}` : ""}
             onChange={(e) => p.onAmountChange(e.target.value.replace(/^\$/, "").replace(/[^0-9.]/g, ""))}
-            className="field num"
+            className="field num border-ink text-[24px] font-medium"
           />
         </div>
       </div>

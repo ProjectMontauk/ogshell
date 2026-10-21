@@ -77,7 +77,7 @@ function Dialog({ title, body, children }: { title: string; body: string; childr
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={title}>
       <div aria-hidden className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
       <div className="panel relative w-full max-w-sm p-5 shadow-[var(--shadow-float)]">
-        <h3 className="text-body font-semibold text-ink">{title}</h3>
+        <h3 className="text-body font-medium text-ink">{title}</h3>
         <p className="mt-1.5 text-small text-muted">{body}</p>
         <div className="mt-4 flex justify-end gap-2">{children}</div>
       </div>
@@ -2191,109 +2191,118 @@ useEffect(() => {
     <div className="pb-32 lg:pb-0">
       <Navbar variant={isEmbed ? "embed" : "full"} />
 
-      <div className="container-page pb-24 pt-8 md:pt-10">
-        {/* The question, set as a front-page headline */}
-        <h1 id="case-title" className="display text-ink">
-          <span className="line-mask">
-            <span>{market.title}</span>
-          </span>
-        </h1>
+      <div className="container-page pb-24 pt-7 md:pt-9">
+        {/* An article, with the trade box beside it on desktop for the length of the page */}
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <article className="min-w-0">
+            <h1 id="case-title" className="serif text-[40px] font-medium leading-none tracking-[-0.02em] text-ink [text-wrap:pretty] md:text-[58px]">
+              <span className="line-mask">
+                <span>{market.title}</span>
+              </span>
+            </h1>
+            {market.description && (
+              <p className="after-lines serif mt-3.5 max-w-[46ch] text-[19px] leading-[1.4] text-ink-2 md:text-[21px]">{market.description}</p>
+            )}
 
-        {/* The figure: the two prices on the left, the price history across the rest */}
-        <section aria-labelledby="odds-heading" className="mt-6 border-t-2 border-ink pt-3" data-reveal>
-          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-            <h2 id="odds-heading" className="text-[22px] font-bold text-ink">
-              Market Odds
-            </h2>
-            {chartRange && <span className="num text-small text-muted">{chartRange}</span>}
-          </div>
-          <div className="mt-3.5 grid gap-6 md:grid-cols-[200px_minmax(0,1fr)] md:gap-7 lg:grid-cols-[220px_minmax(0,1fr)]">
-            <ProbabilityBar yesPct={yesPct} noPct={noPct} loading={fpmmOddsLoading} size="lg" className="md:border-r md:border-rule md:pr-6" />
-            <div className="min-w-0">
-              {loadingOdds ? (
-                <div className="skeleton h-[260px] w-full">
-                  <span className="sr-only">Loading chart...</span>
-                </div>
-              ) : (
-                <div data-ui>
-                  <OddsChart data={chartData} height={260} />
-                  <div aria-hidden className="mt-2.5 flex gap-5 text-small text-muted">
-                    <span className="inline-flex items-center gap-1.5">
-                      <i className="inline-block h-[3px] w-[18px] bg-yes" />
-                      Yes
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <i className="inline-block h-[3px] w-[18px] bg-no" />
-                      No
-                    </span>
+            {/* Market Odds: the two prices on one quiet line, the price history under it */}
+            <section aria-labelledby="odds-heading" className="mt-7" data-reveal>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-rule pb-2">
+                <h2 id="odds-heading" className="serif text-[20px] font-medium text-ink">
+                  Market Odds
+                </h2>
+                <ProbabilityBar yesPct={yesPct} noPct={noPct} loading={fpmmOddsLoading} />
+              </div>
+              <div className="mt-3">
+                {loadingOdds ? (
+                  <div className="skeleton h-[240px] w-full">
+                    <span className="sr-only">Loading chart...</span>
                   </div>
+                ) : (
+                  <div data-ui>
+                    <OddsChart data={chartData} height={240} />
+                  </div>
+                )}
+                <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-1 text-small text-muted">
+                  {!loadingOdds && (
+                    <>
+                      <span aria-hidden className="inline-flex items-center gap-1.5">
+                        <i className="inline-block h-[2px] w-[18px] bg-yes" />
+                        Yes
+                      </span>
+                      <span aria-hidden className="inline-flex items-center gap-1.5">
+                        <i className="inline-block h-[2px] w-[18px] bg-no" />
+                        No
+                      </span>
+                    </>
+                  )}
+                  {chartRange && <span className="num ml-auto">{chartRange}</span>}
                 </div>
-              )}
-            </div>
-          </div>
-        </section>
+              </div>
+            </section>
 
-        {/* The rules, and on desktop the trade as a column of the page beside them */}
-        <div className="mt-7 grid border-t-2 border-ink lg:grid-cols-[minmax(0,1fr)_320px]">
-          <section aria-labelledby="rules-heading" className="min-w-0 pt-4 lg:pr-6">
-            <div data-reveal>
-              <h2 id="rules-heading" className="kicker font-mono">
+            {/* As on the original: the first sentence while closed, every paragraph when open */}
+            <section aria-labelledby="rules-heading" className="mt-10" data-reveal>
+              <h2 id="rules-heading" className="serif border-b border-rule pb-2 text-[20px] font-medium text-ink">
                 Rules
               </h2>
-              {/* As on the original: the first sentence while closed, every paragraph when open */}
               <AutoHeight className="mt-3">
-                <div className="market-rules serif flex flex-col gap-4 text-[17px] leading-[1.55] text-ink-2">
+                <div className="market-rules serif flex max-w-[68ch] flex-col gap-4 text-[17px] leading-[1.6] text-ink-2 md:text-[19px]">
                   {splitRules(showRules ? rulesFull : firstLine).map((para, i) => (
                     <p key={i} dangerouslySetInnerHTML={{ __html: para }} />
                   ))}
                 </div>
               </AutoHeight>
-              <button type="button" onClick={() => setShowRules((prev) => !prev)} aria-expanded={showRules} className="btn btn-outline btn-sm mt-4 gap-2">
+              <button
+                type="button"
+                onClick={() => setShowRules((prev) => !prev)}
+                aria-expanded={showRules}
+                className="touch mt-3 inline-flex items-center gap-1.5 border-b border-rule-2 pb-px text-small text-ink transition-colors duration-200 hover:border-ink"
+              >
                 {showRules ? "Read Less" : "Read More"}
-                <CaretDown size={14} className={`transition-transform duration-200 ease-out-quart ${showRules ? "rotate-180" : ""}`} aria-hidden />
+                <CaretDown size={12} className={`transition-transform duration-200 ease-out-quart ${showRules ? "rotate-180" : ""}`} aria-hidden />
               </button>
-            </div>
-          </section>
+            </section>
+
+            {/* Evidence: the two sides as columns */}
+            <section aria-labelledby="evidence-heading" className="mt-10">
+              <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-rule pb-2" data-reveal>
+                <h2 id="evidence-heading" className="serif text-[20px] font-medium text-ink">
+                  Evidence
+                </h2>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  <p className="num text-[12px] text-muted">
+                    Yes Power: {yesVotingPower}x | No Power: {noVotingPower}x
+                  </p>
+                  <button type="button" onClick={() => setEvidenceFormOpen(true)} className="btn btn-outline btn-sm">
+                    Submit Document
+                  </button>
+                </div>
+              </div>
+              <CaseColumns
+                labels={market.outcomes}
+                yesItems={sortedYesEvidence}
+                noItems={sortedNoEvidence}
+                showAllYes={showAllYes}
+                onToggleYes={() => setShowAllYes(v => !v)}
+                showAllNo={showAllNo}
+                onToggleNo={() => setShowAllNo(v => !v)}
+                userVotes={userVotes}
+                votingId={votingEvidenceId}
+                contribution={getUserVotingContribution}
+                onVote={handleVote}
+                mobileSide={mobileSide}
+                onMobileSideChange={(s) => setEvidenceTabIndex(s === "no" ? 1 : 0)}
+              />
+            </section>
+          </article>
 
           {/* Desktop vs phone is decided by CSS so the first paint already has the right layout */}
-          <aside className="hidden border-l border-rule pl-6 pt-4 lg:block" aria-label="Trade">
-            <div ref={fpmmTradingPanelRefDesktop} className="sticky top-16">
+          <aside className="hidden lg:block" aria-label="Trade">
+            <div ref={fpmmTradingPanelRefDesktop} className="sticky top-16 border border-ink p-5">
               <TradePanel {...tradePanelProps} />
             </div>
           </aside>
         </div>
-
-        {/* Evidence: the two sides as columns, under a double rule */}
-        <section aria-labelledby="evidence-heading" className="rule-double mt-10 pt-4">
-          <div className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3" data-reveal>
-            <div>
-              <h2 id="evidence-heading" className="text-[22px] font-bold text-ink">
-                Evidence
-              </h2>
-              <p className="num mt-1 text-small text-muted">
-                Yes Power: {yesVotingPower}x | No Power: {noVotingPower}x
-              </p>
-            </div>
-            <button type="button" onClick={() => setEvidenceFormOpen(true)} className="btn btn-outline btn-sm">
-              Submit Document
-            </button>
-          </div>
-          <CaseColumns
-            labels={market.outcomes}
-            yesItems={sortedYesEvidence}
-            noItems={sortedNoEvidence}
-            showAllYes={showAllYes}
-            onToggleYes={() => setShowAllYes(v => !v)}
-            showAllNo={showAllNo}
-            onToggleNo={() => setShowAllNo(v => !v)}
-            userVotes={userVotes}
-            votingId={votingEvidenceId}
-            contribution={getUserVotingContribution}
-            onVote={handleVote}
-            mobileSide={mobileSide}
-            onMobileSideChange={(s) => setEvidenceTabIndex(s === "no" ? 1 : 0)}
-          />
-        </section>
       </div>
 
       <TradeBar
