@@ -281,12 +281,37 @@ export function getContractsForMarket(marketId: string) {
         outcomeTokenDecimals: d18,
       };
     case 'autism':
+      // Placeholder deployment — swap addresses/position IDs when the market is live.
       return {
-        marketContract: vaccinesAutismMarketContract,
-        conditionalTokensContract: vaccinesAutismConditionalTokensContract,
-        outcome1PositionId: "71226290096252067581285629648336995324141243340652304533540652151956232685208", // Yes
-        outcome2PositionId: "113421302367171696969861912860096314580872080487022862883618672561264857104737", // No
-        outcomeTokenDecimals: d18,
+        marketContract: placeholderMarketContract,
+        conditionalTokensContract: placeholderConditionalTokensContract,
+        outcome1PositionId: "0", // Yes — TODO
+        outcome2PositionId: "0", // No — TODO
+        outcomeTokenDecimals: 6,
+      };
+    case 'glp1-sudden-blindness':
+      return {
+        marketContract: placeholderMarketContract,
+        conditionalTokensContract: placeholderConditionalTokensContract,
+        outcome1PositionId: "0", // Yes — TODO
+        outcome2PositionId: "0", // No — TODO
+        outcomeTokenDecimals: 6,
+      };
+    case 'talarico-flu-absence':
+      return {
+        marketContract: placeholderMarketContract,
+        conditionalTokensContract: placeholderConditionalTokensContract,
+        outcome1PositionId: "0", // Yes — TODO
+        outcome2PositionId: "0", // No — TODO
+        outcomeTokenDecimals: 6,
+      };
+    case 'epstein-intelligence-agent':
+      return {
+        marketContract: placeholderMarketContract,
+        conditionalTokensContract: placeholderConditionalTokensContract,
+        outcome1PositionId: "0", // Yes — TODO
+        outcome2PositionId: "0", // No — TODO
+        outcomeTokenDecimals: 6,
       };
     case 'covid19':
       // outcome1 / outcome2 align with market.outcomes[0] (Yes) and [1] (No) and FPMM index 0 / 1.

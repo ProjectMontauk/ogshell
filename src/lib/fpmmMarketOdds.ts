@@ -2,6 +2,7 @@ import { getContract, readContract } from "thirdweb";
 import { client } from "@/client";
 import { base } from "thirdweb/chains";
 import type { Market } from "@/data/markets";
+import { getMockProbs } from "@/data/mockMarketOdds";
 
 import { CASH_TOKEN_DECIMALS, CASH_TOKEN_SCALE_BI } from "../../constants/tokenUnits";
 import { getContractsForMarket } from "../../constants/contracts";
@@ -13,10 +14,17 @@ const INVESTMENT_AMOUNT = CASH_TOKEN_SCALE_BI;
 /** Fixed-point scale used in `odds-history` rows (same as markets UI). */
 export const ODDS_HISTORY_FIXED_POINT = Number("18446744073709551616");
 
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
 /** Fetch FPMM yes/no probabilities for one market (same logic as homepage + markets/[id] page). */
 export async function fetchFpmmProbsForMarket(
   market: Market
 ): Promise<{ yes: number; no: number } | null> {
+  const mock = getMockProbs(market.id);
+  if (mock && (!market.contractAddress || market.contractAddress.toLowerCase() === ZERO_ADDRESS)) {
+    return mock;
+  }
+
   try {
     const contract = getContract({
       client,

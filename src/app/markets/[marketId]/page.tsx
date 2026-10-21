@@ -150,6 +150,18 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
   const fetchFpmmOdds = useCallback(async () => {
     setFpmmOddsLoading(true);
     try {
+      // Temporary UI odds for undeployed / placeholder markets.
+      const { getMockProbs } = await import("../../../data/mockMarketOdds");
+      const mock = getMockProbs(market.id);
+      const isPlaceholder =
+        !market.contractAddress ||
+        market.contractAddress.toLowerCase() === "0x0000000000000000000000000000000000000000";
+      if (mock && isPlaceholder) {
+        setFpmmOddsYes(BigInt(Math.round(mock.yes * 2 ** 64)));
+        setFpmmOddsNo(BigInt(Math.round(mock.no * 2 ** 64)));
+        return;
+      }
+
       const [sharesYes, sharesNo] = await Promise.all([
         readContract({
           contract: marketContract,
@@ -185,7 +197,7 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
     } finally {
       setFpmmOddsLoading(false);
     }
-  }, [marketContract, outcomeTokenDecimals]);
+  }, [marketContract, outcomeTokenDecimals, market.id, market.contractAddress]);
 
   useEffect(() => {
     fetchFpmmOdds();

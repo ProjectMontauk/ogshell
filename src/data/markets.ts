@@ -43,12 +43,59 @@ export const markets: Market[] = [
   },
   {
     id: 'autism',
-    title: "Childhood Vaccines Linked to Autism?",
-    description: "Is there clear and convincing evidence linking the CDC-recommended childhood vaccine schedule to a higher likelihood of developing Autism Spectrum Disorder?",
+    title: "Is the Childhood Vaccine Schedule Linked to Autism?",
+    description:
+      "Is there clear and convincing evidence linking the CDC-recommended childhood vaccine schedule to a higher likelihood of developing Autism Spectrum Disorder?",
     image: "/RFK.png",
-    contractAddress: "0x80863c2f689b293049564a68e781fd4d4ae01858",
-    outcomes: ["Yes, childhood vaccines linked to autism:", "No, childhood vaccines not linked to autism:"],
-    rules: "The market will resolve \"Yes\" if the WSJ scientific review board finds that there is a clear and convincing evidence establishing the link between children following the CDC-recommended childhood vaccine schedule and a higher likelihood of developing Autism Spectrum Disorder over their lifetime compared to unvaccinated children.\n\nOtherwise, the market will resolve \"No.\" This means the WSJ scientific review board did not find a clear and convincing evidence supporting the link between childhood vaccines and a higher likelihood of developing Autism Spectrum Disorder.\n\nThis market will close February 20th, 2026 at 11:59 AM EDT and within three days of market close, the review board will resolve the market and author the case summary.\n\nFind out more about the WSJ scientific review board <a href=\"/docs?tab=review-boards\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: #2563eb; text-decoration: underline;\">here</a>."
+    contractAddress: "0x0000000000000000000000000000000000000000", // Placeholder — replace when deployed
+    outcomes: [
+      "Yes, the childhood vaccine schedule is linked to autism",
+      "No, the childhood vaccine schedule is not linked to autism",
+    ],
+    rules:
+      'This market will resolve to &ldquo;Yes&rdquo; if there is clear and convincing evidence that children following the CDC-recommended childhood vaccine schedule have a higher likelihood of developing Autism Spectrum Disorder over their lifetime compared to unvaccinated children. Otherwise, this market will resolve to &ldquo;No.&rdquo;\n\nPrice oracle. The reference price for this market is the probability estimate for the same &ldquo;Yes&rdquo; outcome described above, as published by superforecasters from the Good Judgment Project for this market. The oracle rule is fixed: it always tracks those superforecasters&rsquo; current published estimate for this question.\n\nContinuous updates. Superforecasters from the Good Judgment Project may revise their estimate for this market at any time, as new evidence or analysis warrants. There is no monthly, quarterly, or other discrete publication schedule that resets the oracle&mdash;when they update their view, the reference price reflects that latest estimate.\n\nTrading vs. oracle. Exchange prices may differ from the oracle at any moment. Between superforecaster updates, participants trade freely and prices are driven by the market mechanism and participant activity; the oracle does not force a price reset on a calendar.\n\nParticipants should treat the oracle as a forward-looking, evidence-weighted probability&mdash;not a final legal or journalistic determination.',
+  },
+  {
+    id: 'glp1-sudden-blindness',
+    title: "Is GLP-1 Use Linked to Sudden Onset Blindness?",
+    description:
+      "Is there clear and convincing evidence that use of GLP-1 receptor agonist medications is linked to sudden onset blindness?",
+    image: "/Fluoride.png",
+    contractAddress: "0x0000000000000000000000000000000000000000", // Placeholder — replace when deployed
+    outcomes: [
+      "Yes, GLP-1 use is linked to sudden onset blindness",
+      "No, GLP-1 use is not linked to sudden onset blindness",
+    ],
+    rules:
+      'This market will resolve to &ldquo;Yes&rdquo; if there is clear and convincing evidence that use of GLP-1 receptor agonist medications (including, without limitation, drugs such as semaglutide, tirzepatide, liraglutide, and related GLP-1 class therapies) is linked to sudden onset blindness or acute severe vision loss in treated patients, beyond what would be expected from chance, underlying disease, or unrelated causes. Otherwise, this market will resolve to &ldquo;No.&rdquo;\n\nPrice oracle. The reference price for this market is the probability estimate for the same &ldquo;Yes&rdquo; outcome described above, as published by superforecasters from the Good Judgment Project for this market. The oracle rule is fixed: it always tracks those superforecasters&rsquo; current published estimate for this question.\n\nContinuous updates. Superforecasters from the Good Judgment Project may revise their estimate for this market at any time, as new evidence or analysis warrants. There is no monthly, quarterly, or other discrete publication schedule that resets the oracle&mdash;when they update their view, the reference price reflects that latest estimate.\n\nTrading vs. oracle. Exchange prices may differ from the oracle at any moment. Between superforecaster updates, participants trade freely and prices are driven by the market mechanism and participant activity; the oracle does not force a price reset on a calendar.\n\nParticipants should treat the oracle as a forward-looking, evidence-weighted probability&mdash;not a final legal or journalistic determination.',
+  },
+  {
+    id: 'talarico-flu-absence',
+    title: "Was Talarico's Campaign Absence Due to the Flu?",
+    description:
+      "Was James Talarico's roughly two-week absence from the campaign trail caused by influenza (the flu)?",
+    image: "/Macron.png",
+    contractAddress: "0x0000000000000000000000000000000000000000", // Placeholder — replace when deployed
+    outcomes: [
+      "Yes, the absence was due to the flu",
+      "No, the absence was not due to the flu",
+    ],
+    rules:
+      'This market will resolve to &ldquo;Yes&rdquo; if there is clear and convincing evidence that James Talarico&rsquo;s roughly two-week absence from campaign activities was caused by influenza (the flu), including a medically supported flu diagnosis or equivalent contemporaneous documentation establishing flu as the cause. Otherwise, this market will resolve to &ldquo;No.&rdquo;\n\nPrice oracle. The reference price for this market is the probability estimate for the same &ldquo;Yes&rdquo; outcome described above, as published by superforecasters from the Good Judgment Project for this market. The oracle rule is fixed: it always tracks those superforecasters&rsquo; current published estimate for this question.\n\nContinuous updates. Superforecasters from the Good Judgment Project may revise their estimate for this market at any time, as new evidence or analysis warrants. There is no monthly, quarterly, or other discrete publication schedule that resets the oracle&mdash;when they update their view, the reference price reflects that latest estimate.\n\nTrading vs. oracle. Exchange prices may differ from the oracle at any moment. Between superforecaster updates, participants trade freely and prices are driven by the market mechanism and participant activity; the oracle does not force a price reset on a calendar.\n\nParticipants should treat the oracle as a forward-looking, evidence-weighted probability&mdash;not a final legal or journalistic determination.',
+  },
+  {
+    id: 'epstein-intelligence-agent',
+    title: "Was Jeffrey Epstein an Intelligence Agent?",
+    description:
+      "Is there clear and convincing evidence that Jeffrey Epstein worked as an agent, asset, or operative for an intelligence service?",
+    image: "/TrumpEpstein.png",
+    contractAddress: "0x0000000000000000000000000000000000000000", // Placeholder — replace when deployed
+    outcomes: [
+      "Yes, Jeffrey Epstein was an intelligence agent",
+      "No, Jeffrey Epstein was not an intelligence agent",
+    ],
+    rules:
+      'This market will resolve to &ldquo;Yes&rdquo; if there is clear and convincing evidence that Jeffrey Epstein worked as an agent, asset, informant, or operative for a national intelligence service (including, without limitation, the CIA, Mossad, MI6, or a comparable foreign or domestic intelligence organization), whether formally employed or operating in a covert or unofficial capacity on behalf of such a service. Otherwise, this market will resolve to &ldquo;No.&rdquo;\n\nPrice oracle. The reference price for this market is the probability estimate for the same &ldquo;Yes&rdquo; outcome described above, as published by superforecasters from the Good Judgment Project for this market. The oracle rule is fixed: it always tracks those superforecasters&rsquo; current published estimate for this question.\n\nContinuous updates. Superforecasters from the Good Judgment Project may revise their estimate for this market at any time, as new evidence or analysis warrants. There is no monthly, quarterly, or other discrete publication schedule that resets the oracle&mdash;when they update their view, the reference price reflects that latest estimate.\n\nTrading vs. oracle. Exchange prices may differ from the oracle at any moment. Between superforecaster updates, participants trade freely and prices are driven by the market mechanism and participant activity; the oracle does not force a price reset on a calendar.\n\nParticipants should treat the oracle as a forward-looking, evidence-weighted probability&mdash;not a final legal or journalistic determination.',
   },
   {
     id: 'covid19',
@@ -89,7 +136,13 @@ export const markets: Market[] = [
   }
 ];
 
-const EXPOSED_MARKET_IDS = new Set<string>(["covid19"]);
+const EXPOSED_MARKET_IDS = new Set<string>([
+  "covid19",
+  "glp1-sudden-blindness",
+  "talarico-flu-absence",
+  "autism",
+  "epstein-intelligence-agent",
+]);
 
 export function getMarketById(id: string): Market | undefined {
   // MVP: only expose a small set of markets for now.
@@ -100,7 +153,13 @@ export function getMarketById(id: string): Market | undefined {
 export function getAllMarkets(): Market[] {
   // MVP: only expose a small set of markets for now.
   // Order controls homepage: [featured, ...secondary]
-  const orderedIds: string[] = ["covid19"];
+  const orderedIds: string[] = [
+    "covid19",
+    "glp1-sudden-blindness",
+    "talarico-flu-absence",
+    "autism",
+    "epstein-intelligence-agent",
+  ];
   return orderedIds
     .map((id) => markets.find((m) => m.id === id))
     .filter((m): m is Market => Boolean(m));

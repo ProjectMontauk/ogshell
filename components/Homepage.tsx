@@ -172,6 +172,8 @@ const TopProposedMarkets = () => {
 const Homepage = () => {
   const markets = getAllMarkets();
   const [featured] = markets;
+  // Featured leads the page; the Markets grid is everything else (no duplicate of the lead).
+  const listedMarkets = markets.slice(1);
   // Single fetch of odds for all markets once on mount (same idea as markets/[id] page).
   const [marketOdds, setMarketOdds] = useState<Record<string, { yes: number; no: number }>>({});
 
@@ -203,7 +205,7 @@ const Homepage = () => {
             Markets
           </h1>
           <ul className="mt-6 grid gap-6 sm:grid-cols-2">
-            {markets.map((m) => (
+            {listedMarkets.map((m) => (
               <MarketCard key={m.id} market={m} probs={marketOdds[m.id] ?? null} />
             ))}
           </ul>

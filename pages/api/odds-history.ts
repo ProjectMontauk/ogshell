@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '../../lib/prisma';
 import { getAllowedOrigin } from '../../lib/cors';
+import { buildMockOddsHistory, hasMockOdds } from '../../src/data/mockMarketOdds';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const origin = getAllowedOrigin(req.headers.origin as string | undefined);
@@ -69,9 +70,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         where: { marketId },
         orderBy: { timestamp: 'asc' },
       });
+      if (entries.length === 0 && hasMockOdds(marketId)) {
+        res.status(200).json(buildMockOddsHistory(marketId));
+        return;
+      }
       res.status(200).json(entries);
     } catch (error) {
       console.error("Failed to fetch odds history:", error);
+      // Placeholder markets may have no DB; fall back to mock series for UI preview.
+      if (hasMockOdds(marketId)) {
+        res.status(200).json(buildMockOddsHistory(marketId));
+        return;
+      }
       res.status(500).json({ error: 'Failed to fetch odds history' });
     }
     return;
