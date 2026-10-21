@@ -57,7 +57,7 @@ export default function OddsChart({ data: incoming, height = 240, detailed = tru
   const endDot = (side: "yes" | "no") =>
     function EndDot(props: { cx?: number; cy?: number; index?: number }) {
       if (props.index !== lastIndex || props.cx == null || props.cy == null) return <g key={`d-${side}-${props.index}`} />;
-      return <circle key={`d-${side}`} cx={props.cx} cy={props.cy} r={4} fill={`var(--${side})`} />;
+      return <circle key={`d-${side}`} cx={props.cx} cy={props.cy} r={3.5} fill={`var(--${side})`} />;
     };
   const endLabel = (side: "yes" | "no") =>
     function EndLabel(props: { x?: number | string; y?: number | string; index?: number; value?: unknown }) {
@@ -89,7 +89,7 @@ export default function OddsChart({ data: incoming, height = 240, detailed = tru
           <CartesianGrid vertical={false} stroke="var(--chart-grid)" />
           <XAxis
             dataKey="timestamp"
-            axisLine={{ stroke: "var(--ink)", strokeWidth: 1.5 }}
+            axisLine={{ stroke: detailed ? "var(--ink)" : "var(--chart-grid)", strokeWidth: 1 }}
             tickLine={detailed ? { stroke: "var(--ink)" } : false}
             tickSize={5}
             height={detailed ? 26 : 6}
@@ -125,8 +125,8 @@ export default function OddsChart({ data: incoming, height = 240, detailed = tru
             itemStyle={{ padding: 0, fontWeight: 600 }}
             labelStyle={{ color: "var(--muted)", marginBottom: 4 }}
           />
-          <Line type="linear" dataKey="No" name="No" stroke="var(--no)" strokeWidth={2} dot={endDot("no")} label={endLabel("no")} activeDot={{ r: 4, strokeWidth: 0, fill: "var(--no)" }} isAnimationActive={!reduce} />
-          <Line type="linear" dataKey="Yes" name="Yes" stroke="var(--yes)" strokeWidth={2.75} dot={endDot("yes")} label={endLabel("yes")} activeDot={{ r: 4, strokeWidth: 0, fill: "var(--yes)" }} isAnimationActive={!reduce} />
+          <Line type="linear" dataKey="No" name="No" stroke="var(--no)" strokeWidth={1.8} dot={endDot("no")} label={endLabel("no")} activeDot={{ r: 4, strokeWidth: 0, fill: "var(--no)" }} isAnimationActive={!reduce} />
+          <Line type="linear" dataKey="Yes" name="Yes" stroke="var(--yes)" strokeWidth={2.4} dot={endDot("yes")} label={endLabel("yes")} activeDot={{ r: 4, strokeWidth: 0, fill: "var(--yes)" }} isAnimationActive={!reduce} />
         </LineChart>
       </ResponsiveContainer>
     </div>

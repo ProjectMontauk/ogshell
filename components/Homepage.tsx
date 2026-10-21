@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAllMarkets, type Market } from "../src/data/markets";
 import { fetchFpmmProbsForMarket } from "../src/lib/fpmmMarketOdds";
-import { FeaturedMarket, MarketRow } from "../src/components/market/MarketCard";
+import { FeaturedMarket, MarketCard } from "../src/components/market/MarketCard";
 import { SkeletonLines } from "../src/components/ui/Skeleton";
 
 const API_BASE_URL = "";
@@ -61,16 +61,16 @@ const TrendingEvidence = ({ markets }: { markets: Market[] }) => {
 
   return (
     <section aria-labelledby="trending-heading">
-      <h2 id="trending-heading" className="kicker font-mono">
+      <h2 id="trending-heading" className="serif border-b border-ink pb-2 text-[20px] font-medium leading-tight tracking-[-0.01em] text-ink">
         Trending Evidence
       </h2>
       <ol className="mt-1">
         {topEvidence.map((e, i) => {
-          const cls = "group grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-2 border-b border-dotted border-rule py-3 transition-colors duration-150 hover:bg-ground-2";
+          const cls = "group grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-2 border-b border-rule py-3.5 transition-colors duration-150 hover:bg-ground-2";
           const inner = (
             <>
-              <span className="serif num text-[20px] font-extrabold leading-none text-muted">{i + 1}</span>
-              <span className={`serif line-clamp-3 text-[15px] font-semibold leading-snug ${e.marketId ? "text-ink" : "text-muted"}`}>{e.title}</span>
+              <span className="serif num text-[22px] font-normal leading-none text-muted">{i + 1}</span>
+              <span className={`serif line-clamp-3 text-[16px] font-medium leading-snug ${e.marketId ? "text-ink group-hover:underline" : "text-muted"}`}>{e.title}</span>
             </>
           );
           return (
@@ -139,7 +139,7 @@ const TopProposedMarkets = () => {
 
   return (
     <section aria-labelledby="proposed-heading">
-      <h2 id="proposed-heading" className="kicker font-mono">
+      <h2 id="proposed-heading" className="serif border-b border-ink pb-2 text-[20px] font-medium leading-tight tracking-[-0.01em] text-ink">
         Top Proposed Markets
       </h2>
       {loading ? (
@@ -153,8 +153,8 @@ const TopProposedMarkets = () => {
         <ol className="mt-1">
           {ideas.map((idea) => (
             <li key={idea.id}>
-              <Link href="/market-ideas" className="group grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 border-b border-dotted border-rule py-3 transition-colors duration-150 hover:bg-ground-2">
-                <span className="serif line-clamp-3 text-[15px] font-semibold leading-snug text-ink">{idea.title}</span>
+              <Link href="/market-ideas" className="group grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 border-b border-rule py-3.5 transition-colors duration-150 hover:bg-ground-2">
+                <span className="serif line-clamp-3 text-[16px] font-medium leading-snug text-ink group-hover:underline">{idea.title}</span>
                 <span className="num text-small text-muted">{idea.netVotes}</span>
               </Link>
             </li>
@@ -166,8 +166,8 @@ const TopProposedMarkets = () => {
 };
 
 /**
- * The front page: the featured market as the lead story with trending evidence and proposals
- * in the side column, then every listed market as a row in one index.
+ * The front page: the featured market as the lead story and every listed market as a row under
+ * it, with trending evidence and proposals in the side column, as the original laid them out.
  */
 const Homepage = () => {
   const markets = getAllMarkets();
@@ -194,25 +194,25 @@ const Homepage = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fetch once on mount; markets from getAllMarkets() is static
 
   return (
-    <div className="container-page pb-24 pt-8 md:pt-10">
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-0">
-        <div className="min-w-0 lg:pr-10">{featured && <FeaturedMarket market={featured} probs={marketOdds[featured.id] ?? null} />}</div>
-        <aside className="flex flex-col gap-10 lg:border-l lg:border-rule lg:pl-8">
-          <TrendingEvidence markets={markets} />
-          <TopProposedMarkets />
-        </aside>
-      </div>
+    <div className="container-page grid gap-12 pb-24 pt-8 md:pt-10 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-0 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="min-w-0 lg:pr-10">
+        {featured && <FeaturedMarket market={featured} probs={marketOdds[featured.id] ?? null} />}
 
-      <section aria-labelledby="markets-heading" className="mt-16">
-        <h1 id="markets-heading" className="serif border-b border-ink pb-2 text-[clamp(26px,2.4vw,34px)] font-extrabold tracking-[-0.02em] text-ink">
-          Markets
-        </h1>
-        <ul>
-          {markets.map((m) => (
-            <MarketRow key={m.id} market={m} probs={marketOdds[m.id] ?? null} />
-          ))}
-        </ul>
-      </section>
+        <section aria-labelledby="markets-heading" className="mt-14">
+          <h1 id="markets-heading" className="serif border-b border-ink pb-2 text-[clamp(26px,2.4vw,34px)] font-medium tracking-[-0.02em] text-ink">
+            Markets
+          </h1>
+          <ul className="mt-6 grid gap-6 sm:grid-cols-2">
+            {markets.map((m) => (
+              <MarketCard key={m.id} market={m} probs={marketOdds[m.id] ?? null} />
+            ))}
+          </ul>
+        </section>
+      </div>
+      <aside className="flex flex-col gap-10 lg:border-l lg:border-rule lg:pl-7">
+        <TrendingEvidence markets={markets} />
+        <TopProposedMarkets />
+      </aside>
     </div>
   );
 };

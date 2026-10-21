@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { Market } from "@/data/markets";
 import OddsChart, { type OddsPoint } from "./OddsChart";
 import { ODDS_HISTORY_FIXED_POINT } from "@/lib/fpmmMarketOdds";
@@ -26,36 +27,31 @@ function useGrace(ms = 6000) {
   return on;
 }
 
-/** One outcome on the lead story: label, a track filled to the price, the multiplier and the price. */
+/**
+ * One outcome as a cell in the 32px strip along a market's foot, the height of the nav: label and
+ * multiplier, then the price in its own ruled cell. A missing price shows a skeleton during the
+ * grace period, then "--".
+ */
 function Outcome({ label, p, side, waiting }: { label: string; p: number; side: "yes" | "no"; waiting: boolean }) {
   const pct = pctOf(p);
-  if (waiting && pct === null) {
-    return (
-      <div className="grid grid-cols-[2.5rem_minmax(0,1fr)_3.5rem_3.5rem] items-center gap-3 border-b border-dotted border-rule py-2.5 text-body sm:grid-cols-[3rem_minmax(0,1fr)_4rem_4rem] sm:gap-4">
-        <span className={`font-semibold ${side === "yes" ? "text-yes" : "text-no"}`}>{label}</span>
-        <span className="skeleton h-2" />
-        <span className="skeleton ml-auto h-3.5 w-10" />
-        <span className="skeleton ml-auto h-5 w-12" />
-      </div>
-    );
-  }
   const odds = p > 0 ? (1 / p).toFixed(2) : null;
-  const color = side === "yes" ? "text-yes" : "text-no";
+  const loading = waiting && pct === null;
   return (
-    <div className="grid grid-cols-[2.5rem_minmax(0,1fr)_3.5rem_3.5rem] items-center gap-3 border-b border-dotted border-rule py-2.5 text-body sm:grid-cols-[3rem_minmax(0,1fr)_4rem_4rem] sm:gap-4">
-      <span className={`font-semibold ${color}`}>{label}</span>
-      <span className="relative h-2 shadow-[inset_0_0_0_1px_var(--rule)]">
-        <span className={`absolute inset-y-0 left-0 ${side === "yes" ? "bg-yes" : "bg-no"} transition-[width] duration-700 ease-out-quart`} style={{ width: `${pct ?? 0}%` }} />
+    <div className="flex h-8 items-stretch text-small">
+      <span className="flex flex-1 items-center gap-2 px-3 sm:px-5">
+        <span className="font-medium text-ink">{label}</span>
+        {loading ? <span className="skeleton h-3 w-8" /> : <span className="num text-muted">{odds ? `${odds}x` : "--"}</span>}
       </span>
-      <span className="num text-right text-muted">{odds ? `${odds}x` : "--"}</span>
-      <span className={`serif num text-right text-[22px] font-semibold leading-none ${color}`}>{pct !== null ? `${pct}%` : "--"}</span>
+      <span className={`num flex min-w-14 items-center justify-center border-l border-ink px-2.5 font-semibold ${side === "yes" ? "text-yes" : "text-no"}`}>
+        {loading ? <span className="skeleton h-3 w-7" /> : pct !== null ? `${pct}%` : "--"}
+      </span>
     </div>
   );
 }
 
 /**
- * The lead story: the featured market set like a front-page headline, its question, the two
- * outcomes and the price history. The headline is the link.
+ * The lead story in one ruled box: the featured market set like a front-page headline (under its
+ * picture when it has one), the two outcomes in cells, then the price history. The top part is the link.
  */
 export function FeaturedMarket({ market, probs }: { market: Market; probs: Probs }) {
   const waiting = useGrace() && probs === null;
@@ -90,67 +86,66 @@ export function FeaturedMarket({ market, probs }: { market: Market; probs: Probs
     };
   }, [market.id]);
 
+  // As on the original front page, these two markets lead without their picture.
+  const cover = market.id !== "jfk" && market.id !== "covid19";
+
   return (
-    <article>
+    <article className="border border-ink">
       <Link href={`/markets/${market.id}`} className="group block">
-        <h2 className="serif [text-wrap:pretty] text-[clamp(40px,6vw,78px)] font-extrabold leading-[0.93] tracking-[-0.035em] text-ink decoration-[3px] underline-offset-8 group-hover:underline">
-          {market.title}
-        </h2>
+        {cover && (
+          <Image
+            src={market.image}
+            alt={market.title}
+            width={1280}
+            height={800}
+            className="aspect-[16/9] w-full border-b border-ink object-cover object-top contrast-[1.06] grayscale"
+          />
+        )}
+        <div className="px-5 py-6 sm:px-7 sm:py-7">
+          <h2 className="serif [text-wrap:pretty] text-[clamp(30px,4vw,44px)] font-medium leading-[1.04] tracking-[-0.02em] text-ink decoration-2 underline-offset-[6px] group-hover:underline">
+            {market.title}
+          </h2>
+          {market.description && <p className="serif mt-3 max-w-[60ch] text-[clamp(16px,1.4vw,19px)] leading-[1.45] text-ink-2">{market.description}</p>}
+        </div>
+        <div className="grid grid-cols-2 divide-x divide-ink border-t border-ink">
+          <Outcome label="Yes" p={probs?.yes ?? 0} side="yes" waiting={waiting} />
+          <Outcome label="No" p={probs?.no ?? 0} side="no" waiting={waiting} />
+        </div>
       </Link>
-      {market.description && <p className="serif mt-4 max-w-[58ch] text-[clamp(17px,1.5vw,20px)] leading-[1.45] text-ink-2">{market.description}</p>}
-      <div className="mt-6">
-        <Outcome label="Yes" p={probs?.yes ?? 0} side="yes" waiting={waiting} />
-        <Outcome label="No" p={probs?.no ?? 0} side="no" waiting={waiting} />
-      </div>
       {featuredHistory.length > 0 && (
-        <div className="mt-5">
-          <OddsChart data={featuredHistory} height={160} detailed={false} />
+        <div className="border-t border-ink px-5 pb-3 pt-5 sm:px-7">
+          <OddsChart data={featuredHistory} height={220} detailed={false} />
         </div>
       )}
     </article>
   );
 }
 
-/** One market in the list: question and description on the left, the split on the right. The row is the link. */
-export function MarketRow({ market, probs }: { market: Market; probs: Probs }) {
+/**
+ * One market in the list as a boxed card: the question, then the description with the arrow, then
+ * the two outcomes in cells along the foot. The card is the link.
+ */
+export function MarketCard({ market, probs }: { market: Market; probs: Probs }) {
   const waiting = useGrace() && probs === null;
-  const yes = pctOf(probs?.yes ?? 0);
-  const no = pctOf(probs?.no ?? 0);
   return (
     <li>
       <Link
         href={`/markets/${market.id}`}
-        className="group grid grid-cols-[minmax(0,1fr)_1.5rem] items-center gap-x-6 gap-y-3 border-b border-dotted border-rule py-5 transition-colors duration-150 hover:bg-ground-2 md:grid-cols-[minmax(0,1fr)_220px_1.5rem]"
+        className="group flex h-full flex-col border border-ink transition-colors duration-150 hover:bg-ground-2"
       >
-        <div className="min-w-0">
-          <h3 className="serif text-[22px] font-bold leading-tight text-ink">{market.title}</h3>
-          {market.description && <p className="serif mt-1 line-clamp-2 text-[15px] leading-snug text-ink-2">{market.description}</p>}
+        <h3 className="serif border-b border-ink p-5 text-[24px] font-medium leading-tight tracking-[-0.01em] text-ink [text-wrap:pretty] decoration-1 underline-offset-4 group-hover:underline">
+          {market.title}
+        </h3>
+        <div className="flex flex-1 flex-col px-5 pb-4 pt-4">
+          {market.description && <p className="serif text-[16px] leading-snug text-ink-2">{market.description}</p>}
+          <span aria-hidden className="mt-auto self-end pt-6 text-lead text-ink transition-transform duration-150 group-hover:translate-x-1">
+            →
+          </span>
         </div>
-        <div className="col-span-2 row-start-2 md:col-span-1 md:row-start-auto">
-          {waiting ? (
-            <>
-              <div className="flex justify-between">
-                <span className="skeleton h-4 w-16" />
-                <span className="skeleton h-4 w-16" />
-              </div>
-              <div className="skeleton mt-1.5 h-1.5" />
-            </>
-          ) : (
-            <>
-              <div className="num flex justify-between text-body font-semibold">
-                <span className="text-yes">Yes {yes ?? "--"}%</span>
-                <span className="text-no">No {no ?? "--"}%</span>
-              </div>
-              <div className="mt-1.5 flex h-1.5 shadow-[0_0_0_1px_var(--ink)]">
-                <span className="bg-yes" style={{ flex: probs?.yes ?? 0.5 }} />
-                <span className="bg-no" style={{ flex: probs?.no ?? 0.5 }} />
-              </div>
-            </>
-          )}
+        <div className="grid grid-cols-2 divide-x divide-ink border-t border-ink">
+          <Outcome label="Yes" p={probs?.yes ?? 0} side="yes" waiting={waiting} />
+          <Outcome label="No" p={probs?.no ?? 0} side="no" waiting={waiting} />
         </div>
-        <span aria-hidden className="col-start-2 row-start-1 justify-self-end text-lead text-muted transition-[transform,color] duration-150 group-hover:translate-x-1 group-hover:text-ink md:col-start-auto md:row-start-auto">
-          →
-        </span>
       </Link>
     </li>
   );
