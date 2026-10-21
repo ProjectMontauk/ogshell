@@ -156,7 +156,7 @@ export default function MarketCardEmbed({
         )}
         <div className="flex flex-1 flex-col justify-between">
           <div>
-            <h2 className="serif text-[26px] font-extrabold leading-[1.05] tracking-[-0.02em] text-ink">{market.title}</h2>
+            <h2 className="serif text-[26px] font-medium leading-[1.05] tracking-[-0.02em] text-ink">{market.title}</h2>
             <p className="serif mt-2 line-clamp-3 text-[15px] leading-snug text-ink-2">{market.description}</p>
             <div className="mt-3">
               {outcomes.map((o) => (
@@ -164,7 +164,7 @@ export default function MarketCardEmbed({
                   <span className={`font-semibold ${o.side === "yes" ? "text-yes" : "text-no"}`}>{o.label}</span>
                   <span className={`h-[2px] w-20 ${o.side === "yes" ? "bg-yes" : "bg-no"}`} />
                   <span className="num text-muted">{o.odds ? `${o.odds}x` : "--"}</span>
-                  <span className={`serif num min-w-[3rem] text-right text-[18px] font-bold ${o.side === "yes" ? "text-yes" : "text-no"}`}>
+                  <span className={`serif num min-w-[3rem] text-right text-[18px] font-medium ${o.side === "yes" ? "text-yes" : "text-no"}`}>
                     {o.pct !== null ? `${o.pct}%` : "--"}
                   </span>
                 </div>

@@ -139,8 +139,8 @@ export default function ConditionalTokensRedeemShares({
   };
 
   return (
-    <div className={`border-t-2 border-ink pt-3 text-small ${className}`}>
-      <h3 className="serif mb-2 text-lead font-bold text-ink">Redeem positions</h3>
+    <div className={`border-t border-ink pt-3 text-small ${className}`}>
+      <h3 className="serif mb-2 text-lead font-medium text-ink">Redeem positions</h3>
       <p className="mb-3 text-small text-muted">
         {hideParameterFields
           ? "Redeem your winning position for this market. Your wallet will be asked to confirm one transaction; collateral is paid to your cash balance."

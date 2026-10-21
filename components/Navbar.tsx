@@ -16,7 +16,7 @@ import { getTotalBetValueUsd } from "../src/utils/portfolioTotals";
 // Loaded after first paint: the wallet picker would otherwise ship with every page.
 const WalletButton = dynamic(() => import("./WalletButton"), {
   ssr: false,
-  loading: () => <span aria-hidden className="skeleton inline-block h-8 w-[72px]" />,
+  loading: () => <span aria-hidden className="skeleton inline-block h-full w-[80px]" />,
 });
 
 /** The same sign-in the masthead uses, for pages that ask for it in their own content. */
@@ -55,14 +55,12 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
   const reduce = useReducedMotion();
   const account = useActiveAccount();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
+  // The masthead's date line, set after mount so the server render and the first client render agree.
+  const [today, setToday] = useState("");
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    setToday(new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }));
   }, []);
+
   const { portfolioValue, setPortfolioValue, cashRefreshNonce, lastPortfolioHydrateKey, setLastPortfolioHydrateKey } = usePortfolio();
   const [portfolioLoading, setPortfolioLoading] = useState(false);
   const { data: balance, isPending, refetch } = useReadContract({
@@ -147,7 +145,7 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
       </Link>
     </div>
   );
-  const balances = balanceLinks("/portfolio", "hidden md:flex");
+  const balances = balanceLinks("/portfolio", "flex");
 
   const connect = <WalletButton />;
 
@@ -156,7 +154,7 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
       <nav className="w-full bg-ground">
         <div className="container-page flex h-14 items-center justify-end gap-4">
           {balanceLinks("/deposit", "flex flex-wrap justify-end")}
-          {connect}
+          <div className="flex h-10">{connect}</div>
         </div>
       </nav>
     );
@@ -167,65 +165,53 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
 
   return (
     <>
-      {/* Masthead: the motto, the name, and on the right the reader's balances. Scrolls away. */}
-      <header className="container-page hidden grid-cols-[1fr_auto_1fr] items-end pb-2 pt-6 md:grid">
-        <span className="text-small text-muted">Time Discovers Truth</span>
-        <Link href="/" className="serif text-[46px] font-extrabold leading-none tracking-[-0.025em] text-ink" aria-label="The Citizen, home">
+      {/* Masthead: the name on the left, the date and motto on the right. Scrolls away. */}
+      <header className="container-page hidden items-end justify-between py-6 md:flex">
+        <Link href="/" className="serif text-[44px] font-semibold leading-none tracking-[-0.02em] text-ink" aria-label="The Citizen, home">
           The Citizen
         </Link>
-        <div className="flex justify-end">{balances}</div>
+        <div className="text-right text-small leading-relaxed">
+          <div className="font-medium text-ink">{today}</div>
+          <div className="text-muted">Time Discovers Truth</div>
+        </div>
       </header>
 
-      {/* Section nav: sticks to the top, turns translucent with a blur once the page scrolls under it.
-          The small name and the wallet live here so they stay in reach after the masthead is gone. */}
-      <nav
-        className={`sticky top-0 z-30 w-full transition-[background-color] duration-200 ${
-          scrolled ? "bg-ground/80 backdrop-blur-md backdrop-saturate-150" : "bg-ground"
-        }`}
-      >
-        <div className="container-page">
-          <div className="flex h-14 items-center justify-between gap-6 md:grid md:h-12 md:grid-cols-[1fr_auto_1fr] md:border-b-4 md:border-double md:border-ink">
-            <Link
-              href="/"
-              aria-label="The Citizen, home"
-              className={`serif whitespace-nowrap text-[26px] font-extrabold leading-none tracking-[-0.02em] text-ink transition-opacity duration-200 md:text-[20px] ${
-                scrolled ? "md:opacity-100" : "md:pointer-events-none md:opacity-0"
-              }`}
+      {/* Section nav between two thin rules that run edge to edge. The links, the balances and the
+          wallet sit in boxed cells, flush with the rules. Sticks to the top. */}
+      <nav className="sticky top-0 z-30 w-full border-b border-rule bg-ground md:border-y md:border-ink">
+        <div className="container-page flex h-14 items-stretch justify-between gap-6 md:h-8">
+          <Link href="/" aria-label="The Citizen, home" className="serif flex items-center whitespace-nowrap text-[26px] font-semibold leading-none tracking-[-0.02em] text-ink md:hidden">
+            The Citizen
+          </Link>
+
+          <ul className="hidden md:flex">
+            {NAV_LINKS.map((item) => (
+              <li key={item.href} className="flex border-r border-ink first:border-l">
+                <Link
+                  href={item.href}
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                  className={`flex items-center px-4 text-small transition-colors duration-200 ${isActive(item.href) ? "bg-ground-2 font-medium text-ink" : "text-ink-2 hover:bg-ground-2 hover:text-ink"}`}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex items-stretch justify-end">
+            {account?.address && <div className="hidden items-center border-l border-ink px-4 text-small md:flex">{balances}</div>}
+            <div className="hidden items-stretch md:flex">{connect}</div>
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              className="btn btn-outline my-auto h-10 w-10 px-0 md:hidden"
+              aria-label="Open menu"
+              aria-expanded={menuOpen}
             >
-              The Citizen
-            </Link>
-
-            <ul className="hidden items-center gap-7 md:flex">
-              {NAV_LINKS.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    aria-current={isActive(item.href) ? "page" : undefined}
-                    className={`text-body transition-colors duration-200 ${
-                      isActive(item.href) ? "font-semibold text-ink shadow-[inset_0_-2px_0_var(--ink)]" : "text-muted hover:text-ink"
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-
-            <div className="flex items-center justify-end gap-3">
-              <div className="hidden md:block">{connect}</div>
-              <button
-                type="button"
-                onClick={() => setMenuOpen(true)}
-                className="btn btn-outline h-10 w-10 px-0 md:hidden"
-                aria-label="Open menu"
-                aria-expanded={menuOpen}
-              >
-                <List size={18} aria-hidden />
-              </button>
-            </div>
+              <List size={18} aria-hidden />
+            </button>
           </div>
         </div>
-        <div className={`h-px bg-rule transition-opacity duration-200 md:hidden ${scrolled ? "opacity-100" : "opacity-0"}`} />
       </nav>
 
       {/* Phones: full-screen menu */}
@@ -242,7 +228,7 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
             transition={{ duration: reduce ? 0 : 0.2 }}
           >
             <div className="container-page flex h-14 items-center justify-between">
-              <span className="serif text-[26px] font-extrabold leading-none tracking-[-0.02em] text-ink">The Citizen</span>
+              <span className="serif text-[26px] font-semibold leading-none tracking-[-0.02em] text-ink">The Citizen</span>
               <button type="button" onClick={() => setMenuOpen(false)} className="btn btn-outline h-11 w-11 px-0" aria-label="Close menu">
                 <X size={18} aria-hidden />
               </button>
@@ -256,7 +242,7 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
                   transition={{ duration: 0.35, delay: reduce ? 0 : 0.05 + i * 0.05, ease: [0.22, 1, 0.36, 1] }}
                   className=""
                 >
-                  <Link href={item.href} className={`serif block border-b border-rule py-4 text-heading font-bold ${isActive(item.href) ? "text-ink" : "text-muted"}`}>
+                  <Link href={item.href} className={`serif block border-b border-rule py-4 text-heading font-medium ${isActive(item.href) ? "text-ink" : "text-muted"}`}>
                     {item.label}
                   </Link>
                 </motion.li>
@@ -273,7 +259,7 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
                   </span>
                 </div>
               )}
-              <div>{connect}</div>
+              <div className="flex h-11">{connect}</div>
             </div>
           </motion.div>
         )}

@@ -22,8 +22,8 @@ const wallets = [
 ];
 
 const connectClass =
-  "btn btn-outline !h-8 !min-w-0 !rounded-none !bg-transparent !px-3 !py-0 !text-small !font-medium !text-ink !shadow-[inset_0_0_0_1px_var(--ink)] hover:!bg-ink hover:!text-ground";
-const detailsClass = "btn btn-outline !h-8 !min-w-0 !rounded-none !bg-transparent !px-3 !py-0 !text-small !text-ink !shadow-[inset_0_0_0_1px_var(--ink)]";
+  "btn btn-primary !h-full !min-h-0 !min-w-0 !rounded-none !bg-ink !px-4 !py-0 !text-small !font-normal !text-ground hover:!opacity-85";
+const detailsClass = "btn btn-outline !h-full !min-h-0 !min-w-0 !rounded-none !border-0 !border-l !border-ink !bg-transparent !px-4 !py-0 !text-small !text-ink !shadow-none";
 
 /** `large`: the in-page version, used where a page asks the reader to sign in. */
 export default function WalletButton({ large = false }: { large?: boolean }) {

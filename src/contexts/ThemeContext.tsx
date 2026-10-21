@@ -34,7 +34,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const resolved = useSyncExternalStore(
     subscribe,
     getResolvedSnapshot,
-    () => "dark"
+    () => "light"
   );
 
   const setTheme = useCallback((t: StoredTheme) => {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Script from "next/script";
-import { IBM_Plex_Mono, Source_Serif_4 } from "next/font/google";
+import { Courier_Prime, Newsreader } from "next/font/google";
 import "./globals.css";
 import Providers from "../components/Providers";
 import RpcLogger from "../components/RpcLogger";
@@ -10,16 +10,16 @@ import { ThemeProvider } from "../contexts/ThemeContext";
 import ConditionalFooter from "../../components/ConditionalFooter";
 import { THEME_INIT_SCRIPT } from "../lib/theme";
 
-// Source Serif for headlines, figures and reading text; IBM Plex Mono for the interface.
-const serif = Source_Serif_4({
+// Newsreader for headlines and reading text; Courier Prime, at one weight, for the interface.
+const serif = Newsreader({
   variable: "--font-display",
-  weight: ["400", "600", "700", "800"],
   subsets: ["latin"],
+  axes: ["opsz"],
   display: "swap",
 });
-const mono = IBM_Plex_Mono({
+const mono = Courier_Prime({
   variable: "--font-text",
-  weight: ["400", "500", "600"],
+  weight: ["400"],
   subsets: ["latin"],
   display: "swap",
 });
@@ -46,7 +46,7 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body className={`${serif.variable} ${mono.variable} overflow-x-hidden`}>
+      <body className={`${serif.variable} ${mono.variable} overflow-x-clip`}>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <a href="#main" className="skip-link">
           Skip to content
