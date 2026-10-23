@@ -3,11 +3,12 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ------------------------------------------------------------------
-   The Citizen, editorial. A newspaper's structure (masthead, front page,
-   ruled columns, photographs) on a magazine's materials: warm paper, a
-   typewriter monospace for the interface, a serif at medium weight for
-   headlines and reading, thin ink rules and boxed cells. Light is the default;
-   dark is the same paper at night. Yes/No keep the original green and blue.
+   The Citizen, a newspaper front page with trading built in: a blackletter
+   masthead, a double rule under the nav, ruled columns, bold Times-style
+   headlines, and a typewriter monospace for the interface. The modern
+   accents are the trading parts: the ruled Yes/No scale, the chart, the trade box.
+   Dark is the default; light is the same paper by day. Yes/No keep the
+   original green and blue.
    (`--amber` keeps its name as the primary token; it is the ink.)
    ------------------------------------------------------------------ */
 :root {
@@ -24,7 +25,7 @@
   --amber: #121212;
   --amber-ink: #fff7f4;
   /* The original product's Yes green and No blue */
-  --yes: #16a34a;
+  --yes: #15803d; /* one step darker than #16a34a so green text reads on the paper (about 4.8:1) */
   --yes-ink: #ffffff;
   --yes-soft: rgba(22, 163, 74, 0.08);
   --no: #2563eb;
@@ -181,8 +182,8 @@
   h3 {
     text-wrap: balance;
     font-family: var(--font-display), Georgia, serif;
-    font-weight: 500;
-    letter-spacing: -0.015em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
   }
 
   p {
@@ -205,7 +206,7 @@
   /* One grid, one pair of tight margins; large things run to the edges. */
   /* A centred column; the rules of the nav and footer run past it to the screen edges. */
   .container-page {
-    @apply mx-auto w-full max-w-[1200px] px-5 md:px-10;
+    @apply mx-auto w-full max-w-[1320px] px-5 md:px-10;
   }
 
   .measure {
@@ -269,21 +270,29 @@
   .display {
     @apply text-display;
     font-family: var(--font-display), Georgia, serif;
-    font-weight: 500 !important;
-    letter-spacing: -0.02em !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.015em !important;
     text-wrap: pretty; /* balance splits "COVID-19" at its hyphen on phones */
   }
 
   .display-sm {
     @apply text-heading;
     font-family: var(--font-display), Georgia, serif;
-    font-weight: 500 !important;
-    letter-spacing: -0.015em !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
   }
 
   /* Reading text and figures are set in the serif. */
   .serif {
     font-family: var(--font-display), Georgia, serif;
+  }
+
+  /* The name, in blackletter, as on an old newspaper's front page. */
+  .masthead {
+    font-family: var(--font-masthead), var(--font-display), serif;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1;
   }
 
   /* Section heads: a small mono label over a hairline in ink, as on a broadsheet. */
@@ -612,7 +621,7 @@ input[type="number"] {
 .doc-prose h3,
 .doc-prose h5 {
   font-size: var(--text-body);
-  font-weight: 500;
+  font-weight: 700;
   margin: 1.75rem 0 0.5rem;
 }
 .doc-prose p,
@@ -693,7 +702,7 @@ input[type="number"] {
 }
 .doc-prose h1 {
   font-size: clamp(32px, 4.4vw, 48px);
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1;
   padding-bottom: 0.75rem;
@@ -722,7 +731,7 @@ input[type="number"] {
   float: left;
   margin: 0.08em 0.1em 0 0;
   font-size: 3.1em;
-  font-weight: 500;
+  font-weight: 700;
   line-height: 0.82;
   color: var(--ink);
 }

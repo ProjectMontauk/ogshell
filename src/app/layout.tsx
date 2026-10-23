@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Script from "next/script";
-import { Courier_Prime, Newsreader } from "next/font/google";
+import { Courier_Prime, Tinos, UnifrakturMaguntia } from "next/font/google";
 import "./globals.css";
 import Providers from "../components/Providers";
 import RpcLogger from "../components/RpcLogger";
@@ -10,11 +10,19 @@ import { ThemeProvider } from "../contexts/ThemeContext";
 import ConditionalFooter from "../../components/ConditionalFooter";
 import { THEME_INIT_SCRIPT } from "../lib/theme";
 
-// Newsreader for headlines and reading text; Courier Prime, at one weight, for the interface.
-const serif = Newsreader({
-  variable: "--font-display",
+// A newspaper's faces: blackletter for the masthead, a Times-style serif for headlines and
+// reading text, and Courier Prime, at one weight, for the interface.
+const masthead = UnifrakturMaguntia({
+  variable: "--font-masthead",
+  weight: "400",
   subsets: ["latin"],
-  axes: ["opsz"],
+  display: "swap",
+});
+const serif = Tinos({
+  variable: "--font-display",
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  subsets: ["latin"],
   display: "swap",
 });
 const mono = Courier_Prime({
@@ -46,7 +54,7 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body className={`${serif.variable} ${mono.variable} overflow-x-clip`}>
+      <body className={`${masthead.variable} ${serif.variable} ${mono.variable} overflow-x-clip`}>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <a href="#main" className="skip-link">
           Skip to content
