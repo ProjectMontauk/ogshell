@@ -28,32 +28,59 @@ function useGrace(ms = 6000) {
 }
 
 /**
- * One outcome as a cell in the 32px strip along a market's foot, the height of the nav: label and
- * multiplier, then the price in its own ruled cell. A missing price shows a skeleton during the
- * grace period, then "--".
+ * One outcome's reading in its colour, "Yes 47%", with the multiplier beside it; the same words as the
+ * original pills. A missing price shows a skeleton during the grace period, then "--".
  */
 function Outcome({ label, p, side, waiting }: { label: string; p: number; side: "yes" | "no"; waiting: boolean }) {
   const pct = pctOf(p);
   const odds = p > 0 ? (1 / p).toFixed(2) : null;
   const loading = waiting && pct === null;
   return (
-    <div className="flex h-8 items-stretch text-small">
-      <span className="flex flex-1 items-center gap-2 px-3 sm:px-5">
-        <span className="font-medium text-ink">{label}</span>
-        {loading ? <span className="skeleton h-3 w-8" /> : <span className="num text-muted">{odds ? `${odds}x` : "--"}</span>}
-      </span>
-      <span className={`num flex min-w-14 items-center justify-center border-l border-ink px-2.5 font-semibold ${side === "yes" ? "text-yes" : "text-no"}`}>
-        {loading ? <span className="skeleton h-3 w-7" /> : pct !== null ? `${pct}%` : "--"}
-      </span>
+    <span className={`inline-flex items-center gap-1.5 ${side === "yes" ? "text-yes" : "text-no"}`}>
+      <span>{label}</span>
+      {loading ? <span className="skeleton h-3 w-7" /> : <span>{pct !== null ? `${pct}%` : "--"}</span>}
+      {loading ? <span className="skeleton h-3 w-8" /> : <span className="text-muted">{odds ? `${odds}x` : "--"}</span>}
+    </span>
+  );
+}
+
+/**
+ * The Yes and No outcomes of a market as a ruled scale: a hairline split at the Yes price, green for
+ * Yes and blue for No with a tick at the split, and the two readings under its ends. Without a price
+ * the line is a plain rule. The readings sit at either end when the column has room for both (14rem)
+ * and one above the other when it does not, so every card in a column breaks the same way.
+ */
+function Outcomes({ probs, waiting, className = "" }: { probs: Probs; waiting: boolean; className?: string }) {
+  const yes = probs?.yes ?? 0;
+  const split = yes > 0 ? `${Math.min(100, yes * 100)}%` : null;
+  return (
+    <div className={`@container ${className}`}>
+      <div className="num text-small">
+        <div className="relative flex h-0.5 bg-rule">
+          {split && (
+            <>
+              <span className="bg-yes" style={{ width: split }} />
+              <span className="flex-1 bg-no" />
+              <span className="absolute -top-1 h-2.5 w-px bg-ink" style={{ left: split }} />
+            </>
+          )}
+        </div>
+        <div className="mt-1.5 flex flex-col items-start gap-1 @min-[14rem]:flex-row @min-[14rem]:justify-between @min-[14rem]:gap-x-4">
+          <Outcome label="Yes" p={yes} side="yes" waiting={waiting} />
+          <Outcome label="No" p={probs?.no ?? 0} side="no" waiting={waiting} />
+        </div>
+      </div>
     </div>
   );
 }
 
 /**
- * The lead story in one ruled box: the featured market set like a front-page headline (under its
- * picture when it has one), the two outcomes in cells, then the price history. The top part is the link.
+ * The lead story as a front-page package: the question as the headline with its description, the
+ * two outcomes and the price history in the first column, and its picture across the wide column
+ * beside them. On narrower screens the picture comes first. Picture and headline both link to the
+ * market. On a page grid the package spans two columns and takes their widths from it.
  */
-export function FeaturedMarket({ market, probs }: { market: Market; probs: Probs }) {
+export function FeaturedMarket({ market, probs, className = "" }: { market: Market; probs: Probs; className?: string }) {
   const waiting = useGrace() && probs === null;
   // Mini odds history chart data for featured market (as on main: last 40 points, shown once loaded).
   const [featuredHistory, setFeaturedHistory] = useState<OddsPoint[]>([]);
@@ -86,66 +113,89 @@ export function FeaturedMarket({ market, probs }: { market: Market; probs: Probs
     };
   }, [market.id]);
 
-  // As on the original front page, these two markets lead without their picture.
-  const cover = market.id !== "jfk" && market.id !== "covid19";
-
   return (
-    <article className="border border-ink">
-      <Link href={`/markets/${market.id}`} className="group block">
-        {cover && (
-          <Image
-            src={market.image}
-            alt={market.title}
-            width={1280}
-            height={800}
-            className="aspect-[16/9] w-full border-b border-ink object-cover object-top contrast-[1.06] grayscale"
-          />
-        )}
-        <div className="px-5 py-6 sm:px-7 sm:py-7">
-          <h2 className="serif [text-wrap:pretty] text-[clamp(30px,4vw,44px)] font-medium leading-[1.04] tracking-[-0.02em] text-ink decoration-2 underline-offset-[6px] group-hover:underline">
+    <article className={`xl:grid xl:grid-cols-subgrid ${className}`}>
+      <Link href={`/markets/${market.id}`} className="block xl:col-start-2 xl:row-start-1">
+        <Image src={market.image} alt={market.title} width={1280} height={800} priority className="aspect-[16/9] w-full object-cover object-top" />
+      </Link>
+      <div className="mt-5 xl:col-start-1 xl:row-start-1 xl:mt-0">
+        <Link href={`/markets/${market.id}`} className="group block">
+          <h2 className="serif [text-wrap:pretty] text-[32px] font-bold leading-[1.06] tracking-[-0.01em] text-ink decoration-2 underline-offset-[6px] group-hover:underline xl:text-[34px]">
             {market.title}
           </h2>
-          {market.description && <p className="serif mt-3 max-w-[60ch] text-[clamp(16px,1.4vw,19px)] leading-[1.45] text-ink-2">{market.description}</p>}
-        </div>
-        <div className="grid grid-cols-2 divide-x divide-ink border-t border-ink">
-          <Outcome label="Yes" p={probs?.yes ?? 0} side="yes" waiting={waiting} />
-          <Outcome label="No" p={probs?.no ?? 0} side="no" waiting={waiting} />
-        </div>
-      </Link>
-      {featuredHistory.length > 0 && (
-        <div className="border-t border-ink px-5 pb-3 pt-5 sm:px-7">
-          <OddsChart data={featuredHistory} height={220} detailed={false} />
-        </div>
-      )}
+          {market.description && <p className="serif mt-2.5 text-[16px] leading-[1.4] text-ink-2">{market.description}</p>}
+        </Link>
+        <Outcomes probs={probs} waiting={waiting} className="mt-3" />
+        {featuredHistory.length > 0 && (
+          <div className="mt-4">
+            <OddsChart data={featuredHistory} height={124} detailed={false} />
+          </div>
+        )}
+      </div>
     </article>
   );
 }
 
 /**
- * One market in the list as a boxed card: the question, then the description with the arrow, then
- * the two outcomes in cells along the foot. The card is the link.
+ * A second-rank story under the lead: its picture, the question, two lines of the description and
+ * the two outcomes. The picture and headline are the link.
  */
-export function MarketCard({ market, probs }: { market: Market; probs: Probs }) {
+export function MarketStory({ market, probs }: { market: Market; probs: Probs }) {
+  const waiting = useGrace() && probs === null;
+  return (
+    <article>
+      <Link href={`/markets/${market.id}`} className="group block">
+        <Image src={market.image} alt={market.title} width={800} height={500} className="mb-3.5 aspect-[16/10] w-full object-cover" />
+        <h3 className="serif text-[22px] font-bold leading-[1.12] tracking-[-0.01em] text-ink [text-wrap:pretty] decoration-1 underline-offset-4 group-hover:underline">
+          {market.title}
+        </h3>
+        {market.description && <p className="serif mt-1.5 line-clamp-2 text-[15px] leading-[1.35] text-ink-2">{market.description}</p>}
+      </Link>
+      <Outcomes probs={probs} waiting={waiting} className="mt-3" />
+    </article>
+  );
+}
+
+/**
+ * One market as a front-page brief: the question, two lines of its description, and the two
+ * outcomes at the foot of the cell so they line up across a row. The item is the link.
+ */
+export function MarketRow({ market, probs }: { market: Market; probs: Probs }) {
+  const waiting = useGrace() && probs === null;
+  return (
+    <li>
+      <Link href={`/markets/${market.id}`} className="group flex h-full flex-col border-b border-rule py-5">
+        <h3 className="serif text-[20px] font-bold leading-[1.15] tracking-[-0.01em] text-ink [text-wrap:pretty] decoration-1 underline-offset-4 group-hover:underline">
+          {market.title}
+        </h3>
+        {market.description && <p className="serif mt-1.5 line-clamp-2 text-[15px] leading-[1.35] text-ink-2">{market.description}</p>}
+        <Outcomes probs={probs} waiting={waiting} className="mt-auto pt-3" />
+      </Link>
+    </li>
+  );
+}
+
+/**
+ * One market in the index: its number in the listing, the question and two lines of its description,
+ * and the two outcomes in a column of their own on the right (under the text on phones). The row is
+ * the link.
+ */
+export function MarketLine({ market, probs, n }: { market: Market; probs: Probs; n: number }) {
   const waiting = useGrace() && probs === null;
   return (
     <li>
       <Link
         href={`/markets/${market.id}`}
-        className="group flex h-full flex-col border border-ink transition-colors duration-150 hover:bg-ground-2"
+        className="group grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-4 border-b border-rule py-5 sm:grid-cols-[2.5rem_minmax(0,1fr)_16rem] sm:gap-x-7"
       >
-        <h3 className="serif border-b border-ink p-5 text-[24px] font-medium leading-tight tracking-[-0.01em] text-ink [text-wrap:pretty] decoration-1 underline-offset-4 group-hover:underline">
-          {market.title}
-        </h3>
-        <div className="flex flex-1 flex-col px-5 pb-4 pt-4">
-          {market.description && <p className="serif text-[16px] leading-snug text-ink-2">{market.description}</p>}
-          <span aria-hidden className="mt-auto self-end pt-6 text-lead text-ink transition-transform duration-150 group-hover:translate-x-1">
-            →
-          </span>
+        <span className="serif num text-[22px] leading-none text-muted">{n}</span>
+        <div className="min-w-0 max-w-[64ch]">
+          <h3 className="serif text-[22px] font-bold leading-[1.12] tracking-[-0.01em] text-ink [text-wrap:pretty] decoration-1 underline-offset-4 group-hover:underline">
+            {market.title}
+          </h3>
+          {market.description && <p className="serif mt-1.5 line-clamp-2 text-[15px] leading-[1.35] text-ink-2">{market.description}</p>}
         </div>
-        <div className="grid grid-cols-2 divide-x divide-ink border-t border-ink">
-          <Outcome label="Yes" p={probs?.yes ?? 0} side="yes" waiting={waiting} />
-          <Outcome label="No" p={probs?.no ?? 0} side="no" waiting={waiting} />
-        </div>
+        <Outcomes probs={probs} waiting={waiting} className="col-start-2 mt-3 sm:col-start-3 sm:row-start-1 sm:mt-1.5" />
       </Link>
     </li>
   );

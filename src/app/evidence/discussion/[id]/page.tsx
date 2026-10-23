@@ -107,7 +107,7 @@ export default function EvidenceDiscussionPage({ params }: { params: Promise<{ i
             <SkeletonLines rows={4} />
           ) : error || !evidence ? (
             <div className="py-10">
-              <h1 className="serif text-heading font-medium text-ink">Evidence Not Found</h1>
+              <h1 className="serif text-heading font-bold text-ink">Evidence Not Found</h1>
               <p className="mt-2 text-small text-muted">The evidence you&apos;re looking for doesn&apos;t exist or has been removed.</p>
               <button type="button" onClick={() => router.back()} className="btn btn-primary btn-sm mt-4">
                 Go Back
@@ -121,7 +121,7 @@ export default function EvidenceDiscussionPage({ params }: { params: Promise<{ i
                 </span>
                 {evidence.createdAt && <span className="text-muted">{formatDate(evidence.createdAt)}</span>}
               </div>
-              <h1 className="serif mt-4 text-[clamp(32px,4.6vw,52px)] font-medium leading-[1] tracking-[-0.03em] text-ink">{evidence.title}</h1>
+              <h1 className="serif mt-4 text-[clamp(32px,4.6vw,52px)] font-bold leading-[1] tracking-[-0.03em] text-ink">{evidence.title}</h1>
               {evidence.description && <p className="serif mt-4 max-w-[65ch] text-lead leading-relaxed text-ink-2">{evidence.description}</p>}
 
               <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-rule py-3 text-small">
@@ -157,7 +157,7 @@ export default function EvidenceDiscussionPage({ params }: { params: Promise<{ i
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="signin-heading">
           <button type="button" aria-label="Close" onClick={() => setShowSignInModal(false)} className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
           <div className="relative w-full max-w-sm border border-ink bg-ground p-5 shadow-[6px_6px_0_var(--ink)]">
-            <h3 id="signin-heading" className="serif text-lead font-medium text-ink">Sign In Required</h3>
+            <h3 id="signin-heading" className="serif text-lead font-bold text-ink">Sign In Required</h3>
             <p className="mt-1.5 text-small text-muted">Please sign in to add a comment</p>
             <div className="mt-4 flex justify-end gap-2">
               <button type="button" onClick={() => setShowSignInModal(false)} className="btn btn-ghost btn-sm">

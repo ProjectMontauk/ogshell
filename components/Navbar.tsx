@@ -161,36 +161,42 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
   }
 
   // The front page is the markets index, so "Markets" is the current section there too.
-  const isActive = (href: string) => pathname === href || pathname?.startsWith(href + "/") || (href === "/markets" && pathname === "/");
+  const isActive = (href: string) => pathname === href || pathname?.startsWith(href + "/");
 
   return (
     <>
-      {/* Masthead: the name on the left, the date and motto on the right. Scrolls away. */}
-      <header className="container-page hidden items-end justify-between py-6 md:flex">
-        <Link href="/" className="serif text-[44px] font-semibold leading-none tracking-[-0.02em] text-ink" aria-label="The Citizen, home">
+      {/* Front page head, as on a newspaper: the date and motto on the left, the wallet on the right,
+          the name centred in blackletter. Scrolls away. */}
+      <header className="container-page hidden pt-5 md:block">
+        <div className="flex items-start justify-between gap-6">
+          <div className="text-small leading-relaxed">
+            <div className="text-ink">{today}</div>
+            <div className="text-muted">Time Discovers Truth</div>
+          </div>
+          <div className="flex h-9 items-stretch">
+            {account?.address && <div className="flex items-center pr-5 text-small">{balances}</div>}
+            {connect}
+          </div>
+        </div>
+        <Link href="/" className="masthead mx-auto mt-1 block w-fit pb-4 text-[76px] text-ink" aria-label="The Citizen, home">
           The Citizen
         </Link>
-        <div className="text-right text-small leading-relaxed">
-          <div className="font-medium text-ink">{today}</div>
-          <div className="text-muted">Time Discovers Truth</div>
-        </div>
       </header>
 
-      {/* Section nav between two thin rules that run edge to edge. The links, the balances and the
-          wallet sit in boxed cells, flush with the rules. Sticks to the top. */}
-      <nav className="sticky top-0 z-30 w-full border-b border-rule bg-ground md:border-y md:border-ink">
-        <div className="container-page flex h-14 items-stretch justify-between gap-6 md:h-8">
-          <Link href="/" aria-label="The Citizen, home" className="serif flex items-center whitespace-nowrap text-[26px] font-semibold leading-none tracking-[-0.02em] text-ink md:hidden">
+      {/* Sections, centred, over a clean double rule that runs edge to edge. Sticks to the top. */}
+      <nav className="sticky top-0 z-30 w-full bg-ground">
+        <div className="container-page flex h-14 items-center justify-between md:h-11 md:justify-center">
+          <Link href="/" aria-label="The Citizen, home" className="masthead whitespace-nowrap text-[30px] text-ink md:hidden">
             The Citizen
           </Link>
 
-          <ul className="hidden md:flex">
+          <ul className="hidden items-center gap-10 md:flex">
             {NAV_LINKS.map((item) => (
-              <li key={item.href} className="flex border-r border-ink first:border-l">
+              <li key={item.href}>
                 <Link
                   href={item.href}
                   aria-current={isActive(item.href) ? "page" : undefined}
-                  className={`flex items-center px-4 text-small transition-colors duration-200 ${isActive(item.href) ? "bg-ground-2 font-medium text-ink" : "text-ink-2 hover:bg-ground-2 hover:text-ink"}`}
+                  className={`text-small underline-offset-[6px] transition-colors duration-200 ${isActive(item.href) ? "text-ink underline decoration-1" : "text-ink-2 hover:text-ink"}`}
                 >
                   {item.label}
                 </Link>
@@ -198,20 +204,17 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
             ))}
           </ul>
 
-          <div className="flex items-stretch justify-end">
-            {account?.address && <div className="hidden items-center border-l border-ink px-4 text-small md:flex">{balances}</div>}
-            <div className="hidden items-stretch md:flex">{connect}</div>
-            <button
-              type="button"
-              onClick={() => setMenuOpen(true)}
-              className="btn btn-outline my-auto h-10 w-10 px-0 md:hidden"
-              aria-label="Open menu"
-              aria-expanded={menuOpen}
-            >
-              <List size={18} aria-hidden />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setMenuOpen(true)}
+            className="btn btn-outline h-10 w-10 px-0 md:hidden"
+            aria-label="Open menu"
+            aria-expanded={menuOpen}
+          >
+            <List size={18} aria-hidden />
+          </button>
         </div>
+        <div aria-hidden className="h-[5px] border-y border-ink" />
       </nav>
 
       {/* Phones: full-screen menu */}
@@ -228,7 +231,7 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
             transition={{ duration: reduce ? 0 : 0.2 }}
           >
             <div className="container-page flex h-14 items-center justify-between">
-              <span className="serif text-[26px] font-semibold leading-none tracking-[-0.02em] text-ink">The Citizen</span>
+              <span className="masthead text-[30px] text-ink">The Citizen</span>
               <button type="button" onClick={() => setMenuOpen(false)} className="btn btn-outline h-11 w-11 px-0" aria-label="Close menu">
                 <X size={18} aria-hidden />
               </button>
@@ -242,7 +245,7 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
                   transition={{ duration: 0.35, delay: reduce ? 0 : 0.05 + i * 0.05, ease: [0.22, 1, 0.36, 1] }}
                   className=""
                 >
-                  <Link href={item.href} className={`serif block border-b border-rule py-4 text-heading font-medium ${isActive(item.href) ? "text-ink" : "text-muted"}`}>
+                  <Link href={item.href} className={`serif block border-b border-rule py-4 text-heading font-bold ${isActive(item.href) ? "text-ink" : "text-muted"}`}>
                     {item.label}
                   </Link>
                 </motion.li>

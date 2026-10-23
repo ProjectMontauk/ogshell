@@ -203,7 +203,7 @@ export default function TradePanel(p: TradePanelProps) {
             placeholder="$"
             value={p.amount ? `$${p.amount}` : ""}
             onChange={(e) => p.onAmountChange(e.target.value.replace(/^\$/, "").replace(/[^0-9.]/g, ""))}
-            className="field num border-ink text-[24px] font-medium"
+            className="field num border-ink text-[24px] font-bold"
           />
         </div>
       </div>
