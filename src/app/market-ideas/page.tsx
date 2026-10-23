@@ -314,7 +314,7 @@ export default function MarketIdeasPage() {
                           <div className="flex items-start gap-2">
                             <span className="num shrink-0 pt-1 text-small font-semibold text-muted">#{idx + 1}</span>
                             <div className="min-w-0">
-                              <p className="serif text-lead font-medium leading-snug text-ink">{idea.title}</p>
+                              <p className="serif text-lead font-bold leading-snug text-ink">{idea.title}</p>
                               <p className="mt-1 text-small text-muted">
                                 Submitted by <span className="num">{shortAddress(idea.walletAddress)}</span> •{" "}
                                 {idea.createdAt ? new Date(idea.createdAt).toLocaleDateString() : "Unknown date"}

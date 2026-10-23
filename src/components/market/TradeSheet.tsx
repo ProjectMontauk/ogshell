@@ -59,7 +59,7 @@ export default function TradeSheet({ open, onClose, title, children, panelRef }:
             transition={reduce ? { duration: 0 } : spring}
           >
             <div className="flex items-center justify-between border-b-4 border-double border-ink px-4 py-3 md:px-5">
-              <h2 className="text-[18px] font-medium leading-tight text-ink">{title}</h2>
+              <h2 className="text-[18px] font-bold leading-tight text-ink">{title}</h2>
               <button type="button" onClick={onClose} className="btn btn-ghost btn-sm -mr-2 h-8 w-8 px-0" aria-label="Close">
                 <X size={16} aria-hidden />
               </button>
