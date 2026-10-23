@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAllMarkets, type Market } from "../src/data/markets";
 import { fetchFpmmProbsForMarket } from "../src/lib/fpmmMarketOdds";
-import { FeaturedMarket, MarketCard } from "../src/components/market/MarketCard";
+import { FeaturedMarket, MarketLine, MarketRow, MarketStory } from "../src/components/market/MarketCard";
 import { SkeletonLines } from "../src/components/ui/Skeleton";
 
 const API_BASE_URL = "";
@@ -61,16 +61,16 @@ const TrendingEvidence = ({ markets }: { markets: Market[] }) => {
 
   return (
     <section aria-labelledby="trending-heading">
-      <h2 id="trending-heading" className="serif border-b border-ink pb-2 text-[20px] font-medium leading-tight tracking-[-0.01em] text-ink">
+      <h2 id="trending-heading" className="serif border-b lg:-ml-7 lg:pl-7 border-ink pb-2 text-[20px] font-bold leading-tight tracking-[-0.01em] text-ink">
         Trending Evidence
       </h2>
       <ol className="mt-1">
         {topEvidence.map((e, i) => {
-          const cls = "group grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-2 border-b border-rule py-3.5 transition-colors duration-150 hover:bg-ground-2";
+          const cls = "group grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-2 border-b border-rule py-3.5 transition-colors lg:-ml-7 lg:pl-7 duration-150 hover:bg-ground-2";
           const inner = (
             <>
               <span className="serif num text-[22px] font-normal leading-none text-muted">{i + 1}</span>
-              <span className={`serif line-clamp-3 text-[16px] font-medium leading-snug ${e.marketId ? "text-ink group-hover:underline" : "text-muted"}`}>{e.title}</span>
+              <span className={`serif line-clamp-3 text-[16px] font-bold leading-snug ${e.marketId ? "text-ink group-hover:underline" : "text-muted"}`}>{e.title}</span>
             </>
           );
           return (
@@ -139,7 +139,7 @@ const TopProposedMarkets = () => {
 
   return (
     <section aria-labelledby="proposed-heading">
-      <h2 id="proposed-heading" className="serif border-b border-ink pb-2 text-[20px] font-medium leading-tight tracking-[-0.01em] text-ink">
+      <h2 id="proposed-heading" className="serif border-b lg:-ml-7 lg:pl-7 border-ink pb-2 text-[20px] font-bold leading-tight tracking-[-0.01em] text-ink">
         Top Proposed Markets
       </h2>
       {loading ? (
@@ -153,8 +153,8 @@ const TopProposedMarkets = () => {
         <ol className="mt-1">
           {ideas.map((idea) => (
             <li key={idea.id}>
-              <Link href="/market-ideas" className="group grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 border-b border-rule py-3.5 transition-colors duration-150 hover:bg-ground-2">
-                <span className="serif line-clamp-3 text-[16px] font-medium leading-snug text-ink group-hover:underline">{idea.title}</span>
+              <Link href="/market-ideas" className="group grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 border-b border-rule py-3.5 transition-colors lg:-ml-7 lg:pl-7 duration-150 hover:bg-ground-2">
+                <span className="serif line-clamp-3 text-[16px] font-bold leading-snug text-ink group-hover:underline">{idea.title}</span>
                 <span className="num text-small text-muted">{idea.netVotes}</span>
               </Link>
             </li>
@@ -165,16 +165,8 @@ const TopProposedMarkets = () => {
   );
 };
 
-/**
- * The front page: the featured market as the lead story and every listed market as a row under
- * it, with trending evidence and proposals in the side column, as the original laid them out.
- */
-const Homepage = () => {
-  const markets = getAllMarkets();
-  const [featured] = markets;
-  // Featured leads the page; the Markets grid is everything else (no duplicate of the lead).
-  const listedMarkets = markets.slice(1);
-  // Single fetch of odds for all markets once on mount (same idea as markets/[id] page).
+/** Single fetch of odds for all markets once on mount (same idea as markets/[id] page). */
+function useMarketOdds(markets: Market[]) {
   const [marketOdds, setMarketOdds] = useState<Record<string, { yes: number; no: number }>>({});
 
   useEffect(() => {
@@ -195,26 +187,72 @@ const Homepage = () => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fetch once on mount; markets from getAllMarkets() is static
 
-  return (
-    <div className="container-page grid gap-12 pb-24 pt-8 md:pt-10 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-0 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="min-w-0 lg:pr-10">
-        {featured && <FeaturedMarket market={featured} probs={marketOdds[featured.id] ?? null} />}
+  return (id: string) => marketOdds[id] ?? null;
+}
 
-        <section aria-labelledby="markets-heading" className="mt-14">
-          <h1 id="markets-heading" className="serif border-b border-ink pb-2 text-[clamp(26px,2.4vw,34px)] font-medium tracking-[-0.02em] text-ink">
+const heading = "serif border-b border-ink pb-2 text-[20px] font-bold leading-tight tracking-[-0.01em] text-ink";
+
+/**
+ * The front page, made up as a broadsheet's is: the featured market as the lead package, three
+ * stories with their pictures under it, six briefs in two columns, and trending evidence and
+ * proposals in a ruled column on the right. Everything else is on the markets index. On phones it
+ * is one column in reading order, the lead first.
+ */
+const Homepage = () => {
+  const markets = getAllMarkets();
+  const odds = useMarketOdds(markets);
+  const [featured, ...rest] = markets;
+  const stories = rest.slice(0, 3);
+  const briefs = rest.slice(3, 9);
+
+  // On large screens three columns, 272 : 580 : 332 at full width. The main section spans the first
+  // two and lays its children on the same lines (subgrid), so the lead's text and picture fall on
+  // the page's columns.
+  return (
+    <div className="container-page pb-24 pt-8">
+      <div className="grid gap-12 lg:grid-cols-[272fr_580fr_332fr] lg:gap-x-7 lg:gap-y-0">
+        <section aria-labelledby="markets-heading" className="min-w-0 lg:col-span-2 lg:grid lg:grid-cols-subgrid lg:content-start">
+          <h1 id="markets-heading" className={`${heading} lg:col-span-2`}>
             Markets
           </h1>
-          <ul className="mt-6 grid gap-6 sm:grid-cols-2">
-            {listedMarkets.map((m) => (
-              <MarketCard key={m.id} market={m} probs={marketOdds[m.id] ?? null} />
-            ))}
-          </ul>
+          {featured && <FeaturedMarket market={featured} probs={odds(featured.id)} className="mt-4 lg:col-span-2" />}
+          {stories.length > 0 && (
+            <div className="mt-7 grid gap-x-7 gap-y-8 border-t border-rule pt-6 md:grid-cols-3 lg:col-span-2">
+              {stories.map((m) => (
+                <MarketStory key={m.id} market={m} probs={odds(m.id)} />
+              ))}
+            </div>
+          )}
+          {briefs.length > 0 && (
+            <ul className="mt-7 grid gap-x-7 border-t border-rule sm:grid-cols-2 lg:col-span-2">
+              {briefs.map((m) => (
+                <MarketRow key={m.id} market={m} probs={odds(m.id)} />
+              ))}
+            </ul>
+          )}
         </section>
+        <aside className="flex flex-col gap-10 lg:border-l lg:border-rule lg:pl-7">
+          <TrendingEvidence markets={markets} />
+          <TopProposedMarkets />
+        </aside>
       </div>
-      <aside className="flex flex-col gap-10 lg:border-l lg:border-rule lg:pl-7">
-        <TrendingEvidence markets={markets} />
-        <TopProposedMarkets />
-      </aside>
+    </div>
+  );
+};
+
+/** The markets index: every listed market as a numbered, ruled row, in listing order. */
+export const MarketsIndex = () => {
+  const markets = getAllMarkets();
+  const odds = useMarketOdds(markets);
+
+  return (
+    <div className="container-page pb-24 pt-8">
+      <h1 className={heading}>Markets</h1>
+      <ol>
+        {markets.map((m, i) => (
+          <MarketLine key={m.id} market={m} probs={odds(m.id)} n={i + 1} />
+        ))}
+      </ol>
     </div>
   );
 };
