@@ -87,7 +87,7 @@ function TradesTable({ trades }: { trades: Trade[] }) {
                     {trade.outcome} {redemption ? "$1.00" : formatCents(trade.avgPrice)}
                     <span className="num ml-2 font-normal text-muted">{trade.shares.toFixed(2)} shares</span>
                   </span>
-                  <span className="serif text-body font-medium text-ink">{trade.marketTitle}</span>
+                  <span className="serif text-body font-bold text-ink">{trade.marketTitle}</span>
                 </div>
               </td>
               <td className={`${td} whitespace-nowrap text-ink-2`}>{formatTradeDate(trade.createdAt)}</td>
@@ -120,7 +120,7 @@ function Figure({ label, value, muted = false }: { label: string; value: string;
   return (
     <div className="flex flex-col gap-1.5 py-4 sm:px-6 sm:first:pl-0 sm:[&+&]:border-l sm:[&+&]:border-rule">
       <span className="text-small text-muted">{label}</span>
-      <span className={`serif num text-[clamp(36px,5.4vw,64px)] font-medium leading-none tracking-[-0.03em] ${muted ? "text-ink-2" : "text-ink"}`}>{value}</span>
+      <span className={`serif num text-[clamp(36px,5.4vw,64px)] font-bold leading-none tracking-[-0.03em] ${muted ? "text-ink-2" : "text-ink"}`}>{value}</span>
     </div>
   );
 }
@@ -512,7 +512,7 @@ export default function PortfolioPage() {
                               </span>
                               <span className="num text-small font-medium text-ink">${Number(trade.betAmount).toFixed(2)}</span>
                             </div>
-                            <span className="serif text-body font-medium text-ink">{trade.marketTitle}</span>
+                            <span className="serif text-body font-bold text-ink">{trade.marketTitle}</span>
                             <span className="num text-small text-muted">
                               {formatTradeDate(trade.createdAt)} <span className="ml-2">{redemption ? "Redemption" : (trade.tradeType ?? "BUY").toUpperCase()}</span>
                             </span>
@@ -554,7 +554,7 @@ export default function PortfolioPage() {
                             <span className={`text-small font-medium ${pos.kind === "yes" ? "text-yes" : "text-no"}`}>{pos.outcomeLabel}</span>
                             <span className={`num text-small font-medium ${plClass}`}>{pl === null ? "—" : `${pl > 0 ? "+" : pl < 0 ? "-" : ""}$${Math.abs(pl).toFixed(2)}`}</span>
                           </div>
-                          <Link href={`/markets/${pos.marketId}`} className="serif text-body font-medium text-ink">
+                          <Link href={`/markets/${pos.marketId}`} className="serif text-body font-bold text-ink">
                             {pos.marketTitle}
                           </Link>
                           <div className="num flex flex-wrap gap-x-4 gap-y-0.5 text-small text-muted">
@@ -591,7 +591,7 @@ export default function PortfolioPage() {
                             <td className={td}>
                               <div className="flex flex-col gap-0.5">
                                 <span className={`text-small font-medium ${pos.kind === "yes" ? "text-yes" : "text-no"}`}>{pos.outcomeLabel}</span>
-                                <Link href={`/markets/${pos.marketId}`} className="serif text-body font-medium text-ink underline-offset-[3px] hover:underline hover:decoration-hairline-2">
+                                <Link href={`/markets/${pos.marketId}`} className="serif text-body font-bold text-ink underline-offset-[3px] hover:underline hover:decoration-hairline-2">
                                   {pos.marketTitle}
                                 </Link>
                               </div>

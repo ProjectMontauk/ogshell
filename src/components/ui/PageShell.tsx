@@ -22,7 +22,7 @@ export default function PageShell({ title, note, width = "narrow", children }: P
       <div className={`mx-auto ${WIDTH[width]}`}>
         {title && (
           <header className="rule-bleed-b mb-8 pb-5 md:mb-10">
-            <h1 className="serif text-[clamp(36px,5vw,56px)] font-medium leading-[0.95] tracking-[-0.03em] text-ink">{title}</h1>
+            <h1 className="serif text-[clamp(36px,5vw,56px)] font-bold leading-[0.95] tracking-[-0.03em] text-ink">{title}</h1>
             {note && <div className="serif mt-3 max-w-[65ch] text-lead text-ink-2">{note}</div>}
           </header>
         )}

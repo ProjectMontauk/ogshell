@@ -77,7 +77,7 @@ function Dialog({ title, body, children }: { title: string; body: string; childr
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={title}>
       <div aria-hidden className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
       <div className="panel relative w-full max-w-sm p-5 shadow-[var(--shadow-float)]">
-        <h3 className="text-body font-medium text-ink">{title}</h3>
+        <h3 className="text-body font-bold text-ink">{title}</h3>
         <p className="mt-1.5 text-small text-muted">{body}</p>
         <div className="mt-4 flex justify-end gap-2">{children}</div>
       </div>
@@ -2207,7 +2207,7 @@ useEffect(() => {
         {/* An article, with the trade box beside it on desktop for the length of the page */}
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
           <article className="min-w-0">
-            <h1 id="case-title" className="serif text-[40px] font-medium leading-none tracking-[-0.02em] text-ink [text-wrap:pretty] md:text-[58px]">
+            <h1 id="case-title" className="serif text-[40px] font-bold leading-none tracking-[-0.02em] text-ink [text-wrap:pretty] md:text-[58px]">
               <span className="line-mask">
                 <span>{market.title}</span>
               </span>
@@ -2219,7 +2219,7 @@ useEffect(() => {
             {/* Market Odds: the two prices on one quiet line, the price history under it */}
             <section aria-labelledby="odds-heading" className="mt-7" data-reveal>
               <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-rule pb-2">
-                <h2 id="odds-heading" className="serif text-[20px] font-medium text-ink">
+                <h2 id="odds-heading" className="serif text-[20px] font-bold text-ink">
                   Market Odds
                 </h2>
                 <ProbabilityBar yesPct={yesPct} noPct={noPct} loading={fpmmOddsLoading} />
@@ -2254,7 +2254,7 @@ useEffect(() => {
 
             {/* As on the original: the first sentence while closed, every paragraph when open */}
             <section aria-labelledby="rules-heading" className="mt-10" data-reveal>
-              <h2 id="rules-heading" className="serif border-b border-rule pb-2 text-[20px] font-medium text-ink">
+              <h2 id="rules-heading" className="serif border-b border-rule pb-2 text-[20px] font-bold text-ink">
                 Rules
               </h2>
               <AutoHeight className="mt-3">
@@ -2278,7 +2278,7 @@ useEffect(() => {
             {/* Evidence: the two sides as columns */}
             <section aria-labelledby="evidence-heading" className="mt-10">
               <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-rule pb-2" data-reveal>
-                <h2 id="evidence-heading" className="serif text-[20px] font-medium text-ink">
+                <h2 id="evidence-heading" className="serif text-[20px] font-bold text-ink">
                   Evidence
                 </h2>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
