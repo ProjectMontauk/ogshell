@@ -25,7 +25,7 @@ export function SignInButton() {
 }
 
 const NAV_LINKS = [
-  { href: "/markets", label: "Markets" },
+  { href: "/", label: "Markets" },
   { href: "/market-ideas", label: "New" },
   { href: "/portfolio", label: "Portfolio" },
   { href: "/deposit", label: "Deposit" },
@@ -160,8 +160,13 @@ const Navbar = ({ variant = "full" }: NavbarProps) => {
     );
   }
 
-  // The front page is the markets index, so "Markets" is the current section there too.
-  const isActive = (href: string) => pathname === href || pathname?.startsWith(href + "/");
+  // "Markets" points at the homepage; keep it active on individual market pages too.
+  const isActive = (href: string) => {
+    if (href === "/") {
+      return pathname === "/" || Boolean(pathname?.startsWith("/markets"));
+    }
+    return pathname === href || Boolean(pathname?.startsWith(href + "/"));
+  };
 
   return (
     <>

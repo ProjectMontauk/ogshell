@@ -1,14 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import Navbar from "../../../components/Navbar";
-import { MarketsIndex } from "../../../components/Homepage";
-
+/** Markets index lives on the homepage; keep /markets as a redirect for old links. */
 export default function MarketsPage() {
-  return (
-    <div>
-      <Navbar />
-      <MarketsIndex />
-    </div>
-  );
+  redirect("/");
 }
-

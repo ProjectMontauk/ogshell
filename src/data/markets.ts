@@ -74,7 +74,7 @@ export const markets: Market[] = [
     title: "Was Talarico's Campaign Absence Due to the Flu?",
     description:
       "Was James Talarico's roughly two-week absence from the campaign trail caused by influenza (the flu)?",
-    image: "/Macron.png",
+    image: "/Talarico.png",
     contractAddress: "0x0000000000000000000000000000000000000000", // Placeholder — replace when deployed
     outcomes: [
       "Yes, the absence was due to the flu",

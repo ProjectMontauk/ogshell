@@ -137,15 +137,14 @@ export function FeaturedMarket({ market, probs, className = "" }: { market: Mark
 }
 
 /**
- * A second-rank story under the lead: its picture, the question, two lines of the description and
- * the two outcomes. The picture and headline are the link.
+ * A second-rank story under the lead: the question, two lines of the description and the two
+ * outcomes. The headline is the link (no picture).
  */
 export function MarketStory({ market, probs }: { market: Market; probs: Probs }) {
   const waiting = useGrace() && probs === null;
   return (
     <article>
       <Link href={`/markets/${market.id}`} className="group block">
-        <Image src={market.image} alt={market.title} width={800} height={500} className="mb-3.5 aspect-[16/10] w-full object-cover" />
         <h3 className="serif text-[22px] font-bold leading-[1.12] tracking-[-0.01em] text-ink [text-wrap:pretty] decoration-1 underline-offset-4 group-hover:underline">
           {market.title}
         </h3>

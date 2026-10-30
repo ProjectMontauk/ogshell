@@ -95,7 +95,7 @@
   --color-accent-no: var(--no);
 
   --font-sans: var(--font-text), ui-monospace, Menlo, monospace;
-  --font-serif: var(--font-display), Georgia, serif;
+  --font-serif: Georgia, "Times New Roman", Times, serif;
   --font-mono: var(--font-text), ui-monospace, Menlo, monospace;
 
   /* Square everywhere. `panel` is an alias kept for old call sites. */
@@ -181,7 +181,7 @@
   h2,
   h3 {
     text-wrap: balance;
-    font-family: var(--font-display), Georgia, serif;
+    font-family: Georgia, "Times New Roman", Times, serif;
     font-weight: 700;
     letter-spacing: -0.01em;
   }
@@ -282,9 +282,9 @@
     letter-spacing: -0.01em !important;
   }
 
-  /* Reading text and figures are set in the serif. */
+  /* Reading text and figures are set in Georgia. */
   .serif {
-    font-family: var(--font-display), Georgia, serif;
+    font-family: Georgia, "Times New Roman", Times, serif;
   }
 
   /* The name, in blackletter, as on an old newspaper's front page. */

@@ -202,8 +202,9 @@ const Homepage = () => {
   const markets = getAllMarkets();
   const odds = useMarketOdds(markets);
   const [featured, ...rest] = markets;
-  const stories = rest.slice(0, 3);
-  const briefs = rest.slice(3, 9);
+  // First four secondary markets as a 2×2 story grid; any further markets as brief rows.
+  const stories = rest.slice(0, 4);
+  const briefs = rest.slice(4, 10);
 
   // On large screens three columns, 272 : 580 : 332 at full width. The main section spans the first
   // two and lays its children on the same lines (subgrid), so the lead's text and picture fall on
@@ -211,13 +212,10 @@ const Homepage = () => {
   return (
     <div className="container-page pb-24 pt-8">
       <div className="grid gap-12 lg:grid-cols-[272fr_580fr_332fr] lg:gap-x-7 lg:gap-y-0">
-        <section aria-labelledby="markets-heading" className="min-w-0 lg:col-span-2 lg:grid lg:grid-cols-subgrid lg:content-start">
-          <h1 id="markets-heading" className={`${heading} lg:col-span-2`}>
-            Markets
-          </h1>
-          {featured && <FeaturedMarket market={featured} probs={odds(featured.id)} className="mt-4 lg:col-span-2" />}
+        <section aria-label="Markets" className="min-w-0 lg:col-span-2 lg:grid lg:grid-cols-subgrid lg:content-start">
+          {featured && <FeaturedMarket market={featured} probs={odds(featured.id)} className="lg:col-span-2" />}
           {stories.length > 0 && (
-            <div className="mt-7 grid gap-x-7 gap-y-8 border-t border-rule pt-6 md:grid-cols-3 lg:col-span-2">
+            <div className="mt-7 grid gap-x-7 gap-y-8 border-t border-rule pt-6 sm:grid-cols-2 lg:col-span-2">
               {stories.map((m) => (
                 <MarketStory key={m.id} market={m} probs={odds(m.id)} />
               ))}
