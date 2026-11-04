@@ -234,24 +234,10 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
   const [showRules, setShowRules] = useState(false);
   const rulesFull = market.rules;
 
-  /**
-   * Collapsed Rules preview: the Resolution block's Yes/No 95% lines (first two
-   * substantive sentences), so the Superforecaster threshold is visible before Read More.
-   */
+  /** Collapsed Rules preview: first paragraph only (the “resolve Yes if…” criterion). */
   function getCollapsedRulesPreview(rules: string): string {
     const paragraphs = rules.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
-    const resolution =
-      paragraphs.find((p) => /^Resolution\./i.test(p)) ??
-      paragraphs.find((p) => /superforecaster/i.test(p)) ??
-      paragraphs[0] ??
-      rules;
-    // Match sentences; keep "Resolution." with the following Yes/No threshold sentences.
-    const sentences = resolution.match(/[^.!?]+[.!?]+(?:\s|$)/g);
-    if (!sentences || sentences.length === 0) return resolution;
-    if (/^Resolution\./i.test(sentences[0].trim()) && sentences.length >= 3) {
-      return sentences.slice(0, 3).join("").trim();
-    }
-    return sentences.slice(0, 2).join("").trim();
+    return paragraphs[0] ?? rules;
   }
 
   const rulesPreview = getCollapsedRulesPreview(rulesFull);
@@ -2225,13 +2211,13 @@ useEffect(() => {
         {/* An article, with the trade box beside it on desktop for the length of the page */}
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
           <article className="min-w-0">
-            <h1 id="case-title" className="serif text-[40px] font-bold leading-none tracking-[-0.02em] text-ink [text-wrap:pretty] md:text-[58px]">
+            <h1 id="case-title" className="serif text-[32px] font-bold leading-none tracking-[-0.02em] text-ink [text-wrap:pretty] md:text-[46px]">
               <span className="line-mask">
                 <span>{market.title}</span>
               </span>
             </h1>
             {market.description && (
-              <p className="after-lines serif mt-3.5 max-w-[46ch] text-[19px] leading-[1.4] text-ink-2 md:text-[21px]">{market.description}</p>
+              <p className="after-lines serif mt-3.5 max-w-[72ch] text-[19px] leading-[1.4] text-ink-2 md:text-[21px]">{market.description}</p>
             )}
 
             {/* Market Odds: the two prices on one quiet line, the price history under it */}
