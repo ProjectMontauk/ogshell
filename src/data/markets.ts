@@ -10,6 +10,10 @@ export interface Market {
   tradingResolved?: boolean;
 }
 
+/** Shared Citizen resolution: 95% Superforecaster median for Yes or No (appended after each market's Yes criterion). */
+const SUPERFORECASTER_RESOLUTION_RULES =
+  "Resolution. This market will resolve to &ldquo;Yes&rdquo; when the median probability estimate for the &ldquo;Yes&rdquo; outcome, as published by superforecasters from the Good Judgment Project for this market, reaches or exceeds 95%. This market will resolve to &ldquo;No&rdquo; when the median probability estimate for the &ldquo;No&rdquo; outcome published by those superforecasters for this market reaches or exceeds 95%.\n\nUntil one of those thresholds is met, the market remains open. Superforecasters from the Good Judgment Project may revise their estimates at any time, as new evidence or analysis warrants. There is no fixed calendar that forces resolution&mdash;resolution occurs when a published median first meets the applicable 95% threshold.\n\nTrading. Exchange prices may differ from the superforecasters&rsquo; published estimates at any moment. Between updates, participants trade freely and prices are driven by the market mechanism and participant activity.\n\nParticipants should treat the superforecasters&rsquo; estimates as a forward-looking, evidence-weighted probability used for market resolution&mdash;not a final legal or journalistic determination.";
+
 export const markets: Market[] = [
   {
     id: 'jfk',
@@ -53,7 +57,8 @@ export const markets: Market[] = [
       "No, the childhood vaccine schedule is not linked to autism",
     ],
     rules:
-      'This market will resolve to &ldquo;Yes&rdquo; if there is clear and convincing evidence that children following the CDC-recommended childhood vaccine schedule have a higher likelihood of developing Autism Spectrum Disorder over their lifetime compared to unvaccinated children. Otherwise, this market will resolve to &ldquo;No.&rdquo;\n\nPrice oracle. The reference price for this market is the probability estimate for the same &ldquo;Yes&rdquo; outcome described above, as published by superforecasters from the Good Judgment Project for this market. The oracle rule is fixed: it always tracks those superforecasters&rsquo; current published estimate for this question.\n\nContinuous updates. Superforecasters from the Good Judgment Project may revise their estimate for this market at any time, as new evidence or analysis warrants. There is no monthly, quarterly, or other discrete publication schedule that resets the oracle&mdash;when they update their view, the reference price reflects that latest estimate.\n\nTrading vs. oracle. Exchange prices may differ from the oracle at any moment. Between superforecaster updates, participants trade freely and prices are driven by the market mechanism and participant activity; the oracle does not force a price reset on a calendar.\n\nParticipants should treat the oracle as a forward-looking, evidence-weighted probability&mdash;not a final legal or journalistic determination.',
+      "Yes criterion. &ldquo;Yes&rdquo; means there is clear and convincing evidence that children following the CDC-recommended childhood vaccine schedule have a higher likelihood of developing Autism Spectrum Disorder over their lifetime compared to unvaccinated children.\n\n" +
+      SUPERFORECASTER_RESOLUTION_RULES,
   },
   {
     id: 'glp1-sudden-blindness',
@@ -67,7 +72,8 @@ export const markets: Market[] = [
       "No, GLP-1 use is not linked to sudden onset blindness",
     ],
     rules:
-      'This market will resolve to &ldquo;Yes&rdquo; if there is clear and convincing evidence that use of GLP-1 receptor agonist medications (including, without limitation, drugs such as semaglutide, tirzepatide, liraglutide, and related GLP-1 class therapies) is linked to sudden onset blindness or acute severe vision loss in treated patients, beyond what would be expected from chance, underlying disease, or unrelated causes. Otherwise, this market will resolve to &ldquo;No.&rdquo;\n\nPrice oracle. The reference price for this market is the probability estimate for the same &ldquo;Yes&rdquo; outcome described above, as published by superforecasters from the Good Judgment Project for this market. The oracle rule is fixed: it always tracks those superforecasters&rsquo; current published estimate for this question.\n\nContinuous updates. Superforecasters from the Good Judgment Project may revise their estimate for this market at any time, as new evidence or analysis warrants. There is no monthly, quarterly, or other discrete publication schedule that resets the oracle&mdash;when they update their view, the reference price reflects that latest estimate.\n\nTrading vs. oracle. Exchange prices may differ from the oracle at any moment. Between superforecaster updates, participants trade freely and prices are driven by the market mechanism and participant activity; the oracle does not force a price reset on a calendar.\n\nParticipants should treat the oracle as a forward-looking, evidence-weighted probability&mdash;not a final legal or journalistic determination.',
+      "Yes criterion. &ldquo;Yes&rdquo; means there is clear and convincing evidence that use of GLP-1 receptor agonist medications (including, without limitation, drugs such as semaglutide, tirzepatide, liraglutide, and related GLP-1 class therapies) is linked to sudden onset blindness or acute severe vision loss in treated patients, beyond what would be expected from chance, underlying disease, or unrelated causes.\n\n" +
+      SUPERFORECASTER_RESOLUTION_RULES,
   },
   {
     id: 'talarico-flu-absence',
@@ -81,7 +87,8 @@ export const markets: Market[] = [
       "No, the absence was not due to the flu",
     ],
     rules:
-      'This market will resolve to &ldquo;Yes&rdquo; if there is clear and convincing evidence that James Talarico&rsquo;s roughly two-week absence from campaign activities was caused by influenza (the flu), including a medically supported flu diagnosis or equivalent contemporaneous documentation establishing flu as the cause. Otherwise, this market will resolve to &ldquo;No.&rdquo;\n\nPrice oracle. The reference price for this market is the probability estimate for the same &ldquo;Yes&rdquo; outcome described above, as published by superforecasters from the Good Judgment Project for this market. The oracle rule is fixed: it always tracks those superforecasters&rsquo; current published estimate for this question.\n\nContinuous updates. Superforecasters from the Good Judgment Project may revise their estimate for this market at any time, as new evidence or analysis warrants. There is no monthly, quarterly, or other discrete publication schedule that resets the oracle&mdash;when they update their view, the reference price reflects that latest estimate.\n\nTrading vs. oracle. Exchange prices may differ from the oracle at any moment. Between superforecaster updates, participants trade freely and prices are driven by the market mechanism and participant activity; the oracle does not force a price reset on a calendar.\n\nParticipants should treat the oracle as a forward-looking, evidence-weighted probability&mdash;not a final legal or journalistic determination.',
+      "Yes criterion. &ldquo;Yes&rdquo; means there is clear and convincing evidence that James Talarico&rsquo;s roughly two-week absence from campaign activities was caused by influenza (the flu), including a medically supported flu diagnosis or equivalent contemporaneous documentation establishing flu as the cause.\n\n" +
+      SUPERFORECASTER_RESOLUTION_RULES,
   },
   {
     id: 'epstein-intelligence-agent',
@@ -95,7 +102,8 @@ export const markets: Market[] = [
       "No, Jeffrey Epstein was not an intelligence agent",
     ],
     rules:
-      'This market will resolve to &ldquo;Yes&rdquo; if there is clear and convincing evidence that Jeffrey Epstein worked as an agent, asset, informant, or operative for a national intelligence service (including, without limitation, the CIA, Mossad, MI6, or a comparable foreign or domestic intelligence organization), whether formally employed or operating in a covert or unofficial capacity on behalf of such a service. Otherwise, this market will resolve to &ldquo;No.&rdquo;\n\nPrice oracle. The reference price for this market is the probability estimate for the same &ldquo;Yes&rdquo; outcome described above, as published by superforecasters from the Good Judgment Project for this market. The oracle rule is fixed: it always tracks those superforecasters&rsquo; current published estimate for this question.\n\nContinuous updates. Superforecasters from the Good Judgment Project may revise their estimate for this market at any time, as new evidence or analysis warrants. There is no monthly, quarterly, or other discrete publication schedule that resets the oracle&mdash;when they update their view, the reference price reflects that latest estimate.\n\nTrading vs. oracle. Exchange prices may differ from the oracle at any moment. Between superforecaster updates, participants trade freely and prices are driven by the market mechanism and participant activity; the oracle does not force a price reset on a calendar.\n\nParticipants should treat the oracle as a forward-looking, evidence-weighted probability&mdash;not a final legal or journalistic determination.',
+      "Yes criterion. &ldquo;Yes&rdquo; means there is clear and convincing evidence that Jeffrey Epstein worked as an agent, asset, informant, or operative for a national intelligence service (including, without limitation, the CIA, Mossad, MI6, or a comparable foreign or domestic intelligence organization), whether formally employed or operating in a covert or unofficial capacity on behalf of such a service.\n\n" +
+      SUPERFORECASTER_RESOLUTION_RULES,
   },
   {
     id: 'covid19',
@@ -106,7 +114,8 @@ export const markets: Market[] = [
     contractAddress: "0x0842897551AD876979CcbcEeaDCAfA730DC435A1",
     outcomes: ["Yes, COVID-19 was a lab leak", "No, COVID-19 was not a lab leak"],
     rules:
-      'This market will resolve to &ldquo;Yes&rdquo; if there is clear and convincing evidence that SARS-CoV-2 (COVID-19) entered the human population through a laboratory leak from a research or related facility, rather than purely through natural zoonotic spillover without such involvement. Otherwise, this market will resolve to &ldquo;No.&rdquo;\n\nPrice oracle. The reference price for this market is the probability estimate for the same &ldquo;Yes&rdquo; outcome described above, as published by superforecasters from the Good Judgment Project for this market. The oracle rule is fixed: it always tracks those superforecasters&rsquo; current published estimate for this question.\n\nContinuous updates. Superforecasters from the Good Judgment Project may revise their estimate for this market at any time, as new evidence or analysis warrants. There is no monthly, quarterly, or other discrete publication schedule that resets the oracle&mdash;when they update their view, the reference price reflects that latest estimate.\n\nTrading vs. oracle. Exchange prices may differ from the oracle at any moment. Between superforecaster updates, participants trade freely and prices are driven by the market mechanism and participant activity; the oracle does not force a price reset on a calendar.\n\nParticipants should treat the oracle as a forward-looking, evidence-weighted probability&mdash;not a final legal or journalistic determination.',
+      "Yes criterion. &ldquo;Yes&rdquo; means there is clear and convincing evidence that SARS-CoV-2 (COVID-19) entered the human population through a laboratory leak from a research or related facility, rather than purely through natural zoonotic spillover without such involvement.\n\n" +
+      SUPERFORECASTER_RESOLUTION_RULES,
   },
   {
     id: "brigitte-macron-born-man",

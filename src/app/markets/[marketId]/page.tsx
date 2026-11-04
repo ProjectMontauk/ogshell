@@ -232,11 +232,29 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
   }, [fetchFpmmOdds]);
 
   const [showRules, setShowRules] = useState(false);
-  const rulesShort = market.rules;
   const rulesFull = market.rules;
 
-  // Get only the first sentence for the collapsed view
-  const firstLine = rulesShort.split(".")[0] + ".";
+  /**
+   * Collapsed Rules preview: the Resolution block's Yes/No 95% lines (first two
+   * substantive sentences), so the Superforecaster threshold is visible before Read More.
+   */
+  function getCollapsedRulesPreview(rules: string): string {
+    const paragraphs = rules.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
+    const resolution =
+      paragraphs.find((p) => /^Resolution\./i.test(p)) ??
+      paragraphs.find((p) => /superforecaster/i.test(p)) ??
+      paragraphs[0] ??
+      rules;
+    // Match sentences; keep "Resolution." with the following Yes/No threshold sentences.
+    const sentences = resolution.match(/[^.!?]+[.!?]+(?:\s|$)/g);
+    if (!sentences || sentences.length === 0) return resolution;
+    if (/^Resolution\./i.test(sentences[0].trim()) && sentences.length >= 3) {
+      return sentences.slice(0, 3).join("").trim();
+    }
+    return sentences.slice(0, 2).join("").trim();
+  }
+
+  const rulesPreview = getCollapsedRulesPreview(rulesFull);
 
   // Split rules into paragraphs for better formatting
   function splitRules(text: string) {
@@ -2252,14 +2270,14 @@ useEffect(() => {
               </div>
             </section>
 
-            {/* As on the original: the first sentence while closed, every paragraph when open */}
+            {/* Collapsed: Resolution Yes/No 95% lines; expanded: full rules */}
             <section aria-labelledby="rules-heading" className="mt-10" data-reveal>
               <h2 id="rules-heading" className="serif border-b border-rule pb-2 text-[20px] font-bold text-ink">
                 Rules
               </h2>
               <AutoHeight className="mt-3">
                 <div className="market-rules serif flex max-w-[68ch] flex-col gap-4 text-[17px] leading-[1.6] text-ink-2 md:text-[19px]">
-                  {splitRules(showRules ? rulesFull : firstLine).map((para, i) => (
+                  {splitRules(showRules ? rulesFull : rulesPreview).map((para, i) => (
                     <p key={i} dangerouslySetInnerHTML={{ __html: para }} />
                   ))}
                 </div>

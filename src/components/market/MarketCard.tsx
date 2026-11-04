@@ -114,11 +114,9 @@ export function FeaturedMarket({ market, probs, className = "" }: { market: Mark
   }, [market.id]);
 
   return (
-    <article className={`xl:grid xl:grid-cols-subgrid ${className}`}>
-      <Link href={`/markets/${market.id}`} className="block xl:col-start-2 xl:row-start-1">
-        <Image src={market.image} alt={market.title} width={1280} height={800} priority className="aspect-[16/9] w-full object-cover object-top" />
-      </Link>
-      <div className="mt-5 xl:col-start-1 xl:row-start-1 xl:mt-0">
+    // Own two-column grid (not page subgrid) so the lead isn’t stretched to the sidebar’s height.
+    <article className={`grid items-stretch gap-x-7 xl:grid-cols-[340fr_500fr] ${className}`}>
+      <div className="order-2 mt-5 xl:order-1 xl:mt-0">
         <Link href={`/markets/${market.id}`} className="group block">
           <h2 className="serif [text-wrap:pretty] text-[32px] font-bold leading-[1.06] tracking-[-0.01em] text-ink decoration-2 underline-offset-[6px] group-hover:underline xl:text-[34px]">
             {market.title}
@@ -132,6 +130,19 @@ export function FeaturedMarket({ market, probs, className = "" }: { market: Mark
           </div>
         )}
       </div>
+      <Link
+        href={`/markets/${market.id}`}
+        className="relative order-1 block aspect-[16/9] overflow-hidden xl:order-2 xl:aspect-auto xl:h-full xl:min-h-0"
+      >
+        <Image
+          src={market.image}
+          alt={market.title}
+          fill
+          priority
+          sizes="(min-width: 1280px) 42vw, 100vw"
+          className="object-cover object-center"
+        />
+      </Link>
     </article>
   );
 }
