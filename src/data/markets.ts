@@ -10,9 +10,13 @@ export interface Market {
   tradingResolved?: boolean;
 }
 
-/** Shared Citizen resolution: 95% Superforecaster median for Yes or No (appended after each market's Yes criterion). */
+/**
+ * Shared Citizen resolution appendix (after each market’s Yes/No criteria).
+ * Clear-and-convincing is treated as met when the GJP Superforecaster median stays
+ * at ≥95% Yes for over a month, or below 5% Yes for over a month (No).
+ */
 const SUPERFORECASTER_RESOLUTION_RULES =
-  "Resolution. This market will resolve to &ldquo;Yes&rdquo; when the median probability estimate for the &ldquo;Yes&rdquo; outcome, as published by superforecasters from the Good Judgment Project for this market, reaches or exceeds 95%. This market will resolve to &ldquo;No&rdquo; when the median probability estimate for the &ldquo;No&rdquo; outcome published by those superforecasters for this market reaches or exceeds 95%.\n\nUntil one of those thresholds is met, the market remains open. Superforecasters from the Good Judgment Project may revise their estimates at any time, as new evidence or analysis warrants. There is no fixed calendar that forces resolution&mdash;resolution occurs when a published median first meets the applicable 95% threshold.\n\nTrading. Exchange prices may differ from the superforecasters&rsquo; published estimates at any moment. Between updates, participants trade freely and prices are driven by the market mechanism and participant activity.\n\nParticipants should treat the superforecasters&rsquo; estimates as a forward-looking, evidence-weighted probability used for market resolution&mdash;not a final legal or journalistic determination.";
+  "Resolution. The clear and convincing threshold will be met when the Superforecaster median probability estimate from the Good Judgment Project for this market remains stable at 95% median probability for more than one month for &ldquo;Yes,&rdquo; or remains stable below 5% median probability for more than one month for &ldquo;No.&rdquo; Until one of those stability conditions is met, the market remains open. Superforecasters may revise their estimates at any time as new evidence or analysis warrants.\n\nMarket price. The market price is a result of current buying and selling dynamics.\n\nParticipants should treat the superforecasters&rsquo; estimates as a forward-looking, evidence-weighted probability used for market resolution&mdash;not a final legal or journalistic determination.";
 
 export const markets: Market[] = [
   {
@@ -57,7 +61,7 @@ export const markets: Market[] = [
       "No, the childhood vaccine schedule is not linked to autism",
     ],
     rules:
-      "Yes criterion. &ldquo;Yes&rdquo; means there is clear and convincing evidence that children following the CDC-recommended childhood vaccine schedule have a higher likelihood of developing Autism Spectrum Disorder over their lifetime compared to unvaccinated children.\n\n" +
+      "The market will resolve &ldquo;Yes&rdquo; if there is clear and convincing evidence that children following the CDC-recommended childhood vaccine schedule have a higher likelihood of developing Autism Spectrum Disorder over their lifetime compared to unvaccinated children.\n\nThe market will resolve &ldquo;No&rdquo; if there is clear and convincing evidence that children following the CDC-recommended childhood vaccine schedule do not have a higher likelihood of developing Autism Spectrum Disorder over their lifetime compared to unvaccinated children.\n\n" +
       SUPERFORECASTER_RESOLUTION_RULES,
   },
   {
@@ -72,7 +76,7 @@ export const markets: Market[] = [
       "No, GLP-1 use is not linked to sudden onset blindness",
     ],
     rules:
-      "Yes criterion. &ldquo;Yes&rdquo; means there is clear and convincing evidence that use of GLP-1 receptor agonist medications (including, without limitation, drugs such as semaglutide, tirzepatide, liraglutide, and related GLP-1 class therapies) is linked to sudden onset blindness or acute severe vision loss in treated patients, beyond what would be expected from chance, underlying disease, or unrelated causes.\n\n" +
+      "The market will resolve &ldquo;Yes&rdquo; if there is clear and convincing evidence that use of GLP-1 receptor agonist medications (including, without limitation, drugs such as semaglutide, tirzepatide, liraglutide, and related GLP-1 class therapies) is linked to sudden onset blindness or acute severe vision loss in treated patients, beyond what would be expected from chance, underlying disease, or unrelated causes.\n\nThe market will resolve &ldquo;No&rdquo; if there is clear and convincing evidence that use of GLP-1 receptor agonist medications is not linked to sudden onset blindness or acute severe vision loss in treated patients beyond what would be expected from chance, underlying disease, or unrelated causes.\n\n" +
       SUPERFORECASTER_RESOLUTION_RULES,
   },
   {
@@ -87,7 +91,7 @@ export const markets: Market[] = [
       "No, the absence was not due to the flu",
     ],
     rules:
-      "Yes criterion. &ldquo;Yes&rdquo; means there is clear and convincing evidence that James Talarico&rsquo;s roughly two-week absence from campaign activities was caused by influenza (the flu), including a medically supported flu diagnosis or equivalent contemporaneous documentation establishing flu as the cause.\n\n" +
+      "The market will resolve &ldquo;Yes&rdquo; if there is clear and convincing evidence that James Talarico&rsquo;s campaign absence was due to the flu.\n\nThe market will resolve &ldquo;No&rdquo; if there is clear and convincing evidence that James Talarico&rsquo;s campaign absence was due to another condition.\n\n" +
       SUPERFORECASTER_RESOLUTION_RULES,
   },
   {
@@ -102,7 +106,7 @@ export const markets: Market[] = [
       "No, Jeffrey Epstein was not an intelligence agent",
     ],
     rules:
-      "Yes criterion. &ldquo;Yes&rdquo; means there is clear and convincing evidence that Jeffrey Epstein worked as an agent, asset, informant, or operative for a national intelligence service (including, without limitation, the CIA, Mossad, MI6, or a comparable foreign or domestic intelligence organization), whether formally employed or operating in a covert or unofficial capacity on behalf of such a service.\n\n" +
+      "The market will resolve &ldquo;Yes&rdquo; if there is clear and convincing evidence that Jeffrey Epstein worked as an agent, asset, informant, or operative for a national intelligence service (including, without limitation, the CIA, Mossad, MI6, or a comparable foreign or domestic intelligence organization), whether formally employed or operating in a covert or unofficial capacity on behalf of such a service.\n\nThe market will resolve &ldquo;No&rdquo; if there is clear and convincing evidence that Jeffrey Epstein did not work as an agent, asset, informant, or operative for a national intelligence service.\n\n" +
       SUPERFORECASTER_RESOLUTION_RULES,
   },
   {
@@ -114,7 +118,7 @@ export const markets: Market[] = [
     contractAddress: "0x0842897551AD876979CcbcEeaDCAfA730DC435A1",
     outcomes: ["Yes, COVID-19 was a lab leak", "No, COVID-19 was not a lab leak"],
     rules:
-      "Yes criterion. &ldquo;Yes&rdquo; means there is clear and convincing evidence that SARS-CoV-2 (COVID-19) entered the human population through a laboratory leak from a research or related facility, rather than purely through natural zoonotic spillover without such involvement.\n\n" +
+      "The market will resolve &ldquo;Yes&rdquo; if there is clear and convincing evidence that SARS-CoV-2 (COVID-19) entered the human population through a laboratory leak from a research or related facility, rather than purely through natural zoonotic spillover without such involvement.\n\nThe market will resolve &ldquo;No&rdquo; if there is clear and convincing evidence that SARS-CoV-2 (COVID-19) entered the human population purely through natural zoonotic spillover without laboratory involvement.\n\n" +
       SUPERFORECASTER_RESOLUTION_RULES,
   },
   {
