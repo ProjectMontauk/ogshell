@@ -282,7 +282,7 @@
     letter-spacing: -0.01em !important;
   }
 
-  /* Reading text and figures are set in Georgia. */
+  /* Reading text, figures, and market titles are set in Georgia. */
   .serif {
     font-family: Georgia, "Times New Roman", Times, serif;
   }

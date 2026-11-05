@@ -16,7 +16,7 @@ export interface Market {
  * at ≥95% Yes for over a month, or below 5% Yes for over a month (No).
  */
 const SUPERFORECASTER_RESOLUTION_RULES =
-  "Resolution. The clear and convincing threshold will be met when the Superforecaster median probability estimate from the Good Judgment Project for this market remains stable at 95% median probability for more than one month for &ldquo;Yes,&rdquo; or remains stable below 5% median probability for more than one month for &ldquo;No.&rdquo; Until one of those stability conditions is met, the market remains open. Superforecasters may revise their estimates at any time as new evidence or analysis warrants.\n\nMarket price. The market price is a result of current buying and selling dynamics.\n\nParticipants should treat the superforecasters&rsquo; estimates as a forward-looking, evidence-weighted probability used for market resolution&mdash;not a final legal or journalistic determination.";
+  "Resolution. The clear and convincing threshold will be met when the Superforecaster median probability estimate from the Good Judgment Project for this market remains stable at 95% median probability for more than one month for &ldquo;Yes,&rdquo; or remains stable below 5% median probability for more than one month for &ldquo;No.&rdquo; Until one of those stability conditions is met, the market remains open. Superforecasters may revise their estimates at any time as new evidence or analysis warrants.\n\nMarket price. The market price is a result of current buying and selling dynamics.\n\nParticipants should treat the superforecasters&rsquo; estimates as a forward-looking, evidence-weighted probability used for market resolution&mdash;not a final journalistic determination.";
 
 export const markets: Market[] = [
   {
