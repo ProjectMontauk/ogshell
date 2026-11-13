@@ -994,7 +994,10 @@ useEffect(() => {
   // Fetch odds history function (read-only, for page loads)
   const fetchOddsHistory = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/odds-history?marketId=${market.id}`);
+      const res = await fetch(
+        `${API_BASE_URL}/api/odds-history?marketId=${encodeURIComponent(market.id)}&_=${Date.now()}`,
+        { cache: "no-store" }
+      );
       if (!res.ok) {
         console.error('Failed to fetch odds history:', res.status, res.statusText);
         setOddsHistory([]);
@@ -1851,7 +1854,7 @@ useEffect(() => {
             console.error("Failed to submit FPMM buy trade to DB:", err);
           }
           await waitForTransactionConfirmation(result, "Trade Completed");
-          recordNewOdds();
+          void recordNewOdds();
           setTradeFeedback(null);
         },
         onSettled: () => {},
@@ -1979,7 +1982,7 @@ useEffect(() => {
             console.error("Failed to submit FPMM sell trade to DB:", err);
           }
           await waitForTransactionConfirmation(result, "Trade Completed");
-          recordNewOdds();
+          void recordNewOdds();
           setTradeFeedback(null);
         },
         onSettled: () => {},
@@ -2044,68 +2047,115 @@ useEffect(() => {
   // Wrap recordNewOdds in useCallback
   const recordNewOdds = useCallback(async () => {
     try {
-      // Wait a bit for the transaction to be processed
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      const [sharesYes, sharesNo] = await Promise.all([
-        readContract({
-          contract: marketContract,
-          method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
-          params: [INVESTMENT_AMOUNT, 0n],
-        }),
-        readContract({
-          contract: marketContract,
-          method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
-          params: [INVESTMENT_AMOUNT, 1n],
-        }),
-      ]);
+      // Wait for the trade to land in RPC state, then retry calcBuyAmount briefly.
+      let sharesYes: bigint | undefined;
+      let sharesNo: bigint | undefined;
+      let lastErr: unknown;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 2500 : 1500));
+        try {
+          const [y, n] = await Promise.all([
+            readContract({
+              contract: marketContract,
+              method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
+              params: [INVESTMENT_AMOUNT, 0n],
+            }),
+            readContract({
+              contract: marketContract,
+              method: "function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns (uint256)",
+              params: [INVESTMENT_AMOUNT, 1n],
+            }),
+          ]);
+          sharesYes = typeof y === "bigint" ? y : BigInt(String(y));
+          sharesNo = typeof n === "bigint" ? n : BigInt(String(n));
+          lastErr = undefined;
+          break;
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      if (sharesYes === undefined || sharesNo === undefined) {
+        console.error("Failed to read FPMM odds after trade:", lastErr);
+        refetchOddsFromContract();
+        return;
+      }
       const invHuman = bigintWeiToHumanNumber(INVESTMENT_AMOUNT, CASH_TOKEN_DECIMALS);
-      const sY = bigintWeiToHumanNumber(
-        typeof sharesYes === "bigint" ? sharesYes : BigInt(String(sharesYes)),
-        outcomeTokenDecimals
-      );
-      const sN = bigintWeiToHumanNumber(
-        typeof sharesNo === "bigint" ? sharesNo : BigInt(String(sharesNo)),
-        outcomeTokenDecimals
-      );
-      const oddsYesRaw = sY > 0 ? invHuman / sY : 0;
-      const oddsNoRaw = sN > 0 ? invHuman / sN : 0;
+      const sY = bigintWeiToHumanNumber(sharesYes, outcomeTokenDecimals);
+      const sN = bigintWeiToHumanNumber(sharesNo, outcomeTokenDecimals);
+      if (sY <= 0 || sN <= 0) {
+        console.error("FPMM odds after trade had non-positive share quotes", { sY, sN });
+        refetchOddsFromContract();
+        return;
+      }
+      const oddsYesRaw = invHuman / sY;
+      const oddsNoRaw = invHuman / sN;
       const sum = oddsYesRaw + oddsNoRaw;
-      const pY = sum > 0 ? oddsYesRaw / sum : 0;
-      const pN = sum > 0 ? oddsNoRaw / sum : 0;
-      const yesProbability = pY * 2 ** 64;
-      const noProbability = pN * 2 ** 64;
-      console.log("FPMM odds (after delay):", { sharesYes: sharesYes.toString(), sharesNo: sharesNo.toString(), probYes: pY, probNo: pN });
-      // Record to database (after trade, odds should have changed)
-      const oddsResponse = await fetch(`${API_BASE_URL}/api/record-odds`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-          // No API key needed - handled server-side
+      const pY = oddsYesRaw / sum;
+      const pN = oddsNoRaw / sum;
+      const scale = Number("18446744073709551616");
+      const yesProbability = Math.round(pY * scale);
+      const noProbability = Math.round(pN * scale);
+      const timestamp = new Date().toISOString();
+      console.log("FPMM odds (after delay):", {
+        sharesYes: sharesYes.toString(),
+        sharesNo: sharesNo.toString(),
+        probYes: pY,
+        probNo: pN,
+      });
+
+      // Optimistic chart update so the UI moves even if the refetch is cached.
+      setOddsHistory((prev) => [
+        ...(Array.isArray(prev) ? prev : []),
+        {
+          id: Date.now(),
+          yesProbability,
+          noProbability,
+          timestamp,
         },
+      ]);
+      setFpmmOddsYes(BigInt(yesProbability));
+      setFpmmOddsNo(BigInt(noProbability));
+
+      const oddsResponse = await fetch(`${API_BASE_URL}/api/record-odds`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
         body: JSON.stringify({
           marketId: market.id,
           yesProbability,
           noProbability,
-          timestamp: new Date().toISOString()
+          timestamp,
         }),
       });
       if (!oddsResponse.ok) {
-        console.error('Failed to record odds to database:', oddsResponse.status, oddsResponse.statusText);
+        const body = await oddsResponse.text().catch(() => "");
+        console.error(
+          "Failed to record odds to database:",
+          oddsResponse.status,
+          oddsResponse.statusText,
+          body
+        );
       } else {
-        console.log('Recorded new odds to database after trade:', { yesProbability, noProbability });
+        console.log("Recorded new odds to database after trade:", { yesProbability, noProbability });
       }
-      // Refresh the odds history to show the new entry (chart)
       try {
         await fetchOddsHistory();
       } catch (error) {
-        console.error('Failed to refresh odds history:', error);
+        console.error("Failed to refresh odds history:", error);
       }
-      // Refetch live odds so Market Odds header and Yes/No buttons update
       refetchOddsFromContract();
     } catch (error) {
-      console.error('Failed to record odds:', error);
+      console.error("Failed to record odds:", error);
+      refetchOddsFromContract();
     }
-  }, [marketContract, market.id, fetchOddsHistory, refetchOddsFromContract, outcomeTokenDecimals]);
+  }, [
+    marketContract,
+    market.id,
+    fetchOddsHistory,
+    refetchOddsFromContract,
+    outcomeTokenDecimals,
+    INVESTMENT_AMOUNT,
+  ]);
 
   const chartGridStroke = themeResolved === "dark" ? "#52525b" : "#bdbdbd";
   const chartTickFill = themeResolved === "dark" ? "#94a3b8" : "#525252";

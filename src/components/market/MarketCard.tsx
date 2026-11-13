@@ -89,7 +89,10 @@ export function FeaturedMarket({ market, probs, className = "" }: { market: Mark
     let cancelled = false;
     const fetchHistory = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/odds-history?marketId=${market.id}`);
+        const res = await fetch(
+          `${API_BASE_URL}/api/odds-history?marketId=${encodeURIComponent(market.id)}&_=${Date.now()}`,
+          { cache: "no-store" }
+        );
         if (!res.ok) return;
         const data = await res.json();
         if (!Array.isArray(data)) return;

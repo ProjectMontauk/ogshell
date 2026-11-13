@@ -2,12 +2,23 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '../../lib/prisma';
 import { getAllowedOrigin } from '../../lib/cors';
 import { buildMockOddsHistory, hasMockOdds } from '../../src/data/mockMarketOdds';
+import { getMarketById } from '../../src/data/markets';
+
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
+function isPlaceholderMarket(marketId: string): boolean {
+  const market = getMarketById(marketId);
+  if (!market?.contractAddress) return true;
+  return market.contractAddress.toLowerCase() === ZERO_ADDRESS;
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const origin = getAllowedOrigin(req.headers.origin as string | undefined);
   if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-API-Key');
+  // Odds change after every trade — never let CDN/browser serve a stale series.
+  res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
 
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
@@ -70,15 +81,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         where: { marketId },
         orderBy: { timestamp: 'asc' },
       });
-      if (entries.length === 0 && hasMockOdds(marketId)) {
+      // Only undeployed placeholders use synthetic history. Live FPMMs must show real DB rows
+      // (or an empty chart) so post-trade writes are visible.
+      if (entries.length === 0 && hasMockOdds(marketId) && isPlaceholderMarket(marketId)) {
         res.status(200).json(buildMockOddsHistory(marketId));
         return;
       }
       res.status(200).json(entries);
     } catch (error) {
       console.error("Failed to fetch odds history:", error);
-      // Placeholder markets may have no DB; fall back to mock series for UI preview.
-      if (hasMockOdds(marketId)) {
+      if (hasMockOdds(marketId) && isPlaceholderMarket(marketId)) {
         res.status(200).json(buildMockOddsHistory(marketId));
         return;
       }
