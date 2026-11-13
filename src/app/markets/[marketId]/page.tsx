@@ -150,14 +150,13 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
   const fetchFpmmOdds = useCallback(async () => {
     setFpmmOddsLoading(true);
     try {
-      // Temporary UI odds for undeployed markets / Base Sepolia until FPMMs are redeployed.
+      // Temporary UI odds for undeployed placeholder markets only.
       const { getMockProbs } = await import("../../../data/mockMarketOdds");
-      const { appChain: chain } = await import("../../../../constants/contracts");
       const mock = getMockProbs(market.id);
       const isPlaceholder =
         !market.contractAddress ||
         market.contractAddress.toLowerCase() === "0x0000000000000000000000000000000000000000";
-      if (mock && (isPlaceholder || chain.id === 84532)) {
+      if (mock && isPlaceholder) {
         setFpmmOddsYes(BigInt(Math.round(mock.yes * 2 ** 64)));
         setFpmmOddsNo(BigInt(Math.round(mock.no * 2 ** 64)));
         return;

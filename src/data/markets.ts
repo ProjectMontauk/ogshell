@@ -55,7 +55,7 @@ export const markets: Market[] = [
     description:
       "Is there clear and convincing evidence linking the CDC-recommended childhood vaccine schedule to a higher likelihood of developing Autism Spectrum Disorder?",
     image: "/RFK.png",
-    contractAddress: "0x0000000000000000000000000000000000000000", // Placeholder — replace when deployed
+    contractAddress: "0x3389a6487821B765A85bAcb293fFBBc0Ad7394FD",
     outcomes: [
       "Yes, the childhood vaccine schedule is linked to autism",
       "No, the childhood vaccine schedule is not linked to autism",
@@ -70,7 +70,7 @@ export const markets: Market[] = [
     description:
       "Is there clear and convincing evidence that use of GLP-1 receptor agonist medications is linked to sudden onset blindness?",
     image: "/Fluoride.png",
-    contractAddress: "0x0000000000000000000000000000000000000000", // Placeholder — replace when deployed
+    contractAddress: "0x7a104c751c01a8ecc000df26dc5e8c74232198e2",
     outcomes: [
       "Yes, GLP-1 use is linked to sudden onset blindness",
       "No, GLP-1 use is not linked to sudden onset blindness",
@@ -85,7 +85,7 @@ export const markets: Market[] = [
     description:
       "Was James Talarico's roughly two-week absence from the campaign trail caused by influenza (the flu)?",
     image: "/Talarico.png",
-    contractAddress: "0x0000000000000000000000000000000000000000", // Placeholder — replace when deployed
+    contractAddress: "0x587e06E62E7Af734265cF58Ef7F26Effe468861f",
     outcomes: [
       "Yes, the absence was due to the flu",
       "No, the absence was not due to the flu",
@@ -100,7 +100,7 @@ export const markets: Market[] = [
     description:
       "Is there clear and convincing evidence that Jeffrey Epstein worked as an agent, asset, or operative for an intelligence service?",
     image: "/TrumpEpstein.png",
-    contractAddress: "0x0000000000000000000000000000000000000000", // Placeholder — replace when deployed
+    contractAddress: "0x2bC9F90ab25B5Db00f4F516d10a4c9C517123a0a",
     outcomes: [
       "Yes, Jeffrey Epstein was an intelligence agent",
       "No, Jeffrey Epstein was not an intelligence agent",

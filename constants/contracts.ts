@@ -33,6 +33,30 @@ export const covid19LabLeakMarketContractAddress =
 export const covid19LabLeakConditionalTokensContractAddress =
   "0x59536aFD96b0Ff1EE61e2BC231706fafBa31f106";
 
+// GLP-1 sudden blindness market (Base Sepolia FPMM; same CT + MockUSDC as COVID)
+export const glp1SuddenBlindnessMarketContractAddress =
+  "0x7a104c751c01a8ecc000df26dc5e8c74232198e2";
+export const glp1SuddenBlindnessConditionalTokensContractAddress =
+  covid19LabLeakConditionalTokensContractAddress;
+
+// Talarico flu absence market (Base Sepolia FPMM; same CT + MockUSDC)
+export const talaricoFluAbsenceMarketContractAddress =
+  "0x587e06E62E7Af734265cF58Ef7F26Effe468861f";
+export const talaricoFluAbsenceConditionalTokensContractAddress =
+  covid19LabLeakConditionalTokensContractAddress;
+
+// Childhood vaccine schedule / autism market (Base Sepolia FPMM; same CT + MockUSDC)
+export const autismMarketContractAddress =
+  "0x3389a6487821B765A85bAcb293fFBBc0Ad7394FD";
+export const autismConditionalTokensContractAddress =
+  covid19LabLeakConditionalTokensContractAddress;
+
+// Epstein intelligence agent market (Base Sepolia FPMM; same CT + MockUSDC)
+export const epsteinIntelligenceAgentMarketContractAddress =
+  "0x2bC9F90ab25B5Db00f4F516d10a4c9C517123a0a";
+export const epsteinIntelligenceAgentConditionalTokensContractAddress =
+  covid19LabLeakConditionalTokensContractAddress;
+
 // Trump-Epstein Market Contracts
 export const trumpEpsteinMarketContractAddress = "0xbf7b301d6b0542f2b69da5816eda102bbcc2aaf2"; // Trump-Epstein Market Contract on Base
 export const trumpEpsteinConditionalTokensContractAddress = "0x3d06ef3054f4b710342568dcfe42ee3876b15236"; // Trump-Epstein Conditional Tokens Contract on Base
@@ -122,6 +146,54 @@ export const covid19LabLeakConditionalTokensContract = getContract({
   client,
   chain: appChain,
   address: covid19LabLeakConditionalTokensContractAddress,
+});
+
+export const glp1SuddenBlindnessMarketContract = getContract({
+  client,
+  chain: appChain,
+  address: glp1SuddenBlindnessMarketContractAddress,
+});
+
+export const glp1SuddenBlindnessConditionalTokensContract = getContract({
+  client,
+  chain: appChain,
+  address: glp1SuddenBlindnessConditionalTokensContractAddress,
+});
+
+export const talaricoFluAbsenceMarketContract = getContract({
+  client,
+  chain: appChain,
+  address: talaricoFluAbsenceMarketContractAddress,
+});
+
+export const talaricoFluAbsenceConditionalTokensContract = getContract({
+  client,
+  chain: appChain,
+  address: talaricoFluAbsenceConditionalTokensContractAddress,
+});
+
+export const autismMarketContract = getContract({
+  client,
+  chain: appChain,
+  address: autismMarketContractAddress,
+});
+
+export const autismConditionalTokensContract = getContract({
+  client,
+  chain: appChain,
+  address: autismConditionalTokensContractAddress,
+});
+
+export const epsteinIntelligenceAgentMarketContract = getContract({
+  client,
+  chain: appChain,
+  address: epsteinIntelligenceAgentMarketContractAddress,
+});
+
+export const epsteinIntelligenceAgentConditionalTokensContract = getContract({
+  client,
+  chain: appChain,
+  address: epsteinIntelligenceAgentConditionalTokensContractAddress,
 });
 
 // Trump-Epstein Market Contract Instances
@@ -284,36 +356,45 @@ export function getContractsForMarket(marketId: string) {
         outcomeTokenDecimals: d18,
       };
     case 'autism':
-      // Placeholder deployment — swap addresses/position IDs when the market is live.
       return {
-        marketContract: placeholderMarketContract,
-        conditionalTokensContract: placeholderConditionalTokensContract,
-        outcome1PositionId: "0", // Yes — TODO
-        outcome2PositionId: "0", // No — TODO
+        marketContract: autismMarketContract,
+        conditionalTokensContract: autismConditionalTokensContract,
+        // Hex: 0x236A8DB3… / 0x02BD25E8…
+        outcome1PositionId:
+          "16019213470275084107411431650344488459298227099146914939882041010305091126319", // Yes
+        outcome2PositionId:
+          "1238821413182495097622813857235079099411731703041787181926734968277411235054", // No
         outcomeTokenDecimals: 6,
       };
     case 'glp1-sudden-blindness':
       return {
-        marketContract: placeholderMarketContract,
-        conditionalTokensContract: placeholderConditionalTokensContract,
-        outcome1PositionId: "0", // Yes — TODO
-        outcome2PositionId: "0", // No — TODO
+        marketContract: glp1SuddenBlindnessMarketContract,
+        conditionalTokensContract: glp1SuddenBlindnessConditionalTokensContract,
+        outcome1PositionId:
+          "112371803426570343625109056135645948034569679134661643803664426643844574664773", // Yes
+        outcome2PositionId:
+          "16176558606901767471673624156768631000045526997574632813462780501060677331644", // No
         outcomeTokenDecimals: 6,
       };
     case 'talarico-flu-absence':
       return {
-        marketContract: placeholderMarketContract,
-        conditionalTokensContract: placeholderConditionalTokensContract,
-        outcome1PositionId: "0", // Yes — TODO
-        outcome2PositionId: "0", // No — TODO
+        marketContract: talaricoFluAbsenceMarketContract,
+        conditionalTokensContract: talaricoFluAbsenceConditionalTokensContract,
+        outcome1PositionId:
+          "113899525743750345012766316530693353820761353943788289292828182035780888906371", // Yes
+        outcome2PositionId:
+          "8983074433620921250785856512855934358359375267730931564597526386510041579361", // No
         outcomeTokenDecimals: 6,
       };
     case 'epstein-intelligence-agent':
       return {
-        marketContract: placeholderMarketContract,
-        conditionalTokensContract: placeholderConditionalTokensContract,
-        outcome1PositionId: "0", // Yes — TODO
-        outcome2PositionId: "0", // No — TODO
+        marketContract: epsteinIntelligenceAgentMarketContract,
+        conditionalTokensContract: epsteinIntelligenceAgentConditionalTokensContract,
+        // Hex: 0x5936D0E2… / 0xE710EF89…
+        outcome1PositionId:
+          "40352694931989177420965461551900749005562240191210530332706273811445653427166", // Yes
+        outcome2PositionId:
+          "104514190801690987109507394655496864142758538862663990771207208141683953783385", // No
         outcomeTokenDecimals: 6,
       };
     case 'covid19':
