@@ -115,7 +115,7 @@ export const markets: Market[] = [
     description:
       "Did SARS-CoV-2 (COVID-19) reach humans through a laboratory-associated leak rather than purely through natural zoonotic spillover without such involvement?",
     image: "/CovidVaccine.png",
-    contractAddress: "0x0842897551AD876979CcbcEeaDCAfA730DC435A1",
+    contractAddress: "0x2463017C4544E2740481c2bF81E3F890B07FA399",
     outcomes: ["Yes, COVID-19 was a lab leak", "No, COVID-19 was not a lab leak"],
     rules:
       "The market will resolve &ldquo;Yes&rdquo; if there is clear and convincing evidence that SARS-CoV-2 (COVID-19) entered the human population through a laboratory leak from a research or related facility, rather than purely through natural zoonotic spillover without such involvement.\n\nThe market will resolve &ldquo;No&rdquo; if there is clear and convincing evidence that SARS-CoV-2 (COVID-19) entered the human population purely through natural zoonotic spillover without laboratory involvement.\n\n" +

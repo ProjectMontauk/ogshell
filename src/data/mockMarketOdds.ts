@@ -6,6 +6,8 @@ const ODDS_HISTORY_FIXED_POINT = Number("18446744073709551616");
  * Probabilities are approximate placeholders for UI preview only.
  */
 export const MOCK_YES_PROBABILITY: Record<string, number> = {
+  // Used on Base Sepolia until the mainnet FPMM is redeployed / retargeted.
+  covid19: 0.5,
   // Semaglutide/NAION association is contested; markets often price a real-but-uncertain link.
   "glp1-sudden-blindness": 0.29,
   // Campaign illness claims are hard to verify; near coin-flip until better evidence.

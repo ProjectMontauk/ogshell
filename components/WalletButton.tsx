@@ -3,8 +3,8 @@
 import React from "react";
 import { ConnectButton } from "thirdweb/react";
 import { inAppWallet, createWallet } from "thirdweb/wallets";
-import { base } from "thirdweb/chains";
 import { client } from "../src/client";
+import { appChain, baseUsdcContractAddress } from "../constants/contracts";
 
 // The wallet picker is the heaviest thing in the app (every wallet's connect flow, QR codes,
 // the in-app auth). It lives in its own module so pages load without it and it arrives after
@@ -12,7 +12,7 @@ import { client } from "../src/client";
 const wallets = [
   inAppWallet({
     auth: { options: ["google", "apple", "email", "phone", "passkey"] as const },
-    smartAccount: { chain: base, sponsorGas: true },
+    smartAccount: { chain: appChain, sponsorGas: true },
   }),
   createWallet("io.metamask"),
   createWallet("com.coinbase.wallet"),
@@ -30,9 +30,25 @@ export default function WalletButton({ large = false }: { large?: boolean }) {
   return (
     <ConnectButton
       client={client}
+      chain={appChain}
       wallets={wallets}
       connectButton={{ label: "Sign In", className: large ? "btn btn-primary btn-lg" : connectClass }}
-      detailsButton={{ className: detailsClass }}
+      detailsButton={{
+        className: detailsClass,
+        // Show MockUSDC instead of native ETH in the connected wallet chip.
+        displayBalanceToken: {
+          [appChain.id]: baseUsdcContractAddress,
+        },
+      }}
+      supportedTokens={{
+        [appChain.id]: [
+          {
+            address: baseUsdcContractAddress,
+            name: "Mock USDC",
+            symbol: "USDC",
+          },
+        ],
+      }}
     />
   );
 }

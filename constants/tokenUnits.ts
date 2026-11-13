@@ -1,4 +1,4 @@
-/** Circle USDC on Base mainnet uses 6 decimals. */
+/** Cash collateral (Circle USDC / MockUSDC) uses 6 decimals. */
 export const CASH_TOKEN_DECIMALS = 6;
 export const CASH_TOKEN_SCALE = 10 ** CASH_TOKEN_DECIMALS;
 export const CASH_TOKEN_SCALE_BI = BigInt(CASH_TOKEN_SCALE);

@@ -1,14 +1,17 @@
 import { client } from "../src/client";
 import { getContract } from "thirdweb";
-import { base } from "thirdweb/chains";
+import { baseSepolia } from "thirdweb/chains";
 import { OUTCOME_TOKEN_DECIMALS } from "./tokenUnits";
 
-/** All `getContract` instances target Base mainnet (chain id 8453). */
-export const appChain = base;
+/** All `getContract` instances target Base Sepolia (chain id 84532). */
+export const appChain = baseSepolia;
 
-/** Circle USDC on Base — used as cash collateral for trading. */
+/**
+ * MockUSDC on Base Sepolia (6 decimals) — collateral for test markets.
+ * From `TacoVersions/gnosis/og` (`scripts/constants.js`), not Circle’s Sepolia USDC.
+ */
 export const baseUsdcContractAddress =
-  "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
+  "0xDAB56809ac640587b9d6B744f275118e9D989CB5" as const;
 
 // CIA / JFK market — verify these are your Base mainnet deployments (addresses differ from testnet).
 export const marketContractAddress = "0xC8A498Bd0726036F7cdF9bb83f92E9D969970600";
@@ -24,11 +27,11 @@ export const fluoridationIqConditionalTokensContractAddress = "0xac1365907452b72
 export const vaccinesAutismMarketContractAddress = "0x80863c2f689b293049564a68e781fd4d4ae01858"; // Childhood Vaccines Linked to Autism Market Contract on Base
 export const vaccinesAutismConditionalTokensContractAddress = "0x8Bb4f3bc065332c284dB19D0013e44b0732b544c"; // Childhood Vaccines Linked to Autism Conditional Tokens Contract on Base
 
-// COVID-19 lab leak market
+// COVID-19 lab leak market (Base Sepolia FPMM + Conditional Tokens; MockUSDC collateral)
 export const covid19LabLeakMarketContractAddress =
-  "0x0842897551AD876979CcbcEeaDCAfA730DC435A1";
+  "0x2463017C4544E2740481c2bF81E3F890B07FA399";
 export const covid19LabLeakConditionalTokensContractAddress =
-  "0x441b85F16D590553169357195CEc8C17a4f8A957";
+  "0x59536aFD96b0Ff1EE61e2BC231706fafBa31f106";
 
 // Trump-Epstein Market Contracts
 export const trumpEpsteinMarketContractAddress = "0xbf7b301d6b0542f2b69da5816eda102bbcc2aaf2"; // Trump-Epstein Market Contract on Base
@@ -60,155 +63,155 @@ export const placeholderConditionalTokensContractAddress = "0x89A801b50B5E9A0340
 
 export const tokenContract = getContract({
     client: client,
-    chain: base,
+    chain: appChain,
     address: tokenContractAddress,
 })
 
 export const marketContract = getContract({
     client,
-    chain: base,
+    chain: appChain,
     address: marketContractAddress,
   });
 
 export const conditionalTokensContract = getContract({
     client,
-    chain: base,
+    chain: appChain,
     address: conditionalTokensContractAddress,
   });
 
 export const jfkConditionalTokensContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: jfkConditionalTokensContractAddress,
 });
 
 // Fluoridation IQ Market Contract Instances
 export const fluoridationIqMarketContract = getContract({
     client,
-    chain: base,
+    chain: appChain,
     address: fluoridationIqMarketContractAddress,
   });
 
 export const fluoridationIqConditionalTokensContract = getContract({
     client,
-    chain: base,
+    chain: appChain,
     address: fluoridationIqConditionalTokensContractAddress,
   });
 
 // Vaccines Autism / Childhood Vaccines Market Contract Instances
 export const vaccinesAutismMarketContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: vaccinesAutismMarketContractAddress,
 });
 
 export const vaccinesAutismConditionalTokensContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: vaccinesAutismConditionalTokensContractAddress,
 });
 
 // COVID-19 lab leak market contract instances
 export const covid19LabLeakMarketContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: covid19LabLeakMarketContractAddress,
 });
 
 export const covid19LabLeakConditionalTokensContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: covid19LabLeakConditionalTokensContractAddress,
 });
 
 // Trump-Epstein Market Contract Instances
 export const trumpEpsteinMarketContract = getContract({
     client,
-    chain: base,
+    chain: appChain,
     address: trumpEpsteinMarketContractAddress,
   });
 
 export const trumpEpsteinConditionalTokensContract = getContract({
     client,
-    chain: base,
+    chain: appChain,
     address: trumpEpsteinConditionalTokensContractAddress,
   });
 
 // 2020 Election Fraud Market Contract Instances
 export const election2020MarketContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: election2020MarketContractAddress,
 });
 
 export const election2020ConditionalTokensContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: election2020ConditionalTokensContractAddress,
 });
 
 // MRNA TurboCancer Market Contract Instances (legacy)
 export const mrnaTurboCancerMarketContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: mrnaTurboCancerMarketContractAddress,
 });
 
 export const mrnaTurboCancerConditionalTokensContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: mrnaTurboCancerConditionalTokensContractAddress,
 });
 
 // MRNA Market Contract Instances (new)
 export const mrnaMarketContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: mrnaMarketContractAddress,
 });
 
 export const mrnaConditionalTokensContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: mrnaConditionalTokensContractAddress,
 });
 
 // Apollo 11 Moon Landing Fake Market Contract Instances
 export const apollo11MoonLandingFakeMarketContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: apollo11MoonLandingFakeMarketContractAddress,
 });
 
 export const apollo11MoonLandingFakeConditionalTokensContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: apollo11MoonLandingFakeConditionalTokensContractAddress,
 });
 
 // The Citizen Market Contract Instances
 export const citizenMarketContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: citizenMarketContractAddress,
 });
 
 export const citizenConditionalTokensContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: citizenConditionalTokensContractAddress,
 });
 
 // Placeholder Market Contract Instances
 export const placeholderMarketContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: placeholderMarketContractAddress,
 });
 
 export const placeholderConditionalTokensContract = getContract({
   client,
-  chain: base,
+  chain: appChain,
   address: placeholderConditionalTokensContractAddress,
 });
 
@@ -316,13 +319,14 @@ export function getContractsForMarket(marketId: string) {
     case 'covid19':
       // outcome1 / outcome2 align with market.outcomes[0] (Yes) and [1] (No) and FPMM index 0 / 1.
       // On-chain outcome amounts use 6 decimals (human shares = raw / 10^6).
+      // Position IDs derived on Base Sepolia CT from conditionIds(0) + indexSet 1/2 + MockUSDC.
       return {
         marketContract: covid19LabLeakMarketContract,
         conditionalTokensContract: covid19LabLeakConditionalTokensContract,
         outcome1PositionId:
-          "111846243408201574669141168131581112666481372695181953021621812195547648974416",
+          "18491180026779688852445200754146634625986627328577625999331212039807961589669", // Yes
         outcome2PositionId:
-          "23528406331491934134454691610455200160809212333566719062563270495462952394196",
+          "3096726023708915958955711171427272686245726027566193352965539889669377361967", // No
         outcomeTokenDecimals: 6,
       };
     case 'jfk':

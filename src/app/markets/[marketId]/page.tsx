@@ -150,13 +150,14 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
   const fetchFpmmOdds = useCallback(async () => {
     setFpmmOddsLoading(true);
     try {
-      // Temporary UI odds for undeployed / placeholder markets.
+      // Temporary UI odds for undeployed markets / Base Sepolia until FPMMs are redeployed.
       const { getMockProbs } = await import("../../../data/mockMarketOdds");
+      const { appChain: chain } = await import("../../../../constants/contracts");
       const mock = getMockProbs(market.id);
       const isPlaceholder =
         !market.contractAddress ||
         market.contractAddress.toLowerCase() === "0x0000000000000000000000000000000000000000";
-      if (mock && isPlaceholder) {
+      if (mock && (isPlaceholder || chain.id === 84532)) {
         setFpmmOddsYes(BigInt(Math.round(mock.yes * 2 ** 64)));
         setFpmmOddsNo(BigInt(Math.round(mock.no * 2 ** 64)));
         return;
@@ -183,7 +184,13 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
         typeof sharesNo === "bigint" ? sharesNo : BigInt(String(sharesNo)),
         outcomeTokenDecimals
       );
-      if (sY <= 0 || sN <= 0) return;
+      if (sY <= 0 || sN <= 0) {
+        if (mock) {
+          setFpmmOddsYes(BigInt(Math.round(mock.yes * 2 ** 64)));
+          setFpmmOddsNo(BigInt(Math.round(mock.no * 2 ** 64)));
+        }
+        return;
+      }
       const oddsYesRaw = invHuman / sY;
       const oddsNoRaw = invHuman / sN;
       const probYes = oddsYesRaw / (oddsYesRaw + oddsNoRaw);
@@ -191,7 +198,18 @@ function MarketPageContent({ params }: { params: Promise<{ marketId: string }> }
       setFpmmOddsYes(BigInt(Math.round(probYes * 2 ** 64)));
       setFpmmOddsNo(BigInt(Math.round(probNo * 2 ** 64)));
     } catch (e) {
-      console.error("FPMM calcBuyAmount odds error:", e);
+      console.warn("FPMM calcBuyAmount odds error:", e);
+      try {
+        const { getMockProbs } = await import("../../../data/mockMarketOdds");
+        const mock = getMockProbs(market.id);
+        if (mock) {
+          setFpmmOddsYes(BigInt(Math.round(mock.yes * 2 ** 64)));
+          setFpmmOddsNo(BigInt(Math.round(mock.no * 2 ** 64)));
+          return;
+        }
+      } catch {
+        /* ignore */
+      }
       setFpmmOddsYes(undefined);
       setFpmmOddsNo(undefined);
     } finally {
