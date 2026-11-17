@@ -114,7 +114,7 @@ export const markets: Market[] = [
     title: "Was COVID-19 a Lab Leak?",
     description:
       "Did SARS-CoV-2 (COVID-19) reach humans through a laboratory-associated leak rather than purely through natural zoonotic spillover without such involvement?",
-    image: "/CovidWetMarket.jpg",
+    image: "/CovidWetMarket.png",
     contractAddress: "0x2463017C4544E2740481c2bF81E3F890B07FA399",
     outcomes: ["Yes, COVID-19 was a lab leak", "No, COVID-19 was not a lab leak"],
     rules:
