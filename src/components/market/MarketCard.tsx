@@ -118,7 +118,8 @@ export function FeaturedMarket({ market, probs, className = "" }: { market: Mark
 
   return (
     // Own two-column grid (not page subgrid) so the lead isn’t stretched to the sidebar’s height.
-    <article className={`grid items-stretch gap-x-7 xl:grid-cols-[340fr_500fr] ${className}`}>
+    // Image column uses absolute fill on xl so it always matches the text column height (no letterboxing).
+    <article className={`grid items-stretch gap-x-7 xl:grid-cols-[minmax(0,340fr)_minmax(0,500fr)] ${className}`}>
       <div className="order-2 mt-5 xl:order-1 xl:mt-0">
         <Link href={`/markets/${market.id}`} className="group block">
           <h2 className="serif [text-wrap:pretty] text-[32px] font-bold leading-[1.06] tracking-[-0.01em] text-ink decoration-2 underline-offset-[6px] group-hover:underline xl:text-[34px]">
@@ -133,19 +134,18 @@ export function FeaturedMarket({ market, probs, className = "" }: { market: Mark
           </div>
         )}
       </div>
-      <Link
-        href={`/markets/${market.id}`}
-        className="relative order-1 block aspect-[16/9] overflow-hidden xl:order-2 xl:aspect-auto xl:h-full xl:min-h-0"
-      >
-        <Image
-          src={market.image}
-          alt={market.title}
-          fill
-          priority
-          sizes="(min-width: 1280px) 42vw, 100vw"
-          className="object-cover object-center"
-        />
-      </Link>
+      <div className="relative order-1 aspect-[16/9] overflow-hidden xl:order-2 xl:aspect-auto xl:h-full xl:min-h-0 xl:self-stretch">
+        <Link href={`/markets/${market.id}`} className="absolute inset-0 block">
+          <Image
+            src={market.image}
+            alt={market.title}
+            fill
+            priority
+            sizes="(min-width: 1280px) 42vw, 100vw"
+            className="object-cover object-[center_20%]"
+          />
+        </Link>
+      </div>
     </article>
   );
 }
