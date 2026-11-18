@@ -29,7 +29,6 @@ const NAV_LINKS = [
   { href: "/market-ideas", label: "New" },
   { href: "/portfolio", label: "Portfolio" },
   { href: "/deposit", label: "Deposit" },
-  { href: "/research", label: "Research" },
   { href: "/docs", label: "Docs" },
 ];
 

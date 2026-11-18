@@ -2,6 +2,7 @@
 
 import { SkeletonLines } from "../../components/ui/Skeleton";
 import Navbar from '../../../components/Navbar';
+import AutomatedTrades from '../../components/research/AutomatedTrades';
 import { BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 import { useState, useEffect, Suspense } from 'react';
@@ -10,11 +11,11 @@ import { useSearchParams } from 'next/navigation';
 function DocsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams?.get('tab');
-  const validTabs = ['flf-docs', 'superforecaster-methodology', 'relegation-system', 'how-derps-work', 'quarterly-trial-procedure', 'economics', 'idea-futures', 'review-boards'] as const;
+  const validTabs = ['research', 'flf-docs', 'superforecaster-methodology', 'relegation-system', 'how-derps-work', 'quarterly-trial-procedure', 'economics', 'idea-futures', 'review-boards'] as const;
   type DocsTab = typeof validTabs[number];
   const isValidTab = (tab: string | null | undefined): tab is DocsTab =>
     !!tab && validTabs.includes(tab as DocsTab);
-  const initialTab = isValidTab(tabParam) ? tabParam : 'flf-docs';
+  const initialTab: DocsTab = isValidTab(tabParam) ? tabParam : 'research';
   const [activeTab, setActiveTab] = useState<DocsTab>(initialTab);
   
   useEffect(() => {
@@ -29,6 +30,12 @@ function DocsContent() {
       <div className="container-page pb-24 pt-10 md:pt-14">
         <div className="doc-prose">
           <div role="tablist" aria-label="Documentation" className="tabs mb-8 overflow-x-auto">
+            <button
+              onClick={() => setActiveTab('research')}
+              className="tab shrink-0" data-selected={activeTab === 'research'}
+            >
+              Research
+            </button>
             <button
               onClick={() => setActiveTab('flf-docs')}
               className="tab shrink-0" data-selected={activeTab === 'flf-docs'}
@@ -78,6 +85,8 @@ function DocsContent() {
               Review Boards
             </button>
           </div>
+
+          {activeTab === 'research' && <AutomatedTrades />}
 
           {activeTab === 'flf-docs' && (
             <div>

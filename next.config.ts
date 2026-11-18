@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
     // Temporarily ignore build errors to allow deployment
     ignoreBuildErrors: true,
   },
+  async redirects() {
+    // Research now lives as the default tab of Docs; keep old links working.
+    return [{ source: "/research", destination: "/docs?tab=research", permanent: true }];
+  },
   async headers() {
     return [
       {
