@@ -33,7 +33,6 @@ export default function AutomatedTrades() {
   const [trades, setTrades] = useState<AgentTrade[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [marketFilter, setMarketFilter] = useState<string>("all");
 
   const load = useCallback(async () => {
     try {
@@ -53,19 +52,11 @@ export default function AutomatedTrades() {
     void load();
   }, [load]);
 
-  const markets = useMemo(() => {
-    const seen = new Map<string, string>();
-    for (const t of trades) if (!seen.has(t.marketId)) seen.set(t.marketId, t.marketTitle);
-    return Array.from(seen, ([id, title]) => ({ id, title }));
-  }, [trades]);
-
-  const visible = useMemo(() => (marketFilter === "all" ? trades : trades.filter((t) => t.marketId === marketFilter)), [trades, marketFilter]);
-
   const totals = useMemo(() => {
-    const bought = visible.filter((t) => t.action === "BUY").reduce((sum, t) => sum + t.amountUsd, 0);
-    const sold = visible.filter((t) => t.action === "SELL").reduce((sum, t) => sum + t.amountUsd, 0);
-    return { count: visible.length, bought, sold };
-  }, [visible]);
+    const bought = trades.filter((t) => t.action === "BUY").reduce((sum, t) => sum + t.amountUsd, 0);
+    const sold = trades.filter((t) => t.action === "SELL").reduce((sum, t) => sum + t.amountUsd, 0);
+    return { count: trades.length, bought, sold };
+  }, [trades]);
 
   if (loading) {
     return (
@@ -105,22 +96,9 @@ export default function AutomatedTrades() {
         </span>
       </div>
 
-      {markets.length > 1 && (
-        <div role="tablist" aria-label="Filter by market" className="tabs mt-5 flex-wrap">
-          <button role="tab" type="button" aria-selected={marketFilter === "all"} onClick={() => setMarketFilter("all")} className="tab">
-            All markets
-          </button>
-          {markets.map((m) => (
-            <button key={m.id} role="tab" type="button" aria-selected={marketFilter === m.id} onClick={() => setMarketFilter(m.id)} className="tab">
-              {m.title}
-            </button>
-          ))}
-        </div>
-      )}
-
       <h2 className="kicker mt-6">Automated trades</h2>
       <ol className="row-list not-prose">
-        {visible.map((t) => {
+        {trades.map((t) => {
           const isBuy = t.action === "BUY";
           const sideColor = t.outcome === "Yes" ? "text-yes" : "text-no";
           return (
