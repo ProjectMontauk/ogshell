@@ -211,3 +211,29 @@ model UserDeposits {
   @@index([walletAddress])
   @@index([createdAt])
 }
+
+// Automated (LLM-driven) agent trades, with the evaluation that triggered each one.
+// Written by POST /api/agent/record-trade when scripts/agent-evaluate.mjs executes a trade.
+model AgentResearch {
+  id               Int      @id @default(autoincrement())
+  walletAddress    String   // The agent's wallet
+  marketId         String
+  marketTitle      String
+  action           String   // BUY | SELL
+  outcome          String   // 'Yes' or 'No' (the side bought or sold)
+  shares           Float    // Shares bought or sold
+  amountUsd        Float    // USD spent (BUY) or received (SELL)
+  avgPrice         Float    // amountUsd / shares
+  txHash           String?
+  agentProbability Float    // The LLM's estimate that the market resolves Yes (0-1)
+  marketYesPrice   Float    // Market Yes price when the agent decided (0-1)
+  edge             Float    // Gap on the side traded (0-1)
+  confidence       String   // low | medium | high
+  reasoning        String   // The LLM's stated reasoning
+  model            String?  // LLM model id
+  createdAt        DateTime @default(now())
+
+  @@index([marketId])
+  @@index([createdAt])
+  @@index([walletAddress])
+}
