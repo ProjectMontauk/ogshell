@@ -51,17 +51,17 @@ export const markets: Market[] = [
   },
   {
     id: 'autism',
-    title: "Is the Childhood Vaccine Schedule Linked to Autism?",
+    title: "Are Seed Oils Linked to Chronic Disease?",
     description:
-      "Is there clear and convincing evidence linking the CDC-recommended childhood vaccine schedule to a higher likelihood of developing Autism Spectrum Disorder?",
+      "Is there clear and convincing evidence linking the consumption of seed oils to a higher likelihood of developing chronic disease?",
     image: "/RFK.png",
     contractAddress: "0x3389a6487821B765A85bAcb293fFBBc0Ad7394FD",
     outcomes: [
-      "Yes, the childhood vaccine schedule is linked to autism",
-      "No, the childhood vaccine schedule is not linked to autism",
+      "Yes, seed oils are linked to chronic disease",
+      "No, seed oils are not linked to chronic disease",
     ],
     rules:
-      "The market will resolve &ldquo;Yes&rdquo; if there is clear and convincing evidence that children following the CDC-recommended childhood vaccine schedule have a higher likelihood of developing Autism Spectrum Disorder over their lifetime compared to unvaccinated children.\n\nThe market will resolve &ldquo;No&rdquo; if there is clear and convincing evidence that children following the CDC-recommended childhood vaccine schedule do not have a higher likelihood of developing Autism Spectrum Disorder over their lifetime compared to unvaccinated children.\n\n" +
+      "The market will resolve &ldquo;Yes&rdquo; if there is clear and convincing evidence that people who consume seed oils as part of their diet have a higher likelihood of developing chronic disease over their lifetime compared to people who do not consume seed oils.\n\nThe market will resolve &ldquo;No&rdquo; if there is clear and convincing evidence that people who consume seed oils as part of their diet do not have a higher likelihood of developing chronic disease over their lifetime compared to people who do not consume seed oils.\n\n" +
       SUPERFORECASTER_RESOLUTION_RULES,
   },
   {

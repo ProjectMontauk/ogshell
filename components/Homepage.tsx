@@ -190,6 +190,12 @@ function useMarketOdds(markets: Market[]) {
   return (id: string) => marketOdds[id] ?? null;
 }
 
+/**
+ * The right-hand rail (Trending Evidence, Top Proposed Markets). Hidden for now; set to true to bring it
+ * back. While hidden neither section renders, so their /api/evidence and /api/market-ideas calls are skipped.
+ */
+const SHOW_HOMEPAGE_RAIL = false;
+
 const heading = "serif border-b border-ink pb-2 text-[20px] font-bold leading-tight tracking-[-0.01em] text-ink";
 
 /**
@@ -210,7 +216,7 @@ const Homepage = () => {
   // The main section spans the first two and lays its children on the same lines (subgrid).
   return (
     <div className="container-page pb-24 pt-8">
-      <div className="grid gap-12 lg:grid-cols-[340fr_500fr_332fr] lg:gap-x-7 lg:gap-y-0">
+      <div className={`mx-auto grid max-w-[960px] gap-12 lg:gap-x-7 lg:gap-y-0 ${SHOW_HOMEPAGE_RAIL ? "lg:grid-cols-[340fr_500fr_332fr]" : "lg:grid-cols-[340fr_500fr]"}`}>
         <section aria-label="Markets" className="min-w-0 lg:col-span-2 lg:grid lg:grid-cols-subgrid lg:content-start">
           {featured && <FeaturedMarket market={featured} probs={odds(featured.id)} className="lg:col-span-2" />}
           {stories.length > 0 && (
@@ -228,10 +234,12 @@ const Homepage = () => {
             </ul>
           )}
         </section>
-        <aside className="flex flex-col gap-10 lg:border-l lg:border-rule lg:pl-7">
-          <TrendingEvidence markets={markets} />
-          <TopProposedMarkets />
-        </aside>
+        {SHOW_HOMEPAGE_RAIL && (
+          <aside className="flex flex-col gap-10 lg:border-l lg:border-rule lg:pl-7">
+            <TrendingEvidence markets={markets} />
+            <TopProposedMarkets />
+          </aside>
+        )}
       </div>
     </div>
   );
