@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { getAgent } from "@/data/agents";
 import { SkeletonLines } from "../ui/Skeleton";
 
 export interface AgentTrade {
@@ -136,7 +137,7 @@ export default function AutomatedTrades() {
               )}
 
               <p className="mt-2 text-small text-muted">
-                Agent <span className="num">{shortAddress(t.walletAddress)}</span>
+                Agent {getAgent(t.walletAddress)?.name} <span className="num">{shortAddress(t.walletAddress)}</span>
                 {t.model && t.model !== "manual-override" ? <> · {t.model}</> : null}
                 {t.model === "manual-override" ? <> · manual test</> : null}
                 {t.txHash ? (
