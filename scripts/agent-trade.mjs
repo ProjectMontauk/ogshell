@@ -24,6 +24,8 @@
  *   SITE_URL                        Optional. e.g. http://localhost:3000 (npm run dev) or the deployed
  *                                   site. If set, the trade is also recorded in the app's DB
  *                                   (trade history, odds chart, user position).
+ *   AGENT_API_SECRET                Same value as in the app. The app only records trades that carry it,
+ *                                   so it is needed whenever SITE_URL is set.
  *   AGENT_MAX_TRADE_USD             Optional per-trade safety cap (default 100)
  *   BASE_SEPOLIA_RPC_URL            Optional (default https://sepolia.base.org)
  *   NEXT_PUBLIC_THIRDWEB_CLIENT_ID  Already in .env (used for read-only runs)
@@ -438,7 +440,7 @@ console.log(`\nRecording trade in the app DB via ${siteUrl} ...`);
 try {
   const res = await fetch(`${siteUrl}/api/agent/record-trade`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.AGENT_API_SECRET ?? ""}` },
     body: JSON.stringify({
       walletAddress,
       marketId,

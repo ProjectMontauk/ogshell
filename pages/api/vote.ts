@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '../../lib/prisma';
 import { getAllowedOrigin } from '../../lib/cors';
+import { mayActAs } from '../../lib/automation';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const origin = getAllowedOrigin(req.headers.origin as string | undefined);
@@ -16,6 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     const { evidenceId, walletAddress, voteType, evidenceType, marketId } = req.body;
+    if (!mayActAs(req, walletAddress)) return res.status(403).json({ error: 'This address belongs to an agent' });
     
     if (!evidenceId || !walletAddress || !voteType || !evidenceType || !marketId) {
       return res.status(400).json({ error: 'Missing required fields' });

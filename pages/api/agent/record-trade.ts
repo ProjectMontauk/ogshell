@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { readContract } from 'thirdweb';
+import { isTrustedCaller } from '../../../lib/automation';
 import prisma from '../../../lib/prisma';
 import { getContractsForMarket } from '../../../constants/contracts';
 import { CASH_TOKEN_DECIMALS } from '../../../constants/tokenUnits';
@@ -18,7 +19,7 @@ import { getMarketById } from '../../../src/data/markets';
  *         research?: { agentProbability, marketYesPrice, edge, confidence, reasoning, model? } }
  * Idempotent on txHash (when provided): re-posting the same txHash returns the existing trade.
  *
- * No auth on purpose (test markets). Add a shared-secret header check here before using real funds.
+ * Requires `Authorization: Bearer $AGENT_API_SECRET`: this route writes trades, odds and positions for any wallet.
  */
 
 const ODDS_SCALE = 2 ** 64; // OddsHistory stores probability * 2^64, like the app does
@@ -31,6 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
   }
+  if (!isTrustedCaller(req)) return res.status(401).json({ error: 'Missing or wrong AGENT_API_SECRET' });
 
   try {
     const { walletAddress, marketId, side, usd, shares, txHash } = req.body ?? {};

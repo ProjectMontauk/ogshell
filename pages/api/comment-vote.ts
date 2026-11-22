@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '@prisma/client';
 import { getAllowedOrigin } from '../../lib/cors';
+import { mayActAs } from '../../lib/automation';
 
 const prisma = new PrismaClient();
 
@@ -19,6 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'POST') {
     try {
       const { commentId, walletAddress, voteType } = req.body;
+      if (!mayActAs(req, walletAddress)) return res.status(403).json({ error: 'This address belongs to an agent' });
       
       if (!commentId || !walletAddress || !voteType) {
         return res.status(400).json({ error: 'Comment ID, wallet address, and vote type are required' });

@@ -22,7 +22,7 @@
  *   AGENT_DAILY_LIMIT_LOW_USD            ... at low confidence (default 100)
  *   AGENT_MAX_POSITION_USD               Max value held per market side (default 2000)
  *   AGENT_MIN_TRADE_USD                  Skip trades smaller than this (default 1)
- *   AGENT_WALLET_ADDRESS, BASE_SEPOLIA_RPC_URL, SITE_URL   Same as agent-trade.mjs
+ *   AGENT_WALLET_ADDRESS, BASE_SEPOLIA_RPC_URL, SITE_URL, AGENT_API_SECRET   Same as agent-trade.mjs
  *
  * If AGENT_WALLET_ADDRESS belongs to an agent in src/data/agents.ts, that agent's method is added to the
  * prompt. The methods differ, so the agents reach different estimates and trade against each other.
