@@ -11,17 +11,20 @@ import { useSearchParams } from 'next/navigation';
 function DocsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams?.get('tab');
-  const validTabs = ['research', 'flf-docs', 'superforecaster-methodology', 'relegation-system', 'how-derps-work', 'quarterly-trial-procedure', 'economics', 'idea-futures', 'review-boards'] as const;
+  const validTabs = ['research', 'flf-docs', 'superforecaster-methodology', 'relegation-system', 'market-making', 'quarterly-trial-procedure', 'economics', 'idea-futures', 'review-boards'] as const;
   type DocsTab = typeof validTabs[number];
-  const isValidTab = (tab: string | null | undefined): tab is DocsTab =>
-    !!tab && validTabs.includes(tab as DocsTab);
-  const initialTab: DocsTab = isValidTab(tabParam) ? tabParam : 'research';
+  const normalizeTab = (tab: string | null | undefined): DocsTab | null => {
+    if (!tab) return null;
+    // Compat: previous Market Making tab id
+    if (tab === 'how-derps-work') return 'market-making';
+    return validTabs.includes(tab as DocsTab) ? (tab as DocsTab) : null;
+  };
+  const initialTab: DocsTab = normalizeTab(tabParam) ?? 'research';
   const [activeTab, setActiveTab] = useState<DocsTab>(initialTab);
   
   useEffect(() => {
-    if (isValidTab(tabParam)) {
-      setActiveTab(tabParam);
-    }
+    const next = normalizeTab(tabParam);
+    if (next) setActiveTab(next);
   }, [tabParam]);
 
   return (
@@ -49,8 +52,8 @@ function DocsContent() {
               Superforecasters
             </button>
             <button
-              onClick={() => setActiveTab('how-derps-work')}
-              className="tab shrink-0" data-selected={activeTab === 'how-derps-work'}
+              onClick={() => setActiveTab('market-making')}
+              className="tab shrink-0" data-selected={activeTab === 'market-making'}
             >
               Market Making
             </button>
@@ -90,19 +93,31 @@ function DocsContent() {
 
           {activeTab === 'flf-docs' && (
             <div>
-              <div className="relative w-full overflow-hidden rounded-panel" style={{ paddingBottom: '56.25%' }}>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="!mt-0 !mb-0">Pitch Deck</h2>
+                <a
+                  href="/The_Citizen_Pitch_Deck.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="link text-small shrink-0"
+                >
+                  Open PDF
+                </a>
+              </div>
+              <div className="relative w-full overflow-hidden rounded-panel border border-rule bg-ground-2" style={{ height: 'min(70vh, 720px)' }}>
                 <iframe
                   className="absolute inset-0 h-full w-full"
-                  src="https://www.youtube.com/embed/8AGufGYTa-M"
-                  title="Walkthrough"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
+                  src="/The_Citizen_Pitch_Deck.pdf#view=FitH"
+                  title="The Citizen Pitch Deck"
                 />
               </div>
 
               <h2>Introduction</h2>
               <p>
-                The Citizen is a futures market platform designed to surface truth about disputed historical and scientific claims through financial incentives and adversarial adjudication. The world&apos;s top forecasters are contracted to continuously provide probability estimates on contested claims that lack a clear resolution event, such as &quot;Was COVID-19 a lab leak?&quot; A futures market is then listed against the Superforecaster probability estimate, enabling market participants to trade positions, like &quot;Yes, COVID-19 was a lab leak.&quot; The result is that long-horizon truth becomes a tradeable asset, giving participants a direct financial incentive to surface evidence that uncovers the truth about the underlying question.
+                The Citizen is a prediction market for disputed historical and scientific claims. Anyone can buy Yes or No shares on questions like &quot;Was COVID-19 a lab leak?&quot; The market price is set only by trading: it moves as participants buy and sell. Markets stay open until Superforecasters from the Good Judgment Project assign a stable median probability that meets a clear and convincing threshold. That Superforecaster median, not a news headline or a review board vote alone, is what resolves the market.
+              </p>
+              <p>
+                The result is that long-horizon truth becomes a tradeable asset. Participants have a direct financial incentive to surface evidence that moves informed opinion, while resolution waits on calibrated professional forecasters rather than a single abrupt event.
               </p>
               <h2>Design</h2>
               <p>
@@ -117,17 +132,17 @@ function DocsContent() {
                   >
                     Superforecasters
                   </button>
-                  : Superforecasters are professional forecasters qualified by track record. We use them as the price oracle because their judgments are scored against real-world outcomes and have a demonstrated history of accurate calibration.
+                  : Superforecasters are professional forecasters qualified by track record. Their median probability estimate is the resolution signal for each market: Yes resolves when that median stays at or above 95% for more than a month; No resolves when it stays below 5% for more than a month.
                 </li>
                 <li>
                   <button
                     type="button"
-                    onClick={() => setActiveTab('how-derps-work')}
+                    onClick={() => setActiveTab('market-making')}
                     className="link font-medium"
                   >
                     Market Making
                   </button>
-                  : Market making on The Citizen is handled by derp.trade futures markets. We use futures because they can track an index continuously, even when there are no earnings and no final resolution event.
+                  : Each market is a Yes/No prediction market with an on-chain automated market maker. The price reflects buying and selling only; it is not pegged to the Superforecaster estimate while the market is open.
                 </li>
                 <li>
                   <button
@@ -138,16 +153,6 @@ function DocsContent() {
                     Idea Futures
                   </button>
                   : Idea futures are long-dated markets where Superforecasters trade contested claims against one another. We chose this design so the panel continuously updates probabilities through competition, and a relegation system selects for the strongest track records over time.
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('quarterly-trial-procedure')}
-                    className="link font-medium"
-                  >
-                    Trial Procedure
-                  </button>
-                  : The trial procedure is a Science Court-style review in which Superforecasters act as judges and case managers. We use it to test contested claims adversarially, publish accepted facts, and identify the cruxes most likely to move the market.
                 </li>
               </ul>
             </div>
@@ -169,7 +174,7 @@ function DocsContent() {
                 <li><strong>They beat AI.</strong> In July 2026, the Financial Times tested a leading AI forecasting model against the market on Federal Reserve rate decisions. The AI model matched the market but never beat it. It could not reproduce the judgment that sets superforecasters apart: knowing when to step away from the crowd. When Silicon Valley Bank failed in 2023 and markets swung sharply toward a Fed policy pivot, superforecasters saw no real signal and barely moved their forecast. They were right. The market corrected its overreaction later.</li>
               </ul>
               <p>
-                This makes superforecasters uniquely suited to power a price oracle. They carry a demonstrated record of outperforming classified intelligence and now AI, across decades of real-world tests.
+                This makes Superforecasters uniquely suited to resolve The Citizen&apos;s markets. Their median probability is the clear and convincing signal that closes a market, and they carry a demonstrated record of outperforming classified intelligence and now AI across decades of real-world tests.
               </p>
 
               <h2>Why They&apos;re Qualified</h2>
@@ -202,7 +207,7 @@ function DocsContent() {
                 <li><strong>Extremizing.</strong> The weighted average is then pushed further toward 0 or 1 than a simple average would suggest. This corrects a known bias: forecasters&apos; private information overlaps only partially, so a plain average tends to land closer to 50% than the group&apos;s true collective knowledge supports. The larger and more diverse the forecaster pool, the further the aggregate can safely be pushed toward certainty.</li>
               </ul>
               <p>
-                This weighted and extremized approach beat simple averaging, unweighted medians, and in several tournament years, live prediction markets, inside IARPA&apos;s tournament. The SBI methodology follows the same model. Individual superforecaster estimates are weighted by track record and recency, then extremized, to produce the published index value.
+                This weighted and extremized approach beat simple averaging, unweighted medians, and in several tournament years, live prediction markets, inside IARPA&apos;s tournament. On The Citizen, the published Superforecaster median probability is what markets resolve against: Yes if that median holds at or above 95% for more than a month, No if it holds below 5% for more than a month.
               </p>
               <p>
                 Learn more about Good Judgment&apos;s research and services at{' '}
@@ -308,154 +313,77 @@ function DocsContent() {
             </div>
           )}
 
-          {activeTab === 'how-derps-work' && (
+          {activeTab === 'market-making' && (
             <div>
+              <h2>Prediction Markets</h2>
               <p>
-                The Citizen&apos;s futures markets are powered by{' '}
-                <a href="https://derp.trade" target="_blank" rel="noopener noreferrer">
-                  derp.trade
-                </a>
-                , which handles all market making and trade execution. The overview below explains how DERPs work in plain language. For formulas, code, and the full technical specification, see the{' '}
-                <a href="https://docs.derp.trade/docs/protocol/overview" target="_blank" rel="noopener noreferrer">
-                  derp.trade protocol docs
-                </a>.
+                Every market on The Citizen is a Yes/No prediction market. Traders buy and sell outcome shares with USDC. The share price is the market&apos;s implied probability, and it moves only when people trade. It is not locked to any external index while the market is open.
+              </p>
+              <p>
+                Resolution is separate from price discovery. A market stays open until Superforecasters from the Good Judgment Project publish a median probability that meets a clear and convincing threshold and holds there. Until then, the market continues to trade freely.
               </p>
 
-              <h2>The Basics</h2>
+              <h2>How Resolution Works</h2>
               <p>
-                A derivative is a financial contract whose value is based on the price of something else. On derp.trade, that &quot;something else&quot; is a token, such as SOL, WIF, or any other Solana token. On The Citizen, the underlying is the probability of a contested claim resolving one way or the other.
-              </p>
-              <p>
-                When you trade on The Citizen, you are not buying or selling the underlying claim directly. Instead, you are opening a position that tracks the market&apos;s implied probability:
+                The clear and convincing threshold is met when the Superforecaster median probability estimate for the claim:
               </p>
               <ul>
-                <li><strong>Long</strong>: you profit if the price goes up.</li>
-                <li><strong>Short</strong>: you profit if the price goes down.</li>
+                <li><strong>Resolves Yes</strong> if the median stays at or above 95% for more than one month.</li>
+                <li><strong>Resolves No</strong> if the median stays below 5% for more than one month.</li>
               </ul>
               <p>
-                You can use leverage to amplify your position. For example, 10x leverage means a 1% price move gives you a 10% gain (or loss). All positions are denominated in USDT. You deposit USDT as collateral and receive your profits in USDT.
+                Superforecasters may revise their estimates at any time as new evidence arrives. Until one of those stability conditions is met, the market remains open. Participants should treat the Superforecaster median as the forward-looking, evidence-weighted signal used for resolution, not as a journalistic verdict and not as the live trading price.
               </p>
 
               <h2>How Trading Works</h2>
               <p>
-                Here is the flow of a typical trade on The Citizen:
+                Here is the flow of a typical trade:
               </p>
               <ol>
-                <li><strong>Pick a market</strong>: browse the available contested-claims markets on The Citizen.</li>
-                <li><strong>Choose long or short</strong>: decide whether you think the implied probability will go up or down.</li>
-                <li><strong>Set your position size and leverage</strong>: enter the amount of USDT you want to put up as collateral and choose your leverage multiplier.</li>
-                <li><strong>The AMM takes the other side</strong>: derp.trade&apos;s automated market maker fills your order instantly. There is no waiting for a counterparty.</li>
-                <li><strong>Your PnL updates in real time</strong>: as the market price moves, your unrealized profit or loss changes.</li>
-                <li><strong>Close when you are ready</strong>, or get liquidated if your collateral runs out.</li>
+                <li><strong>Pick a market</strong>: choose a contested claim on The Citizen.</li>
+                <li><strong>Choose Yes or No</strong>: buy shares on the side you think is underpriced relative to the eventual resolution.</li>
+                <li><strong>Set your size</strong>: enter how much USDC to spend. There is no leverage and no liquidation.</li>
+                <li><strong>The AMM fills the trade</strong>: an on-chain fixed-product market maker (FPMM) takes the other side instantly. You do not wait for a matching counterparty.</li>
+                <li><strong>Hold, sell, or redeem</strong>: you can sell shares back into the AMM at any time while the market is open, or redeem winning shares after resolution.</li>
               </ol>
 
-              <h2>The AMM: Your Trading Partner</h2>
+              <h2>The Automated Market Maker</h2>
               <p>
-                On traditional exchanges, you need another person on the other side of your trade. On derp.trade, an automated market maker (AMM) fills that role. The AMM is a smart contract that is always willing to trade with you.
+                Liquidity comes from a Fixed Product Market Maker paired with Conditional Tokens. Buying Yes shares increases the Yes price and decreases the No price, and the reverse for buying No. The product of the pool balances stays constant, so larger trades move the price more.
               </p>
               <p>
-                Because the AMM is always available, markets can exist for tokens with low trading volume. There is no minimum liquidity requirement; the AMM handles everything.
-              </p>
-              <p>
-                The AMM earns trading fees and funding payments, which build up its liquidity over time. The more a market is traded, the deeper its liquidity becomes.
+                Because the AMM is always available, thin markets can still trade. Depth grows as more collateral is added to the pool. Positions are fully collateralized in USDC: you risk what you spend, not a leveraged multiple of it.
               </p>
 
-              <h2>Funding Rates</h2>
-              <p>
-                To keep markets balanced, derp.trade uses funding rates. If many more traders are long than short (or vice versa), the majority side pays a small fee to the minority side. This encourages traders to take the less popular side and keeps the market healthy.
-              </p>
-              <p>
-                Funding is charged continuously, every 15 seconds in small amounts. You can see the current funding rate for any market on the trading page before you open a position.
-              </p>
-
-              <h2>Leverage and Liquidation</h2>
-              <p>
-                Leverage lets you control a larger position with less collateral. For example, with 10x leverage and 10 USDT of collateral, you control a 100 USDT position.
-              </p>
-              <p>
-                The tradeoff is risk. Higher leverage means your position gets liquidated more easily. Liquidation happens when your losses eat through your collateral. At that point, the protocol closes your position and you lose your deposited collateral.
-              </p>
-              <p>
-                Before opening any trade, check your liquidation price, the price at which your position would be liquidated. The trading UI shows this clearly.
-              </p>
-
-              <h2>DERPs vs. Traditional Perps</h2>
+              <h2>Price vs. Resolution</h2>
               <div className="table-wrap">
                 <table>
                   <thead>
                     <tr>
                       <th></th>
-                      <th>Traditional perps</th>
-                      <th>DERPs</th>
+                      <th>While the market is open</th>
+                      <th>At resolution</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td className="px-3 py-2 font-semibold">Liquidity</td>
-                      <td>Order book: needs many buyers and sellers</td>
-                      <td>AMM: always available</td>
+                      <td className="px-3 py-2 font-semibold">What sets the number</td>
+                      <td>Buying and selling of Yes/No shares</td>
+                      <td>Superforecaster median probability</td>
                     </tr>
                     <tr>
-                      <td className="px-3 py-2 font-semibold">Supported assets</td>
-                      <td>Major tokens only (BTC, ETH, SOL)</td>
-                      <td>Any token on Solana</td>
+                      <td className="px-3 py-2 font-semibold">What it means</td>
+                      <td>Implied probability from traders</td>
+                      <td>Clear and convincing evidence threshold met</td>
                     </tr>
                     <tr>
-                      <td className="px-3 py-2 font-semibold">Market creation</td>
-                      <td>Requires exchange approval and liquidity</td>
-                      <td>Permissionless and free</td>
-                    </tr>
-                    <tr>
-                      <td className="px-3 py-2 font-semibold">Margin type</td>
-                      <td>Cross or isolated</td>
-                      <td>Isolated only</td>
-                    </tr>
-                    <tr>
-                      <td className="px-3 py-2 font-semibold">Unique risk</td>
-                      <td>Counterparty and exchange risk</td>
-                      <td>
-                        AMM payout risk (
-                        <a href="https://docs.derp.trade/docs/risk/risk-overview" target="_blank" rel="noopener noreferrer">
-                          learn more
-                        </a>
-                        )
-                      </td>
+                      <td className="px-3 py-2 font-semibold">Can it move freely?</td>
+                      <td>Yes</td>
+                      <td>Market closes once the median is stable past the threshold</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
-
-              <h2>Further Reading</h2>
-              <p>
-                Market making on The Citizen is handled entirely by derp.trade. For step-by-step guides and the complete documentation, visit the derp.trade docs:
-              </p>
-              <ul>
-                <li>
-                  <a href="https://docs.derp.trade/docs/welcome/how-derps-work" target="_blank" rel="noopener noreferrer">
-                    How DERPs work
-                  </a>
-                </li>
-                <li>
-                  <a href="https://docs.derp.trade/docs/getting-started/setting-up-your-wallet" target="_blank" rel="noopener noreferrer">
-                    Setting up your wallet
-                  </a>
-                </li>
-                <li>
-                  <a href="https://docs.derp.trade/docs/getting-started/your-first-trade" target="_blank" rel="noopener noreferrer">
-                    Your first trade
-                  </a>
-                </li>
-                <li>
-                  <a href="https://docs.derp.trade/docs/protocol/overview" target="_blank" rel="noopener noreferrer">
-                    Protocol overview
-                  </a>
-                </li>
-                <li>
-                  <a href="https://docs.derp.trade/docs/risk/risk-overview" target="_blank" rel="noopener noreferrer">
-                    Risk overview
-                  </a>
-                </li>
-              </ul>
             </div>
           )}
 
