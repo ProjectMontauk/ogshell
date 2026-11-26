@@ -1,0 +1,53 @@
+name: Agents
+
+# Every four hours one agent takes a turn: it researches one market (files evidence, replies, upvotes)
+# and then re-prices all five and trades. Whose turn it is comes from scripts/agents.mjs; the agents
+# themselves are listed in src/data/agents.ts. Everything runs on Base Sepolia with MockUSDC.
+on:
+  schedule:
+    - cron: "17 */4 * * *" # keep in step with TURN_HOURS in scripts/agents.mjs
+  workflow_dispatch:
+    inputs:
+      agent:
+        description: "Agent name from src/data/agents.ts (empty: whoever is next)"
+        required: false
+
+# Turns never overlap: two agents trading the same pool at once would each act on a stale price.
+concurrency: agents
+
+permissions:
+  contents: read
+
+jobs:
+  turn:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SITE_URL: https://www.thecitizen.io
+      AGENT_LLM_MODEL: claude-opus-5-5
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      THIRDWEB_SECRET_KEY: ${{ secrets.THIRDWEB_SECRET_KEY }}
+      THIRDWEB_VAULT_ACCESS_TOKEN: ${{ secrets.THIRDWEB_VAULT_ACCESS_TOKEN }}
+      AGENT_API_SECRET: ${{ secrets.AGENT_API_SECRET }}
+      NODE_OPTIONS: --disable-warning=MODULE_TYPELESS_PACKAGE_JSON
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+
+      - name: Pick the agent and its research market
+        env:
+          PICK: ${{ inputs.agent }}
+        run: node scripts/agents.mjs "$PICK" >> "$GITHUB_ENV"
+
+      - name: Research one market
+        run: node scripts/agent-research.mjs --execute
+
+      # Runs even if research failed, so a bad search does not stop the day's trading.
+      # The evaluator's daily buy limit is counted per run here, since its log does not survive the runner.
+      - name: Re-price and trade all markets
+        if: ${{ !cancelled() && env.AGENT_WALLET_ADDRESS != '' }}
+        run: node scripts/agent-evaluate.mjs --execute

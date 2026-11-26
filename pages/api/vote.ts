@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '../../lib/prisma';
 import { getAllowedOrigin } from '../../lib/cors';
+import { mayActAs } from '../../lib/automation';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const origin = getAllowedOrigin(req.headers.origin as string | undefined);
@@ -16,6 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     const { evidenceId, walletAddress, voteType, evidenceType, marketId } = req.body;
+    if (!mayActAs(req, walletAddress)) return res.status(403).json({ error: 'This address belongs to an agent' });
     
     if (!evidenceId || !walletAddress || !voteType || !evidenceType || !marketId) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -106,20 +108,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
           });
         }
-          // Calculate new net votes for this evidence
-          const votes = await tx.vote.findMany({
-            where: { evidenceId },
-            select: { voteWeight: true }
-          });
-          
-          const netVotes = votes.reduce((sum, vote) => sum + vote.voteWeight, 0);
-          
-          // Update the evidence with new net votes
-          await tx.evidence.update({
-            where: { id: evidenceId },
-            data: { netVotes }
-          });
-          
+        // Apply the change to the stored count instead of recounting Vote rows: evidence seeded with a
+        // netVotes value has no rows behind it, and a recount would wipe that value on the first vote.
+        const { netVotes } = await tx.evidence.update({
+          where: { id: evidenceId },
+          data: { netVotes: existingVote ? { decrement: existingVote.voteWeight } : { increment: baseVotingWeight } },
+          select: { netVotes: true },
+        });
+
         return { netVotes, action: 'toggled' };
       });
       
